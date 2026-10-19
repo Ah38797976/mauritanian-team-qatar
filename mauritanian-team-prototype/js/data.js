@@ -13,7 +13,7 @@ window.DATA = {
   ],
   perms: {
     admin: ['viewPlayers', 'players', 'staff', 'matches', 'stats', 'settings', 'audit', 'viewStaff', 'contactPlayers', 'contactStaff'],
-    secretary: ['viewPlayers', 'players', 'stats', 'matches', 'viewStaff'],
+    secretary: ['viewPlayers', 'players', 'staff', 'matches', 'stats', 'settings', 'viewStaff', 'users'], // الأمين الرياضي: يدير اللاعبين والطاقم والمباريات والإعدادات والمستخدمين؛ بلا هواتف/بريد ولا مالية ولا سجل ولا صلاحيات
     coach: ['viewPlayers', 'lineup', 'viewStaff', 'contactStaffTeam'],
     officer: ['stats'],
     treasurer: ['finance', 'viewNames']

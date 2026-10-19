@@ -10,10 +10,10 @@
   const SAVED = 'تم الحفظ مؤقتًا (في الذاكرة فقط)';
   const denied = (what) => `<div class="card"><h2>غير مصرح</h2><p>هذه الصفحة (${what}) غير متاحة لدور «${esc(St.ROLES[St.user().role])}». هذه محاكاة واجهة فقط وليست حماية أمنية حقيقية.</p></div>`;
   // فصل المساحتين داخل الصفحة نفسها: «لوحة التحكم» (إدارة الفريق) و«التطبيق» (الاستخدام اليومي). الفصل للعرض فقط؛ الصلاحيات الفعلية في Store.
-  const PANEL = [['dash', 'نظرة عامة'], ['players', 'إدارة اللاعبين'], ['matches', 'إدارة المباريات'], ['staff', 'الطاقم'], ['finance', 'المالية'], ['roles', 'الصلاحيات'], ['audit', 'سجل العمليات'], ['settings', 'الإعدادات']];
+  const PANEL = [['dash', 'نظرة عامة'], ['players', 'إدارة اللاعبين'], ['matches', 'إدارة المباريات'], ['staff', 'الطاقم'], ['users', 'المستخدمون'], ['finance', 'المالية'], ['roles', 'الصلاحيات'], ['audit', 'سجل العمليات'], ['settings', 'الإعدادات']];
   const APP = [['players', 'اللاعبون'], ['coach', 'لوحة المدرب'], ['matches', 'المباريات'], ['stats', 'الإحصائيات']];
   const PANEL_ROLES = ['founder', 'admin', 'secretary', 'treasurer'];
-  const PANEL_ONLY = ['dash', 'staff', 'finance', 'roles', 'audit', 'settings'], APP_ONLY = ['coach', 'stats'];
+  const PANEL_ONLY = ['dash', 'staff', 'users', 'finance', 'roles', 'audit', 'settings'], APP_ONLY = ['coach', 'stats'];
   let sticky = null, curSpace = 'app';
   const isPanelUser = () => PANEL_ROLES.includes(St.user().role);
   const spaceOf = page => !isPanelUser() ? 'app' : PANEL_ONLY.includes(page) ? 'panel' : APP_ONLY.includes(page) ? 'app' : (sticky || 'panel');
@@ -101,6 +101,8 @@
   };
 
   V.staff = () => { if (!(St.can('staff') || St.can('viewStaff'))) return denied('الطاقم'); const ph = St.can('contactStaff') || St.can('contactStaffTeam'); return `<h1>الطاقم الإداري والفني</h1>${ph ? '' : '<div class="note" id="snote">أرقام هواتف الطاقم غير متاحة لدورك.</div>'}<div class="tools">${St.can('staff') ? '<button id="adds">+ إضافة عضو</button>' : ''}</div>${tw('جدول الطاقم', `<tr><th>الاسم</th><th>الدور</th><th>النوع</th>${ph ? '<th>هاتف (وهمي)</th>' : ''}<th></th></tr>${St.staffList().map(s => `<tr><td>${esc(s.name)}</td><td>${esc(s.role)}</td><td>${esc(s.kind)}</td>${ph ? `<td>${s.phone === undefined ? '—' : `<bdi>${esc(s.phone)}</bdi>`}</td>` : ''}<td>${St.can('staff') ? `<button class="sec" data-es="${esc(s.id)}">تعديل</button> <button class="dng" data-ds="${esc(s.id)}">حذف</button>` : ''}</td></tr>`).join('')}`)}`; };
+  V.users = () => { if (!St.can('users')) return denied('المستخدمون'); return `<h1>المستخدمون والأدوار (تجريبي)</h1><div class="note">أضف إداريًا أو أمينًا رياضيًا أو مدربًا أو مسؤول مباراة. يظهر المستخدم الجديد في قائمة «المستخدم التجريبي» أعلى الصفحة. لا توجد كلمات مرور في هذا النموذج.</div><div class="tools"><button id="addu">+ إضافة مستخدم</button></div>${tw('جدول المستخدمين', `<tr><th>الاسم</th><th>الدور</th><th></th></tr>${S.users.map(u => `<tr><td>${esc(u.name)}</td><td>${esc(St.ROLES[u.role])}</td><td>${u.role === 'founder' ? '—' : `<button class="sec" data-eu="${esc(u.id)}">تعديل</button> <button class="dng" data-du="${esc(u.id)}">حذف</button>`}</td></tr>`).join('')}`)}`; };
+  const userForm = u => { u = u || { name: '', role: 'admin' }; modal(u.id ? 'تعديل مستخدم' : 'إضافة مستخدم', fld('الاسم', 'name', u.name) + `<label class="f"><span>الدور</span><select name="role">${['admin', 'secretary', 'coach', 'officer', 'treasurer'].map(r => `<option value="${r}" ${r === u.role ? 'selected' : ''}>${esc(St.ROLES[r])}</option>`).join('')}</select></label>`, f => St.saveUser({ id: u.id, name: f.name, role: f.role })); };
   const staffForm = s => { const c = St.can('contactStaff'); s = s || { name: '', role: '', kind: 'فني', phone: '+000 00 11 00 00' }; modal(s.id ? 'تعديل عضو' : 'إضافة عضو', fld('الاسم', 'name', s.name) + fld('الدور', 'role', s.role) + sel('النوع', 'kind', St.KIND, s.kind) + (c ? fld('هاتف وهمي', 'phone', s.phone) : ''), f => St.saveStaff({ id: s.id, name: f.name, role: f.role, kind: f.kind, ...(c ? { phone: f.phone } : {}) })); };
 
   let sesId = 'x1';
@@ -184,6 +186,9 @@
     if (id === 'delp' && confirm('حذف هذا اللاعب (بيانات وهمية)؟')) { if (!fail(St.delPlayer(route().id))) location.hash = '#/players'; }
     if (id === 'unregp' && confirm('إلغاء تسجيل هذا اللاعب؟ يبقى سجله التاريخي محفوظًا.')) { fail(St.unregisterPlayer(route().id)); }
     if (id === 'adds') staffForm();
+    if (id === 'addu') userForm();
+    if (d.eu) userForm(S.users.find(x => x.id === d.eu));
+    if (d.du && confirm('حذف هذا المستخدم؟')) fail(St.delUser(d.du));
     if (d.es) staffForm(St.staffList().find(x => x.id === d.es));
     if (d.ds && confirm('حذف عضو الطاقم؟')) fail(St.delStaff(d.ds));
     if (id === 'addm') matchForm();

@@ -205,7 +205,7 @@ with sync_playwright() as p:
     EXPECT = {  # مكتوب يدويًا حسب جدول الصلاحيات في data.js (لا يُشتق من Store.can)
         'u1': set(ALL),
         'u2': set(PL + ST + MA + SA + ['saveTeam']),
-        'u3': set(PL + MA + SA),
+        'u3': set(PL + ['delStaff'] + MA + SA + ['saveTeam']),  # saveStaff_new يتضمن هاتفًا وهو مرفوض بلا contactStaff
         'u4': set(LU),
         'u5': {'addEvent_m1', 'addEvent_m3', 'setResult_m1', 'setResult_m3'},
         'u6': {'addEvent_m2', 'setResult_m2'}}

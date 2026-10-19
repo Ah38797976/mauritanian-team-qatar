@@ -9,7 +9,7 @@
   delete window.DATA; // لا نسخة خام عامة؛ الحالة الوحيدة هي S داخل هذا الإغلاق
   const subs = [];
   const ROLES = { founder: 'المؤسس', admin: 'الإدارة', secretary: 'الأمين الرياضي', coach: 'المدرب', officer: 'مسؤول المباراة', treasurer: 'الأمين المالي' };
-  const MODS = { viewPlayers: 'مشاهدة ملفات اللاعبين', players: 'إدارة اللاعبين', staff: 'إدارة الطاقم', lineup: 'التشكيلة والحضور', viewStaff: 'مشاهدة الطاقم (بلا هواتف)', contactPlayers: 'عرض هاتف وبريد اللاعبين', contactStaff: 'عرض هواتف الطاقم', contactStaffTeam: 'هواتف طاقم الفريق فقط (بلا بريد)', finance: 'البيانات المالية (محدودة)', viewNames: 'مشاهدة أسماء اللاعبين فقط', matches: 'إدارة المباريات', stats: 'إدخال الإحصائيات', settings: 'إعدادات الفريق', audit: 'سجل العمليات' };
+  const MODS = { viewPlayers: 'مشاهدة ملفات اللاعبين', players: 'إدارة اللاعبين', staff: 'إدارة الطاقم', lineup: 'التشكيلة والحضور', viewStaff: 'مشاهدة الطاقم (بلا هواتف)', contactPlayers: 'عرض هاتف وبريد اللاعبين', contactStaff: 'عرض هواتف الطاقم', contactStaffTeam: 'هواتف طاقم الفريق فقط (بلا بريد)', finance: 'البيانات المالية (محدودة)', viewNames: 'مشاهدة أسماء اللاعبين فقط', matches: 'إدارة المباريات', stats: 'إدخال الإحصائيات', settings: 'إعدادات الفريق', audit: 'سجل العمليات', users: 'إدارة المستخدمين' };
   const EDITABLE_ROLES = ['admin', 'secretary', 'coach', 'officer', 'treasurer'];
   const STAFF_MODS = ['staff', 'viewStaff', 'contactStaff', 'contactStaffTeam']; // مسؤول المباراة لا يصل إلى بيانات الطاقم أبدًا، حتى لو عُدّلت الصلاحيات مباشرة
   const POS = ['حارس', 'مدافع', 'وسط', 'مهاجم'];
@@ -225,6 +225,30 @@
       St.log('تسجيل حضور', `${p.name} — ${s.title}: ${v === true ? 'حاضر' : 'غائب'}`); St.emit(); return '';
     },
     // ---- الأدوار والإعدادات ----
+    // ---- المستخدمون (إضافة إداريين وأدوار أخرى) — محاكاة واجهة فقط ----
+    saveUser(u) {
+      const g = St.guard('users'); if (g) return g;
+      u = u || {};
+      const name = txt(u.name, 60);
+      if (name === null) return 'الاسم أطول من الحد المسموح';
+      if (!name) return 'الاسم مطلوب';
+      if (!EDITABLE_ROLES.includes(u.role)) return 'دور غير صالح';
+      const cur = u.id ? S.users.find(x => x.id === u.id) : null;
+      if (u.id && !cur) return 'مستخدم غير موجود';
+      if (cur && cur.role === 'founder') return 'لا يمكن تعديل المؤسس';
+      if (cur && cur.role === 'officer' && u.role !== 'officer' && S.matches.some(m => m.officer === cur.id)) return 'مسؤول مكلّف بمباريات: غيّر تكليفه أولًا';
+      if (cur) { Object.assign(cur, { name, role: u.role }); St.log('تعديل مستخدم', `${name} — ${ROLES[u.role]}`); }
+      else { S.users.push({ id: nextId('u', S.users), name, role: u.role, teamId: St.team().id }); St.log('إضافة مستخدم', `${name} — ${ROLES[u.role]}`); }
+      St.emit(); return '';
+    },
+    delUser(id) {
+      const g = St.guard('users'); if (g) return g;
+      const x = S.users.find(y => y.id === id); if (!x) return 'مستخدم غير موجود';
+      if (x.role === 'founder') return 'لا يمكن حذف المؤسس';
+      if (id === S.cur) return 'لا يمكنك حذف المستخدم الحالي';
+      if (S.matches.some(m => m.officer === id)) return 'مسؤول مكلّف بمباريات: غيّر تكليفه أولًا';
+      S.users = S.users.filter(y => y.id !== id); St.log('حذف مستخدم', x.name); St.emit(); return '';
+    },
     setPerm(role, mod, v) {
       const g = St.guard('roles'); if (g) return g;
       if (!EDITABLE_ROLES.includes(role)) return 'دور غير صالح';
