@@ -1,0 +1,28 @@
+61c61
+< declare t uuid := app.my_team(); uid uuid := (select auth.uid()); full boolean;
+---
+> declare t uuid := app.my_team(); uid uuid := (select auth.uid()); v_full boolean;
+64c64
+<   full := app.can_see_roster(t);
+---
+>   v_full := app.can_see_roster(t);
+70c70
+<           where mp.player_id = p.id and m.played and (full or m.officer_id = uid)) as apps,
+---
+>           where mp.player_id = p.id and m.played and (v_full or m.officer_id = uid)) as apps,
+72c72
+<           where e.player_id = p.id and e.event_type = 'goal'   and m.played and (full or m.officer_id = uid)) as goals,
+---
+>           where e.player_id = p.id and e.event_type = 'goal'   and m.played and (v_full or m.officer_id = uid)) as goals,
+74c74
+<           where e.player_id = p.id and e.event_type = 'yellow' and m.played and (full or m.officer_id = uid)) as yellow,
+---
+>           where e.player_id = p.id and e.event_type = 'yellow' and m.played and (v_full or m.officer_id = uid)) as yellow,
+76c76
+<           where e.player_id = p.id and e.event_type = 'red'    and m.played and (full or m.officer_id = uid)) as red
+---
+>           where e.player_id = p.id and e.event_type = 'red'    and m.played and (v_full or m.officer_id = uid)) as red
+79c79
+<         and (full or p.id in (select mp.player_id from public.match_players mp join public.matches m on m.id = mp.match_id
+---
+>         and (v_full or p.id in (select mp.player_id from public.match_players mp join public.matches m on m.id = mp.match_id

@@ -1,0 +1,181 @@
+PASS 0001_schema.sql: $$ balanced
+PASS 0001_schema.sql: begin/end transaction balanced
+PASS 0001_schema.sql: no service_role / secret literal
+PASS 0002_helpers.sql: $$ balanced
+PASS 0002_helpers.sql: begin/end transaction balanced
+PASS 0002_helpers.sql: no service_role / secret literal
+PASS 0003_rls.sql: $$ balanced
+PASS 0003_rls.sql: begin/end transaction balanced
+PASS 0003_rls.sql: no service_role / secret literal
+PASS 0004_rpc.sql: $$ balanced
+PASS 0004_rpc.sql: begin/end transaction balanced
+PASS 0004_rpc.sql: no service_role / secret literal
+PASS 0005_storage.sql: $$ balanced
+PASS 0005_storage.sql: begin/end transaction balanced
+PASS 0005_storage.sql: no service_role / secret literal
+PASS 0006_seed_reference.sql: $$ balanced
+PASS 0006_seed_reference.sql: begin/end transaction balanced
+PASS 0006_seed_reference.sql: no service_role / secret literal
+PASS 0007_seed_fake_staging_only.sql: $$ balanced
+PASS 0007_seed_fake_staging_only.sql: begin/end transaction balanced
+PASS 0007_seed_fake_staging_only.sql: no service_role / secret literal
+PASS 0001_down.sql: $$ balanced
+PASS 0001_down.sql: begin/end transaction balanced
+PASS 0001_down.sql: no service_role / secret literal
+PASS 0002_down.sql: $$ balanced
+PASS 0002_down.sql: begin/end transaction balanced
+PASS 0002_down.sql: no service_role / secret literal
+PASS 0003_down.sql: $$ balanced
+PASS 0003_down.sql: begin/end transaction balanced
+PASS 0003_down.sql: no service_role / secret literal
+PASS 0004_down.sql: $$ balanced
+PASS 0004_down.sql: begin/end transaction balanced
+PASS 0004_down.sql: no service_role / secret literal
+PASS 0005_down.sql: $$ balanced
+PASS 0005_down.sql: begin/end transaction balanced
+PASS 0005_down.sql: no service_role / secret literal
+PASS 0006_down.sql: $$ balanced
+PASS 0006_down.sql: begin/end transaction balanced
+PASS 0006_down.sql: no service_role / secret literal
+PASS 0007_down.sql: $$ balanced
+PASS 0007_down.sql: begin/end transaction balanced
+PASS 0007_down.sql: no service_role / secret literal
+PASS 00_catalog_security.sql: $$ balanced
+PASS 00_catalog_security.sql: begin/end transaction balanced
+PASS 00_catalog_security.sql: no service_role / secret literal
+PASS 20_contact_leak.sql: $$ balanced
+PASS 20_contact_leak.sql: begin/end transaction balanced
+PASS 20_contact_leak.sql: no service_role / secret literal
+PASS 30_session_and_escalation.sql: $$ balanced
+PASS 30_session_and_escalation.sql: begin/end transaction balanced
+PASS 30_session_and_escalation.sql: no service_role / secret literal
+PASS 40_cross_team.sql: $$ balanced
+PASS 40_cross_team.sql: begin/end transaction balanced
+PASS 40_cross_team.sql: no service_role / secret literal
+PASS 50_storage.sql: $$ balanced
+PASS 50_storage.sql: begin/end transaction balanced
+PASS 50_storage.sql: no service_role / secret literal
+PASS rls_matrix.sql: $$ balanced
+PASS rls_matrix.sql: begin/end transaction balanced
+PASS rls_matrix.sql: no service_role / secret literal
+PASS 0004_rpc.sql: public.rpc_get_me definer pins search_path
+PASS 0004_rpc.sql: public.rpc_get_roster definer pins search_path
+PASS 0004_rpc.sql: public.rpc_get_stat_rows definer pins search_path
+PASS 0004_rpc.sql: public.rpc_save_player definer pins search_path
+PASS 0004_rpc.sql: public.rpc_delete_player definer pins search_path
+PASS 0004_rpc.sql: public.rpc_unregister_player definer pins search_path
+PASS 0004_rpc.sql: public.rpc_save_staff definer pins search_path
+PASS 0004_rpc.sql: public.rpc_delete_staff definer pins search_path
+PASS 0004_rpc.sql: public.rpc_save_match definer pins search_path
+PASS 0004_rpc.sql: public.rpc_add_event definer pins search_path
+PASS 0004_rpc.sql: public.rpc_set_result definer pins search_path
+PASS 0004_rpc.sql: public.rpc_set_starters definer pins search_path
+PASS 0004_rpc.sql: public.rpc_set_attendance definer pins search_path
+PASS 0004_rpc.sql: public.rpc_set_permission definer pins search_path
+PASS 0004_rpc.sql: public.rpc_save_team definer pins search_path
+PASS 0004_rpc.sql: public.rpc_register_photo definer pins search_path
+PASS 0004_rpc.sql: public.rpc_delete_photo definer pins search_path
+PASS 0004_rpc.sql: plpgsql variable "t" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "r" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "t" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "uid" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "city_ok" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "t" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "uid" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "v_full" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "t" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "v_id" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "cur_c" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "v_name" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "v_phone" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "v_num" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "v_pos" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "canc" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "t" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "pl" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "n_m" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "t" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "pl" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "t" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "v_id" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "cur_c" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "v_name" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "v_phone" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "canc" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "t" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "n" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "t" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "v_id" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "v_date" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "v_off" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "t" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "mt" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "v_type" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "ok" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "t" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "mt" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "t" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "i" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "f" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "t" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "s" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "t" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "r" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "t" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "v_name" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "t" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "pl" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "t" is not a reserved word
+PASS 0004_rpc.sql: plpgsql variable "ph" is not a reserved word
+PASS 0002_helpers.sql: app.my_team definer pins search_path
+PASS 0002_helpers.sql: app.my_role definer pins search_path
+PASS 0002_helpers.sql: app.role_has_perm definer pins search_path
+PASS 0002_helpers.sql: app.has_perm definer pins search_path
+PASS 0002_helpers.sql: app.can_see_roster definer pins search_path
+PASS 0002_helpers.sql: app.can_view_matches definer pins search_path
+PASS 0002_helpers.sql: app.can_read_match definer pins search_path
+PASS 0002_helpers.sql: app.log definer pins search_path
+PASS 0002_helpers.sql: app.lineup_guard definer pins search_path
+PASS 0002_helpers.sql: plpgsql variable "r" is not a reserved word
+PASS 0002_helpers.sql: plpgsql variable "r" is not a reserved word
+PASS 0002_helpers.sql: plpgsql variable "n" is not a reserved word
+PASS 0002_helpers.sql: plpgsql variable "st" is not a reserved word
+PASS 0006_seed_reference.sql: app.seed_team_defaults definer pins search_path
+PASS 0004: no broad "revoke ... all functions in schema"
+PASS 0002: no broad "revoke ... all functions in schema"
+PASS 0004: 17 RPC defined = 17 granted = 17 explicitly revoked from public/anon
+PASS 0004: every RPC refuses when my_team() is null or lacks permission (deny/not-found before any write)
+PASS 0004: exposed write RPCs derive team from the session only (no p_team/team_id parameter)
+PASS 0001/0003: 17 tables = RLS enabled = SELECT policy
+PASS 0003: no INSERT/UPDATE/DELETE grant or write policy
+PASS 0003: sequences revoked (S-5)
+PASS 0005: no UPDATE policy; select/insert/delete only
+PASS 0005: insert policy enforces path shape (S-6)
+PASS 0007: refuses to run without app.allow_fake_seed flag
+PASS 0007: only obviously fake contact values (+000 / example.invalid)
+PASS tests/00_catalog_security.sql: plan + finish + rollback
+PASS tests/00_catalog_security.sql: marked REVIEW ONLY
+PASS tests/00_catalog_security.sql: reset role after every role switch
+PASS tests/00_catalog_security.sql: psql variables used = []
+PASS tests/20_contact_leak.sql: plan + finish + rollback
+PASS tests/20_contact_leak.sql: marked REVIEW ONLY
+PASS tests/20_contact_leak.sql: reset role after every role switch
+PASS tests/20_contact_leak.sql: psql variables used = ['u_admin', 'u_coach', 'u_founder', 'u_officer1', 'u_officer2', 'u_secretary', 'u_treasurer']
+PASS tests/30_session_and_escalation.sql: plan + finish + rollback
+PASS tests/30_session_and_escalation.sql: marked REVIEW ONLY
+PASS tests/30_session_and_escalation.sql: reset role after every role switch
+PASS tests/30_session_and_escalation.sql: psql variables used = ['u_admin', 'u_coach', 'u_founder', 'u_officer1', 'u_secretary', 'u_treasurer']
+PASS tests/40_cross_team.sql: plan + finish + rollback
+PASS tests/40_cross_team.sql: marked REVIEW ONLY
+PASS tests/40_cross_team.sql: reset role after every role switch
+PASS tests/40_cross_team.sql: psql variables used = ['u_admin', 'u_founder', 'u_officer1']
+PASS tests/50_storage.sql: plan + finish + rollback
+PASS tests/50_storage.sql: marked REVIEW ONLY
+PASS tests/50_storage.sql: reset role after every role switch
+PASS tests/50_storage.sql: psql variables used = ['u_admin', 'u_coach', 'u_officer1', 'u_treasurer']
+PASS tests/rls_matrix.sql: plan + finish + rollback
+PASS tests/rls_matrix.sql: marked REVIEW ONLY
+PASS tests/rls_matrix.sql: reset role after every role switch
+PASS tests/rls_matrix.sql: psql variables used = ['u_admin', 'u_coach', 'u_founder', 'u_officer1', 'u_secretary', 'u_treasurer']
+
+الإجمالي: 179/179 نجح

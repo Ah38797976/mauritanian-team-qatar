@@ -1,0 +1,109 @@
+PASS SQL defines 17 rpc_* functions
+PASS supabase-adapter.js: rpc_get_me exists in SQL
+PASS supabase-adapter.js: rpc_get_me argument names match SQL parameters
+PASS supabase-adapter.js: rpc_get_roster exists in SQL
+PASS supabase-adapter.js: rpc_get_roster argument names match SQL parameters
+PASS supabase-adapter.js: rpc_get_stat_rows exists in SQL
+PASS supabase-adapter.js: rpc_get_stat_rows argument names match SQL parameters
+PASS supabase-adapter.js: rpc_save_player exists in SQL
+PASS supabase-adapter.js: rpc_save_player argument names match SQL parameters
+PASS supabase-adapter.js: rpc_delete_player exists in SQL
+PASS supabase-adapter.js: rpc_delete_player argument names match SQL parameters
+PASS supabase-adapter.js: rpc_unregister_player exists in SQL
+PASS supabase-adapter.js: rpc_unregister_player argument names match SQL parameters
+PASS supabase-adapter.js: rpc_save_staff exists in SQL
+PASS supabase-adapter.js: rpc_save_staff argument names match SQL parameters
+PASS supabase-adapter.js: rpc_delete_staff exists in SQL
+PASS supabase-adapter.js: rpc_delete_staff argument names match SQL parameters
+PASS supabase-adapter.js: rpc_save_match exists in SQL
+PASS supabase-adapter.js: rpc_save_match argument names match SQL parameters
+PASS supabase-adapter.js: rpc_add_event exists in SQL
+PASS supabase-adapter.js: rpc_add_event argument names match SQL parameters
+PASS supabase-adapter.js: rpc_set_result exists in SQL
+PASS supabase-adapter.js: rpc_set_result argument names match SQL parameters
+PASS supabase-adapter.js: rpc_set_starters exists in SQL
+PASS supabase-adapter.js: rpc_set_starters argument names match SQL parameters
+PASS supabase-adapter.js: rpc_set_attendance exists in SQL
+PASS supabase-adapter.js: rpc_set_attendance argument names match SQL parameters
+PASS supabase-adapter.js: rpc_set_permission exists in SQL
+PASS supabase-adapter.js: rpc_set_permission argument names match SQL parameters
+PASS supabase-adapter.js: rpc_save_team exists in SQL
+PASS supabase-adapter.js: rpc_save_team argument names match SQL parameters
+PASS supabase-adapter.js: rpc_register_photo exists in SQL
+PASS supabase-adapter.js: rpc_register_photo argument names match SQL parameters
+PASS supabase-adapter.js: rpc_delete_photo exists in SQL
+PASS supabase-adapter.js: rpc_delete_photo argument names match SQL parameters
+PASS supabase-adapter.js: every SQL write RPC is reachable from the adapter
+PASS supabase-adapter.js: no service_role / sb_secret literal outside the refusal check
+PASS supabase-adapter.v2.review.js: rpc_get_me exists in SQL
+PASS supabase-adapter.v2.review.js: rpc_get_me argument names match SQL parameters
+PASS supabase-adapter.v2.review.js: rpc_get_roster exists in SQL
+PASS supabase-adapter.v2.review.js: rpc_get_roster argument names match SQL parameters
+PASS supabase-adapter.v2.review.js: rpc_get_stat_rows exists in SQL
+PASS supabase-adapter.v2.review.js: rpc_get_stat_rows argument names match SQL parameters
+PASS supabase-adapter.v2.review.js: rpc_save_player exists in SQL
+PASS supabase-adapter.v2.review.js: rpc_save_player argument names match SQL parameters
+PASS supabase-adapter.v2.review.js: rpc_delete_player exists in SQL
+PASS supabase-adapter.v2.review.js: rpc_delete_player argument names match SQL parameters
+PASS supabase-adapter.v2.review.js: rpc_unregister_player exists in SQL
+PASS supabase-adapter.v2.review.js: rpc_unregister_player argument names match SQL parameters
+PASS supabase-adapter.v2.review.js: rpc_save_staff exists in SQL
+PASS supabase-adapter.v2.review.js: rpc_save_staff argument names match SQL parameters
+PASS supabase-adapter.v2.review.js: rpc_delete_staff exists in SQL
+PASS supabase-adapter.v2.review.js: rpc_delete_staff argument names match SQL parameters
+PASS supabase-adapter.v2.review.js: rpc_save_match exists in SQL
+PASS supabase-adapter.v2.review.js: rpc_save_match argument names match SQL parameters
+PASS supabase-adapter.v2.review.js: rpc_add_event exists in SQL
+PASS supabase-adapter.v2.review.js: rpc_add_event argument names match SQL parameters
+PASS supabase-adapter.v2.review.js: rpc_set_result exists in SQL
+PASS supabase-adapter.v2.review.js: rpc_set_result argument names match SQL parameters
+PASS supabase-adapter.v2.review.js: rpc_set_starters exists in SQL
+PASS supabase-adapter.v2.review.js: rpc_set_starters argument names match SQL parameters
+PASS supabase-adapter.v2.review.js: rpc_set_attendance exists in SQL
+PASS supabase-adapter.v2.review.js: rpc_set_attendance argument names match SQL parameters
+PASS supabase-adapter.v2.review.js: rpc_set_permission exists in SQL
+PASS supabase-adapter.v2.review.js: rpc_set_permission argument names match SQL parameters
+PASS supabase-adapter.v2.review.js: rpc_save_team exists in SQL
+PASS supabase-adapter.v2.review.js: rpc_save_team argument names match SQL parameters
+PASS supabase-adapter.v2.review.js: rpc_register_photo exists in SQL
+PASS supabase-adapter.v2.review.js: rpc_register_photo argument names match SQL parameters
+PASS supabase-adapter.v2.review.js: rpc_delete_photo exists in SQL
+PASS supabase-adapter.v2.review.js: rpc_delete_photo argument names match SQL parameters
+PASS supabase-adapter.v2.review.js: every SQL write RPC is reachable from the adapter
+PASS supabase-adapter.v2.review.js: no service_role / sb_secret literal outside the refusal check
+PASS v2 F-2: sessions expose `date`
+PASS v2 F-3: players carry teamId
+PASS v2 F-3: staff carry teamId
+PASS v2 F-3: contacts merged for a role that received them
+PASS v2 F-3: staff phone present when server returned it
+PASS v2 F-4: only ACTIVE members, officers listed
+PASS v2 F-5: roster() is the server result mapped to Arabic labels
+PASS v2: no phone/email property invented when the server returned none
+PASS v2 F-4: no members for a role that cannot read them
+PASS v2 F-5: names-only roster stays names-only (no undefined pos/status)
+PASS v2: contact keys NOT sent when the caller did not supply them
+PASS v2: labels converted to DB codes
+PASS v2: contact keys sent only when supplied
+PASS v2: server text denial is passed through unchanged
+PASS v2: Postgres 42501 maps to the Arabic deny text
+PASS v2: other errors map to the network text
+PASS v2: upload path starts with the SERVER team id and the player id
+PASS v2: wrong type refused client-side
+PASS v2: oversize refused client-side
+PASS v2: delete removes the path taken from server rows
+PASS v2: deleting an unknown photo id does nothing
+PASS v2: auth sign-out event clears the cache and notifies the UI
+PASS keys: sb_secret_ refused
+PASS keys: JWT with role service_role refused
+PASS keys: placeholder refused
+PASS keys: JWT with role anon accepted
+PASS url: non-https / non-supabase.co refused
+
+V1 DEFECT CONFIRMATIONS (expected true = finding is real):
+CONFIRMED F-2: v1 sessions use session_date, UI reads date
+CONFIRMED F-3a: v1 players have no teamId
+CONFIRMED F-3b: v1 keeps contacts in a separate map, not on the player
+CONFIRMED F-4: v1 never reads team_members
+CONFIRMED F-5: v1 roster() semantics undefined (no accessor); officer scope differs from Store.roster()
+
+الإجمالي: 100/100 نجح

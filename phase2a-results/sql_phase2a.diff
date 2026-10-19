@@ -1,0 +1,62 @@
+188c188
+< create function app.audit_immutable() returns trigger language plpgsql as $$
+---
+> create function app.audit_immutable() returns trigger language plpgsql set search_path = '' as $$
+12c12
+< create function app.deny() returns text language sql immutable as $$ select 'غير مصرح بهذه العملية لدورك الحالي'::text $$;
+---
+> create function app.deny() returns text language sql immutable set search_path = '' as $$ select 'غير مصرح بهذه العملية لدورك الحالي'::text $$;
+14c14
+< create function app.try_uuid(p text) returns uuid language plpgsql immutable as $$
+---
+> create function app.try_uuid(p text) returns uuid language plpgsql immutable set search_path = '' as $$
+107c107
+< create function app.touch_updated_at() returns trigger language plpgsql as $$
+---
+> create function app.touch_updated_at() returns trigger language plpgsql set search_path = '' as $$
+113c113,117
+< revoke all on all functions in schema app from public, anon;
+---
+> -- [Phase 2A] explicit list instead of "all functions in schema" (see docs/07-security-review.md S-4)
+> revoke all on function app.audit_immutable(), app.deny(), app.try_uuid(text), app.my_team(), app.my_role(uuid),
+>   app.role_has_perm(uuid, text), app.has_perm(uuid, text, uuid), app.can_see_roster(uuid), app.can_view_matches(uuid),
+>   app.can_read_match(uuid), app.log(uuid, text, text), app.lineup_guard(), app.touch_updated_at()
+>   from public, anon, authenticated;
+36a37,39
+> -- [Phase 2A] sequences too (Supabase default privileges grant them to anon/authenticated) — S-5
+> revoke all on all sequences in schema public from anon, authenticated;
+> alter default privileges in schema public revoke all on sequences from anon, authenticated;
+114,116c114,116
+<   if not canc and (
+<        ((p->>'phone') is not null and btrim(p->>'phone') <> coalesce(cur_c.phone, ''))
+<     or ((p->>'email') is not null and btrim(p->>'email') <> coalesce(cur_c.email, ''))) then
+---
+>   -- [Phase 2A] S-1: reject the mere PRESENCE of phone/email keys. Comparing to the stored value would let a caller
+>   -- who may not read contacts brute-force them (same value => accepted, different => denied).
+>   if not canc and ((p->>'phone') is not null or (p->>'email') is not null) then
+199c199,200
+<   if not canc and (s->>'phone') is not null and btrim(s->>'phone') <> coalesce(cur_c.phone, '') then return app.deny(); end if;
+---
+>   -- [Phase 2A] S-1: presence-based rejection (no value comparison => no oracle)
+>   if not canc and (s->>'phone') is not null then return app.deny(); end if;
+410c411,420
+< revoke all on all functions in schema public from public, anon;
+---
+> -- [Phase 2A] S-4: explicit signatures instead of "all functions in schema public"
+> revoke all on function
+>   public.rpc_get_me(), public.rpc_get_roster(), public.rpc_get_stat_rows(),
+>   public.rpc_save_player(jsonb), public.rpc_delete_player(uuid), public.rpc_unregister_player(uuid),
+>   public.rpc_save_staff(jsonb), public.rpc_delete_staff(uuid),
+>   public.rpc_save_match(jsonb), public.rpc_add_event(uuid, jsonb), public.rpc_set_result(uuid, int, boolean),
+>   public.rpc_set_starters(uuid[]), public.rpc_set_attendance(uuid, uuid, boolean),
+>   public.rpc_set_permission(text, text, boolean), public.rpc_save_team(jsonb),
+>   public.rpc_register_photo(uuid, text, text, int, boolean), public.rpc_delete_photo(uuid)
+>   from public, anon;
+420c430
+< alter default privileges in schema public revoke execute on functions from public, anon;
+---
+> alter default privileges in schema public revoke execute on functions from public, anon, authenticated;  -- future functions need an explicit grant
+30a31
+>   and name ~ '^[0-9a-f-]{36}/[0-9a-f-]{36}/[0-9a-f-]{36}\.(jpg|png|webp)$'   -- [Phase 2A] S-6: same shape as player_photos CHECK
+9a10
+> set local search_path = public, extensions, pg_temp;   -- [Phase 2A] pgTAP lives in the "extensions" schema on Supabase

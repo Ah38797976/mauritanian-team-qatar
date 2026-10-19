@@ -1,0 +1,5 @@
+node --check supabase-adapter.js: OK
+node --check supabase-adapter.v2.review.js: OK
+node --check test_adapter_contract.js: OK
+bash -n run_staging_tests_ONLY.sh: OK
+py_compile tools: OK
