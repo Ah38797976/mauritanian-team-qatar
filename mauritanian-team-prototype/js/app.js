@@ -9,22 +9,25 @@
   const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); };
   const SAVED = 'تم الحفظ مؤقتًا (في الذاكرة فقط)';
   const denied = (what) => `<div class="card"><h2>غير مصرح</h2><p>هذه الصفحة (${what}) غير متاحة لدور «${esc(St.ROLES[St.user().role])}». هذه محاكاة واجهة فقط وليست حماية أمنية حقيقية.</p></div>`;
-  // فصل المساحتين داخل الصفحة نفسها: «لوحة التحكم» (إدارة) و«التطبيق» (الاستخدام اليومي). الفصل للعرض فقط؛ الصلاحيات الفعلية في Store.
-  const PANEL = [['dash', 'نظرة عامة'], ['staff', 'الطاقم'], ['finance', 'المالية'], ['roles', 'الصلاحيات'], ['audit', 'سجل العمليات'], ['settings', 'الإعدادات']];
+  // فصل المساحتين داخل الصفحة نفسها: «لوحة التحكم» (إدارة الفريق) و«التطبيق» (الاستخدام اليومي). الفصل للعرض فقط؛ الصلاحيات الفعلية في Store.
+  const PANEL = [['dash', 'نظرة عامة'], ['players', 'إدارة اللاعبين'], ['matches', 'إدارة المباريات'], ['staff', 'الطاقم'], ['finance', 'المالية'], ['roles', 'الصلاحيات'], ['audit', 'سجل العمليات'], ['settings', 'الإعدادات']];
   const APP = [['players', 'اللاعبون'], ['coach', 'لوحة المدرب'], ['matches', 'المباريات'], ['stats', 'الإحصائيات']];
   const PANEL_ROLES = ['founder', 'admin', 'secretary', 'treasurer'];
-  const spaceOf = page => PANEL_ROLES.includes(St.user().role) && (APP.some(a => a[0] === page) || page === 'player') ? 'app' : (PANEL_ROLES.includes(St.user().role) ? 'panel' : 'app');
-  function navFor(page) {
-    const sp = spaceOf(page);
-    if (PANEL_ROLES.includes(St.user().role)) {
-      const sw = `<a href="#/dash" class="sw ${sp === 'panel' ? 'on' : ''}">لوحة التحكم</a><a href="#/players" class="sw ${sp === 'app' ? 'on' : ''}">التطبيق</a>`;
-      return { sp, html: sw + (sp === 'panel' ? PANEL : APP).map(x => x).map(([k, l]) => lnk(k, l, page)).join('') };
+  const PANEL_ONLY = ['dash', 'staff', 'finance', 'roles', 'audit', 'settings'], APP_ONLY = ['coach', 'stats'];
+  let sticky = null, curSpace = 'app';
+  const isPanelUser = () => PANEL_ROLES.includes(St.user().role);
+  const spaceOf = page => !isPanelUser() ? 'app' : PANEL_ONLY.includes(page) ? 'panel' : APP_ONLY.includes(page) ? 'app' : (sticky || 'panel');
+  const mg = () => curSpace === 'panel' && isPanelUser(); // أدوات الإدارة (إضافة/تعديل/حذف) تظهر في لوحة التحكم فقط
+  const lnk = (k, l, page, sp) => `<a href="#/${k}" data-sp="${sp}" class="${page === k || (page === 'player' && k === 'players') ? 'on' : ''}">${esc(l)}</a>`;
+  function navFor(page, sp) {
+    if (isPanelUser()) {
+      const sw = `<a href="#/dash" data-sp="panel" class="sw ${sp === 'panel' ? 'on' : ''}">لوحة التحكم</a><a href="#/players" data-sp="app" class="sw ${sp === 'app' ? 'on' : ''}">التطبيق</a>`;
+      return sw + (sp === 'panel' ? PANEL : APP).map(([k, l]) => lnk(k, l, page, sp)).join('');
     }
     // أدوار التطبيق (مدرب/مسؤول مباراة): التطبيق فقط، مع «الرئيسية»، والطاقم إن كانت لديهم صلاحية عرضه
     const extra = (St.can('viewStaff') || St.can('staff')) ? [['staff', 'الطاقم']] : [];
-    return { sp: 'app', html: [['dash', 'الرئيسية'], ...APP, ...extra].map(([k, l]) => lnk(k, l, page)).join('') };
+    return [['dash', 'الرئيسية'], ...APP, ...extra].map(([k, l]) => lnk(k, l, page, 'app')).join('');
   }
-  const lnk = (k, l, page) => `<a href="#/${k}" class="${page === k || (page === 'player' && k === 'players') ? 'on' : ''}">${esc(l)}</a>`;
   const route = () => { const h = (location.hash || '#/dash').slice(2).split('/'); return { page: h[0] || 'dash', id: h[1] }; };
   const tw = (label, inner, cls = '') => `<div class="card tw" tabindex="0" role="region" aria-label="${esc(label)}"><table class="${cls}">${inner}</table></div>`;
   // نتيجة المباراة بترتيب الفريقين نفسه الذي يظهر في العنوان (الأول في القراءة من اليمين = الفريق الأول)
@@ -73,7 +76,7 @@
 
   V.players = () => {
     if (!St.can('viewPlayers')) return denied('ملفات اللاعبين');
-    return `<h1>اللاعبون</h1><div class="note">ملفات اللاعبين للمسؤولين المخولين فقط — لا توجد قائمة عامة.</div><div class="tools"><input id="q" type="search" placeholder="بحث بالاسم أو الرقم" aria-label="بحث"><select id="fp" aria-label="المركز"><option value="">كل المراكز</option>${POS.map(p => `<option>${esc(p)}</option>`).join('')}</select><select id="fs" aria-label="الحالة"><option value="">كل الحالات</option>${STAT.map(p => `<option>${esc(p)}</option>`).join('')}</select>${St.can('players') ? '<button id="addp">+ إضافة لاعب</button>' : ''}</div><div class="plist" id="plist"></div>`;
+    return `<h1>اللاعبون</h1><div class="note">ملفات اللاعبين للمسؤولين المخولين فقط — لا توجد قائمة عامة.</div><div class="tools"><input id="q" type="search" placeholder="بحث بالاسم أو الرقم" aria-label="بحث"><select id="fp" aria-label="المركز"><option value="">كل المراكز</option>${POS.map(p => `<option>${esc(p)}</option>`).join('')}</select><select id="fs" aria-label="الحالة"><option value="">كل الحالات</option>${STAT.map(p => `<option>${esc(p)}</option>`).join('')}</select>${St.can('players') && mg() ? '<button id="addp">+ إضافة لاعب</button>' : ''}</div><div class="plist" id="plist"></div>`;
   };
   const drawPlayers = () => {
     const q = $('#q').value.trim(), fp = $('#fp').value, fs = $('#fs').value;
@@ -88,7 +91,7 @@
   V.player = id => {
     if (!St.can('viewPlayers')) return denied('ملفات اللاعبين');
     const p = St.player(id); if (!p) return '<h1>اللاعب غير موجود</h1><a href="#/players">رجوع</a>';
-    const s = St.stats(id), ed = St.can('players'), l = St.playerLinks(id), linked = l.events + l.matches > 0;
+    const s = St.stats(id), ed = St.can('players') && mg(), l = St.playerLinks(id), linked = l.events + l.matches > 0;
     const acts = !ed ? '' : linked
       ? `<div class="note" id="dnote">لا يمكن حذف هذا اللاعب نهائيًا لأنه مرتبط بسجلات مباريات (${l.events} حدث، ${l.matches} مشاركة). «إلغاء التسجيل» يُبقي اسمه وإحصائياته في السجل التاريخي ويُخرجه من التشكيلة والحضور الجديد.</div><div class="row"><button id="edp">تعديل</button>${p.status === St.ARCH ? '' : '<button class="dng" id="unregp">إلغاء التسجيل</button>'}</div>`
       : `<div class="row"><button id="edp">تعديل</button><button class="dng" id="delp">حذف</button></div>`;
@@ -118,12 +121,12 @@
     return `<h1>المالية</h1><div class="note" id="fnote">لا توجد وحدة مالية في هذا النموذج بعد (لا اشتراكات ولا مبالغ). يعرض هذا الدور أسماء اللاعبين فقط، بلا هاتف أو بريد أو إحصاءات أو مباريات.</div><div class="card"><h2>اللاعبون (الأسماء فقط) — ${ps.length}</h2><ul id="fnames">${ps.map(p => `<li>${esc(p.name)}</li>`).join('')}</ul></div>`;
   };
   V.matches = () => { if (!St.canViewMatches()) return denied('المباريات'); const ms = St.visibleMatches(), scoped = !St.canSeeRoster() && !St.can('matches');
-    return `<h1>المباريات والنتائج</h1>${scoped ? '<div class="note">تظهر هنا المباريات المكلّف بها فقط.</div>' : ''}<div class="tools">${St.can('matches') ? '<button id="addm">+ مباراة</button>' : ''}</div>${[...ms].sort((a, b) => b.date.localeCompare(a.date)).map(m => {
+    return `<h1>المباريات والنتائج</h1>${scoped ? '<div class="note">تظهر هنا المباريات المكلّف بها فقط.</div>' : ''}<div class="tools">${St.can('matches') && mg() ? '<button id="addm">+ مباراة</button>' : ''}</div>${[...ms].sort((a, b) => b.date.localeCompare(a.date)).map(m => {
     const off = S.users.find(u => u.id === m.officer), canS = St.can('stats', m), cand = St.eventCandidates(m).map(St.player).filter(Boolean);
     return `<div class="card" data-m="${esc(m.id)}"><h2>${title(m)}</h2><div>${esc(m.date)} — مسؤول المباراة: ${esc(off ? off.name : '-')}</div>
     <ul>${m.events.map(e => `<li>د ${num(e.min)}: ${esc(St.EV[e.type])} — ${esc(St.player(e.pid)?.name)}</li>`).join('') || '<li>لا أحداث</li>'}</ul>
     ${canS ? `<form class="row evf" data-mid="${esc(m.id)}"><select name="pid" aria-label="اللاعب">${cand.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select><select name="type" aria-label="الحدث">${Object.entries(St.EV).map(([k, v]) => `<option value="${esc(k)}">${esc(v)}</option>`).join('')}</select><input name="min" type="number" min="1" max="130" value="1" style="width:80px" aria-label="الدقيقة"><button>إضافة حدث</button></form><div class="row" style="margin-top:6px">أهداف الخصم: <input type="number" min="0" value="${num(m.them)}" data-th="${esc(m.id)}" style="width:70px"> <label><input type="checkbox" data-pl="${esc(m.id)}" ${m.played ? 'checked' : ''}> انتهت</label></div>` : '<small>لا تملك صلاحية إدخال إحصائيات هذه المباراة.</small>'}
-    ${St.can('matches') ? `<button class="sec" data-em="${esc(m.id)}" style="margin-top:6px">تعديل البيانات</button>` : ''}</div>`;
+    ${St.can('matches') && mg() ? `<button class="sec" data-em="${esc(m.id)}" style="margin-top:6px">تعديل البيانات</button>` : ''}</div>`;
   }).join('')}`; };
   const matchForm = m => { m = m || { opp: '', date: '2026-11-01', home: true, officer: 'u5' };
     modal(m.id ? 'تعديل مباراة' : 'إضافة مباراة', fld('الخصم', 'opp', m.opp) + fld('التاريخ', 'date', m.date, 'date') + sel('الملعب', 'home', [['1', 'على أرضنا'], ['0', 'خارج الأرض']], m.home ? '1' : '0') + sel('مسؤول المباراة', 'officer', S.users.filter(u => u.role === 'officer' || u.role === 'secretary').map(u => [u.id, u.name]), m.officer), f => St.saveMatch({ id: m.id, opp: f.opp, date: f.date, officer: f.officer, home: f.home === '1' })); };
@@ -151,14 +154,16 @@
     const { page, id } = route(), v = $('#view');
     document.documentElement.style.setProperty('--p', safeColor(St.team().color));
     $('#teamName').textContent = St.team().name;
-    const nv = navFor(page); $('#nav').innerHTML = nv.html; document.body.dataset.space = nv.sp;
+    curSpace = spaceOf(page); if (isPanelUser() && PANEL_ONLY.includes(page)) sticky = 'panel'; document.body.dataset.space = curSpace; $('#nav').innerHTML = navFor(page, curSpace);
     const us = $('#userSel'); us.innerHTML = S.users.map(u => `<option value="${esc(u.id)}" ${u.id === S.cur ? 'selected' : ''}>${esc(u.name)} — ${esc(St.ROLES[u.role])}</option>`).join('');
     v.innerHTML = (Object.prototype.hasOwnProperty.call(V, page) ? V[page] : V.dash)(id);  // لا نقرأ مفاتيح النموذج الأولي (constructor…)
+    if (curSpace === 'app' && isPanelUser() && ['players', 'player', 'matches'].includes(page)) v.insertAdjacentHTML('afterbegin', '<div class="note">هذا عرض التطبيق (للاطلاع فقط). للإضافة والتعديل والحذف افتح «لوحة التحكم».</div>');
     if (page === 'players' && St.can('viewPlayers')) drawPlayers();
   }
   const fail = er => { if (er) { toast(er); render(); } return !!er; };
   St.on(render); window.addEventListener('hashchange', render);
   $('#userSel').onchange = e => St.setUser(e.target.value);
+  $('#nav').addEventListener('click', e => { const a = e.target.closest('a[data-sp]'); if (a && isPanelUser()) sticky = a.dataset.sp; });
   const v = $('#view');
   v.addEventListener('input', e => { if (['q'].includes(e.target.id)) drawPlayers(); });
   v.addEventListener('change', e => {
