@@ -26,7 +26,7 @@
     }
     // أدوار التطبيق (مدرب/مسؤول مباراة): التطبيق فقط، مع «الرئيسية»، والطاقم إن كانت لديهم صلاحية عرضه
     const extra = (St.can('viewStaff') || St.can('staff')) ? [['staff', 'الطاقم']] : [];
-    return [['dash', 'الرئيسية'], ...APP, ...extra].map(([k, l]) => lnk(k, l, page, 'app')).join('');
+    return [...APP, ...extra].map(([k, l]) => lnk(k, l, page, 'app')).join('');
   }
   const route = () => { const h = (location.hash || '#/dash').slice(2).split('/'); return { page: h[0] || 'dash', id: h[1] }; };
   const tw = (label, inner, cls = '') => `<div class="card tw" tabindex="0" role="region" aria-label="${esc(label)}"><table class="${cls}">${inner}</table></div>`;
@@ -151,7 +151,9 @@
   function render() {
     // تبديل الدور: أغلق أي نموذج مفتوح وأفرغه حتى لا تبقى بيانات الدور السابق في الصفحة
     if (S.cur !== lastUser) { lastUser = S.cur; const m = $('#modal'); if (m.open) m.close(); m.innerHTML = ''; }
-    const { page, id } = route(), v = $('#view');
+    let { page, id } = route(); const v = $('#view');
+    // أدوار التطبيق لا ترى «لوحة التحكم» إطلاقًا: الصفحة الرئيسية ومسار غير معروف يحوّلان إلى شاشتها في التطبيق
+    if (!isPanelUser() && (page === 'dash' || !Object.prototype.hasOwnProperty.call(V, page))) { page = St.user().role === 'coach' ? 'coach' : 'matches'; history.replaceState(null, '', '#/' + page); id = undefined; }
     document.documentElement.style.setProperty('--p', safeColor(St.team().color));
     $('#teamName').textContent = St.team().name;
     curSpace = spaceOf(page); if (isPanelUser() && PANEL_ONLY.includes(page)) sticky = 'panel'; document.body.dataset.space = curSpace; $('#nav').innerHTML = navFor(page, curSpace);

@@ -136,8 +136,9 @@ with sync_playwright() as p:
     names = pg.evaluate("Store.S.players.map(p=>p.name)")
     pg.select_option('#userSel', 'u5')
     go(pg, 'dash'); t = view(pg)
-    ok('E: لوحة التحكم: لا أسماء لاعبين ولا إحصائيات عامة لمسؤول المباراة', not any(n in t for n in names) and pg.locator('#topk').count() == 0 and 'نشطون' not in t and 'نسبة الحضور' not in t and 'آخر العمليات' not in t, t[:120].replace('\n', ' '))
-    ok('E: لوحة التحكم تعرض مبارياته فقط (2 مكلّف بها)', 'مباريات مكلّف بها' in t and pg.inner_text('.kpi b') == '2')
+    ok('E: مسؤول المباراة لا يرى لوحة التحكم: #/dash يحوّل إلى المباريات ولا نص «لوحة التحكم» في الصفحة', pg.evaluate('location.hash') == '#/matches' and 'لوحة التحكم' not in pg.inner_text('body'), pg.evaluate('location.hash'))
+    ok('E: شاشته: لا مؤشرات فريق ولا إحصائيات عامة (أسماء من مبارياته المكلّف بها قد تظهر كأحداث)', pg.locator('#topk').count() == 0 and 'نشطون' not in t and 'نسبة الحضور' not in t and 'آخر العمليات' not in t, t[:120].replace('\n', ' '))
+    ok('E: تعرض مبارياته فقط (2 مكلّف بها)', 'المكلّف بها فقط' in t and pg.locator('[data-m]').count() == 2)
     go(pg, 'stats'); t = view(pg)
     ok('E: الإحصائيات: لا لاعبين من خارج مبارياته (p12 وp5)', 'خليل الداه' not in t and 'إبراهيم فال' not in t and pg.locator('.tw tr').count() == 11, pg.locator('.tw tr').count())
     row = pg.locator('tr', has_text='عثمان جالو').inner_text().split('\t')
@@ -167,7 +168,7 @@ with sync_playwright() as p:
     # عدم الانحدار: المدرب والأمين يرون الصورة الكاملة
     pg.select_option('#userSel', 'u4'); go(pg, 'stats')
     ok('E: المدرب ما زال يرى كل اللاعبين في الإحصائيات', pg.locator('.tw tr').count() == 13)
-    go(pg, 'dash'); ok('E: المدرب ما زال يرى مؤشرات الفريق', pg.locator('#topk').count() == 1)
+    go(pg, 'dash'); ok('E: المدرب لا يرى لوحة التحكم: #/dash يحوّل إلى صفحته في التطبيق', pg.evaluate('location.hash') == '#/coach' and 'لوحة التحكم' not in pg.inner_text('body'), pg.evaluate('location.hash'))
     pg.close()
 
     # ================= F. مصفوفة الصلاحيات عبر Store.* مباشرة =================
