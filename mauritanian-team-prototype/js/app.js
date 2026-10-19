@@ -9,7 +9,22 @@
   const toast = m => { const t = $('#toast'); t.textContent = m; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2200); };
   const SAVED = 'تم الحفظ مؤقتًا (في الذاكرة فقط)';
   const denied = (what) => `<div class="card"><h2>غير مصرح</h2><p>هذه الصفحة (${what}) غير متاحة لدور «${esc(St.ROLES[St.user().role])}». هذه محاكاة واجهة فقط وليست حماية أمنية حقيقية.</p></div>`;
-  const NAV = [['dash', 'لوحة التحكم'], ['players', 'اللاعبون'], ['staff', 'الطاقم'], ['finance', 'المالية'], ['coach', 'لوحة المدرب'], ['matches', 'المباريات'], ['stats', 'الإحصائيات'], ['roles', 'الصلاحيات'], ['audit', 'سجل العمليات'], ['settings', 'الإعدادات']];
+  // فصل المساحتين داخل الصفحة نفسها: «لوحة التحكم» (إدارة) و«التطبيق» (الاستخدام اليومي). الفصل للعرض فقط؛ الصلاحيات الفعلية في Store.
+  const PANEL = [['dash', 'نظرة عامة'], ['staff', 'الطاقم'], ['finance', 'المالية'], ['roles', 'الصلاحيات'], ['audit', 'سجل العمليات'], ['settings', 'الإعدادات']];
+  const APP = [['players', 'اللاعبون'], ['coach', 'لوحة المدرب'], ['matches', 'المباريات'], ['stats', 'الإحصائيات']];
+  const PANEL_ROLES = ['founder', 'admin', 'secretary', 'treasurer'];
+  const spaceOf = page => PANEL_ROLES.includes(St.user().role) && (APP.some(a => a[0] === page) || page === 'player') ? 'app' : (PANEL_ROLES.includes(St.user().role) ? 'panel' : 'app');
+  function navFor(page) {
+    const sp = spaceOf(page);
+    if (PANEL_ROLES.includes(St.user().role)) {
+      const sw = `<a href="#/dash" class="sw ${sp === 'panel' ? 'on' : ''}">لوحة التحكم</a><a href="#/players" class="sw ${sp === 'app' ? 'on' : ''}">التطبيق</a>`;
+      return { sp, html: sw + (sp === 'panel' ? PANEL : APP).map(x => x).map(([k, l]) => lnk(k, l, page)).join('') };
+    }
+    // أدوار التطبيق (مدرب/مسؤول مباراة): التطبيق فقط، مع «الرئيسية»، والطاقم إن كانت لديهم صلاحية عرضه
+    const extra = (St.can('viewStaff') || St.can('staff')) ? [['staff', 'الطاقم']] : [];
+    return { sp: 'app', html: [['dash', 'الرئيسية'], ...APP, ...extra].map(([k, l]) => lnk(k, l, page)).join('') };
+  }
+  const lnk = (k, l, page) => `<a href="#/${k}" class="${page === k || (page === 'player' && k === 'players') ? 'on' : ''}">${esc(l)}</a>`;
   const route = () => { const h = (location.hash || '#/dash').slice(2).split('/'); return { page: h[0] || 'dash', id: h[1] }; };
   const tw = (label, inner, cls = '') => `<div class="card tw" tabindex="0" role="region" aria-label="${esc(label)}"><table class="${cls}">${inner}</table></div>`;
   // نتيجة المباراة بترتيب الفريقين نفسه الذي يظهر في العنوان (الأول في القراءة من اليمين = الفريق الأول)
@@ -136,7 +151,7 @@
     const { page, id } = route(), v = $('#view');
     document.documentElement.style.setProperty('--p', safeColor(St.team().color));
     $('#teamName').textContent = St.team().name;
-    $('#nav').innerHTML = NAV.map(([k, l]) => `<a href="#/${k}" class="${page === k || (page === 'player' && k === 'players') ? 'on' : ''}">${esc(l)}</a>`).join('');
+    const nv = navFor(page); $('#nav').innerHTML = nv.html; document.body.dataset.space = nv.sp;
     const us = $('#userSel'); us.innerHTML = S.users.map(u => `<option value="${esc(u.id)}" ${u.id === S.cur ? 'selected' : ''}>${esc(u.name)} — ${esc(St.ROLES[u.role])}</option>`).join('');
     v.innerHTML = (Object.prototype.hasOwnProperty.call(V, page) ? V[page] : V.dash)(id);  // لا نقرأ مفاتيح النموذج الأولي (constructor…)
     if (page === 'players' && St.can('viewPlayers')) drawPlayers();
