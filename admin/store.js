@@ -213,3 +213,109 @@
       if (!Array.isArray(ids) || new Set(ids).size !== ids.length) return 'قائمة التشكيلة غير صالحة';
       if (ids.length > 11) return 'الحد الأقصى 11 لاعبًا';
       for (const id of ids) {
+        const p = rawPlayer(id); if (!p) return 'لاعب غير موجود في التشكيلة';
+        if (!S.lineup.starters.includes(id) && p.status !== 'نشط') return 'لا يمكن إضافة لاعب غير نشط إلى التشكيلة';
+      }
+      S.lineup.starters = ids.slice(); St.log('تحديث التشكيلة', `${ids.length} لاعبًا — ${S.lineup.formation}`); St.emit(); return '';
+    },
+    setAtt(sid, pid, v) {
+      const g = St.guard('lineup'); if (g) return g;
+      const s = S.sessions.find(x => x.id === sid), p = rawPlayer(pid);
+      if (!s) return 'الحصة غير موجودة'; if (!p) return 'اللاعب غير موجود';
+      if (p.status === ARCH) return 'لا يُسجّل حضور للاعب غير مسجّل';
+      S.att[sid] = S.att[sid] || {}; S.att[sid][pid] = v === true;
+      St.log('تسجيل حضور', `${p.name} — ${s.title}: ${v === true ? 'حاضر' : 'غائب'}`); St.emit(); return '';
+    },
+    // ---- الأدوار والإعدادات ----
+    // ---- المستخدمون (إضافة إداريين وأدوار أخرى) — محاكاة واجهة فقط ----
+    saveUser(u) {
+      const g = St.guard('users'); if (g) return g;
+      u = u || {};
+      if (u.id && u.id === S.cur) return 'لا يمكنك تعديل دورك بنفسك';
+      const isF = St.user().role === 'founder'; // دفاع إضافي: منح دور الإدارة أو تعديله للمؤسس وحده
+      const name = txt(u.name, 60);
+      if (name === null) return 'الاسم أطول من الحد المسموح';
+      if (!name) return 'الاسم مطلوب';
+      if (!EDITABLE_ROLES.includes(u.role)) return 'دور غير صالح';
+      const cur = u.id ? S.users.find(x => x.id === u.id) : null;
+      if (u.id && !cur) return 'مستخدم غير موجود';
+      if (cur && cur.role === 'founder') return 'لا يمكن تعديل المؤسس';
+      if (!isF && (u.role === 'admin' || (cur && cur.role === 'admin'))) return DENY;
+      if (cur && cur.role === 'officer' && u.role !== 'officer' && S.matches.some(m => m.officer === cur.id)) return 'مسؤول مكلّف بمباريات: غيّر تكليفه أولًا';
+      if (cur) { Object.assign(cur, { name, role: u.role }); St.log('تعديل مستخدم', `${name} — ${ROLES[u.role]}`); }
+      else { S.users.push({ id: nextId('u', S.users), name, role: u.role, teamId: St.team().id }); St.log('إضافة مستخدم', `${name} — ${ROLES[u.role]}`); }
+      St.emit(); return '';
+    },
+    delUser(id) {
+      const g = St.guard('users'); if (g) return g;
+      const x = S.users.find(y => y.id === id); if (!x) return 'مستخدم غير موجود';
+      if (x.role === 'founder') return 'لا يمكن حذف المؤسس';
+      if (id === S.cur) return 'لا يمكنك حذف المستخدم الحالي';
+      if (S.matches.some(m => m.officer === id)) return 'مسؤول مكلّف بمباريات: غيّر تكليفه أولًا';
+      S.users = S.users.filter(y => y.id !== id); St.log('حذف مستخدم', x.name); St.emit(); return '';
+    },
+    setPerm(role, mod, v) {
+      const g = St.guard('roles'); if (g) return g;
+      if (!EDITABLE_ROLES.includes(role)) return 'دور غير صالح';
+      if (mod === 'users') return 'صلاحية المستخدمين للمؤسس وحده ولا تُمنح لأي دور';
+      if (role === 'officer' && STAFF_MODS.includes(mod)) return 'هذه الصلاحية غير متاحة لدور مسؤول المباراة'; if (!MODS[mod]) return 'صلاحية غير صالحة'; if (typeof v !== 'boolean') return 'قيمة غير صالحة';
+      const a = S.perms[role] = S.perms[role] || []; const i = a.indexOf(mod); if (v && i < 0) a.push(mod); if (!v && i >= 0) a.splice(i, 1);
+      St.log('تغيير صلاحية', `${ROLES[role]} / ${MODS[mod]}: ${v ? 'منح' : 'سحب'}`); St.emit(); return '';
+    },
+    saveTeam(t) {
+      const g = St.guard('settings'); if (g) return g;
+      t = t || {};
+      const name = txt(t.name, 80), city = txt(t.city, 80);
+      if (name === null || city === null) return 'أحد الحقول أطول من الحد المسموح';
+      if (!name) return 'الاسم مطلوب';
+      if (!/^#[0-9a-fA-F]{6}$/.test(t.color)) return 'اللون غير صالح';
+      Object.assign(St.team(), { name, city, color: t.color }); St.log('تحديث إعدادات الفريق', name); St.emit(); return '';
+    },
+    // ---- الموقع العام ----
+    siteSections() { return JSON.parse(JSON.stringify(SITE)); }, // دالة لا خاصية: لا كائنات بيانات عامة على Store
+    siteConfig() { return { about: S.site.about, announcement: S.site.announcement, sections: { ...S.site.sections } }; },
+    saveSite(c) {
+      const g = St.guard('settings'); if (g) return g;
+      c = c || {};
+      const about = txt(c.about, 500), ann = txt(c.announcement, 200);
+      if (about === null || ann === null) return 'أحد النصوص أطول من الحد المسموح';
+      const sec = {};
+      for (const k of Object.keys(SITE)) { const v = (c.sections || {})[k]; if (typeof v !== 'boolean') return 'قيمة ظهور غير صالحة'; sec[k] = v; }
+      S.site = { about, announcement: ann, sections: sec };
+      St.log('تحديث الموقع العام', Object.keys(SITE).filter(k => sec[k]).map(k => SITE[k].label).join('، ') || 'لا أقسام ظاهرة'); St.emit(); return '';
+    },
+    // اللقطة العامة: مصدر الموقع الوحيد. لا هاتف ولا بريد ولا مدينة ولا حالة صحية ولا مسؤول مباراة ولا أحداث ولا مالية ولا سجل. الأقسام المخفية لا تُرسل أصلًا.
+    publicView() {
+      const t = St.team(), on = k => S.site.sections[k] === true;
+      const played = S.matches.filter(m => m.played);
+      const data = {
+        about: () => ({ text: S.site.about }),
+        squad: () => ({ players: S.players.filter(p => p.status !== ARCH).sort((a, b) => a.num - b.num).map(p => ({ name: p.name, num: p.num, pos: p.pos })) }),
+        staff: () => ({ staff: S.staff.map(x => ({ name: x.name, role: x.role, kind: x.kind })) }),
+        matches: () => ({ matches: S.matches.slice().sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0).map(m => ({ opp: m.opp, date: m.date, home: m.home, played: m.played, us: m.played ? St.us(m) : null, them: m.played ? m.them : null })) }),
+        scorers: () => { const rows = S.players.map(p => ({ name: p.name, ...calc(p.id, S.matches) })).filter(r => r.goals > 0).sort((a, b) => b.goals - a.goals || b.apps - a.apps || a.name.localeCompare(b.name, 'ar')).slice(0, 5); return { rows: rows.map(r => ({ name: r.name, goals: r.goals, apps: r.apps })) }; }
+      };
+      return { team: { name: t.name, city: t.city, color: t.color }, announcement: S.site.announcement, sections: Object.keys(SITE).filter(on).map(k => ({ key: k, label: SITE[k].label, ...data[k]() })) };
+    },
+    // تبديل المستخدم التجريبي: أداة محاكاة للمعاينة فقط، وليست عملية بيانات.
+    setUser(id) { if (!S.users.some(u => u.id === id)) return 'مستخدم غير موجود'; S.cur = id; St.emit(); return ''; },
+    // فحص اتساق البيانات: يُرجع قائمة المشكلات (فارغة = متسقة)
+    integrity() {
+      if (!(St.can('audit') || St.canSeeRoster())) return [DENY];
+      const bad = [], ids = new Set(S.players.map(p => p.id));
+      S.matches.forEach(m => {
+        m.events.forEach(e => { if (!ids.has(e.pid)) bad.push(`حدث بلاعب غير موجود في ${m.id}`); else if (!m.players.includes(e.pid)) bad.push(`حدث للاعب ${e.pid} غير مسجل مشاركًا في ${m.id}`); });
+        m.players.forEach(id => { if (!ids.has(id)) bad.push(`مشارك غير موجود في ${m.id}`); });
+      });
+      S.lineup.starters.forEach(id => { if (!ids.has(id)) bad.push('لاعب غير موجود في التشكيلة'); });
+      Object.values(S.att).forEach(a => Object.keys(a).forEach(id => { if (!ids.has(id)) bad.push('حضور للاعب غير موجود'); }));
+      const played = S.matches.filter(m => m.played), byPlayers = S.players.reduce((n, p) => n + calc(p.id, S.matches).goals, 0), byMatches = played.reduce((n, m) => n + St.us(m), 0);
+      if (byPlayers !== byMatches) bad.push(`أهداف اللاعبين (${byPlayers}) لا تطابق أهداف نتائج المباريات (${byMatches})`);
+      return bad;
+    }
+  };
+  // تغليف: الحالة الخام لا تصل إلى app.js إلا مرة واحدة عند التحميل؛ وفي وضع المطوّر/الاختبار (?dev=1) فقط تُكشف St.S
+  St._bind = () => { if (bound) throw new Error('already bound'); bound = true; return S; };
+  if (/[?&]dev=1(&|$)/.test(location.search)) St.S = S;
+  window.Store = Object.freeze(St); // لا استبدال لدوال Store (مثل can) من الخارج
+})();
