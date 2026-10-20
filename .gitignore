@@ -1,12 +1,1 @@
-# أسرار وإعدادات محلية — لا تُرفع أبدًا
-.env
-.env.*
-!.env.example
-supabase-review/client/config.js
-*.pem
-*.key
 
-# نواتج محلية
-__pycache__/
-node_modules/
-.DS_Store
