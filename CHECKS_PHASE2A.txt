@@ -1,5 +1,1 @@
-المرحلة 2A — فحوص (لا شبكة لخدمات، لا Supabase، لا SQL منفَّذ)
-1. SHA-256 للمدخل = cfc35fec8a5d4db21d7a1f255f1fed385e3cceed58cbbadcc93d810a67ce2807 (مطابق للمعلن). ZIP سليم. المانيفست 84/84.
-2. النموذج مطابق بايتًا للأصل. اختبارات 337/337.
-3. tools/test_adapter_contract.js: 100/100 (محاكاة). tools/static_sql_audit.py: 179/179 (نصي). فحص أسرار: نظيف.
-4. اختبارات pgTAP (sql/tests/*.sql) وكل SQL: لم تُشغَّل ولم تُحلَّل بـ Postgres.
+
