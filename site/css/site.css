@@ -1,0 +1,116 @@
+/* الموقع العام — فريق الجالية الموريتانية في قطر. مستقل تمامًا عن لوحة التحكم: لا يشترك معها في أي ملف CSS/JS. بلا مكتبات ولا خطوط خارجية. */
+:root{
+  --p:#0b6b3a;
+  --p-900:color-mix(in srgb,var(--p) 55%,#04140b);
+  --p-700:color-mix(in srgb,var(--p) 80%,#04140b);
+  --p-100:color-mix(in srgb,var(--p) 12%,#fff);
+  --p-50:color-mix(in srgb,var(--p) 6%,#fff);
+  --gold:#c9a24a;--gold-d:#9b7a27;--maroon:#8a1538;
+  --bg:#f5f6f3;--card:#fff;--ink:#14201a;--mut:#5b6b61;--line:#e1e7e2;
+  --r:18px;--sh:0 1px 2px rgba(16,32,24,.05),0 8px 24px rgba(16,32,24,.06);
+  --focus:0 0 0 3px color-mix(in srgb,var(--gold) 55%,transparent);
+}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:76px}
+body{margin:0;font-family:"Segoe UI","Noto Naskh Arabic","Geeza Pro",Tahoma,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.7;-webkit-font-smoothing:antialiased}
+img{max-width:100%}a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:20px}
+:focus-visible{outline:none;box-shadow:var(--focus);border-radius:8px}
+
+/* ---------- الترويسة ---------- */
+.hdr{position:sticky;top:0;z-index:20;background:rgba(8,40,24,.94);backdrop-filter:blur(8px);border-bottom:2px solid var(--gold);color:#fff}
+.hdr-in{display:flex;align-items:center;gap:18px;min-height:64px}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;font-weight:800;font-size:1.08rem;margin-inline-end:auto}
+.logo{display:block;border-radius:50%;background:#fff;box-shadow:0 0 0 2px var(--gold)}
+#snav{display:flex;gap:4px}
+#snav a{color:#e6efe9;text-decoration:none;padding:8px 14px;border-radius:99px;font-size:.93rem;font-weight:600;transition:background .15s,color .15s}
+#snav a:hover,#snav a.on{background:rgba(255,255,255,.14);color:#fff}
+.burger{display:none;background:none;border:0;padding:10px;cursor:pointer;border-radius:10px}
+.burger span{display:block;width:22px;height:2px;background:#fff;margin:5px 0;border-radius:2px;transition:.2s}
+
+.ann{background:linear-gradient(90deg,var(--gold),#e3c675);color:#2b2000;text-align:center;padding:9px 16px;font-weight:700;font-size:.93rem}
+
+/* ---------- البطل ---------- */
+.hero{position:relative;color:#fff;background:radial-gradient(1200px 400px at 85% -10%,color-mix(in srgb,var(--p) 70%,#fff) 0,transparent 60%),linear-gradient(160deg,var(--p-900),var(--p-700) 60%,var(--p));overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 60px,transparent 60px 120px);pointer-events:none}
+.hero::after{content:"";position:absolute;inset-inline-start:-120px;bottom:-160px;width:420px;height:420px;border-radius:50%;border:2px solid rgba(255,255,255,.1);box-shadow:0 0 0 40px rgba(255,255,255,.03)}
+.hero-in{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:36px;align-items:center;padding-block:56px 64px}
+.eyebrow{margin:0 0 8px;color:var(--gold);font-weight:700;letter-spacing:.2px;font-size:.95rem}
+.hero h1{margin:0;font-size:clamp(2rem,5.2vw,3.4rem);line-height:1.2;font-weight:800}
+.sub{margin:8px 0 0;opacity:.88;font-size:1.05rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(104px,1fr));gap:12px;margin-top:26px;max-width:520px}
+.stat{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:10px 18px;}
+.stat b{display:block;font-size:1.7rem;line-height:1.2}.stat span{font-size:.85rem;opacity:.88}
+.hero-card{background:#fff;color:var(--ink);border-radius:22px;padding:22px;box-shadow:0 20px 50px rgba(0,0,0,.28);border-top:5px solid var(--gold)}
+.hero-card .lbl{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.85rem;color:var(--mut);font-weight:700;margin-bottom:14px}
+.pill{display:inline-block;background:var(--gold);color:#2b2000;border-radius:99px;padding:2px 12px;font-size:.78rem;font-weight:800}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;text-align:center}
+.vs .tm{font-weight:800;font-size:1.05rem;line-height:1.35;overflow-wrap:anywhere}
+.vs .mid{font-weight:800;color:var(--mut);font-size:1.1rem}
+.meta{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;margin-top:16px;color:var(--mut);font-size:.9rem}
+
+/* ---------- الأقسام ---------- */
+main{padding-block:30px 56px}
+section.sec{margin-top:40px}
+section.sec:first-child{margin-top:8px}
+.sec-h{display:flex;align-items:center;gap:12px;margin:0 0 18px;font-size:1.55rem;font-weight:800;color:var(--p-900)}
+.sec-h::before{content:"";width:6px;height:1.6rem;border-radius:4px;background:linear-gradient(var(--gold),var(--p))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh)}
+.about{padding:24px 28px;font-size:1.08rem;line-height:1.95;border-inline-start:5px solid var(--gold)}
+.about p{margin:0}
+
+/* المباريات */
+.mgrid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(310px,1fr))}
+.m{padding:16px 18px}
+.m .top{display:flex;justify-content:space-between;align-items:center;font-size:.83rem;color:var(--mut);margin-bottom:12px;gap:8px}
+.m .tm{font-weight:700;overflow-wrap:anywhere}
+.m .sc{font-weight:800;font-size:1.5rem;letter-spacing:1px;direction:ltr;unicode-bidi:isolate;white-space:nowrap}
+.res{display:inline-block;border-radius:8px;padding:0 10px;font-size:.78rem;font-weight:800}
+.res.w{background:#e2f4e8;color:#14693a}.res.d{background:#eef0ee;color:#4c5a51}.res.l{background:#fbe6e3;color:#a5301f}.res.u{background:var(--gold);color:#2b2000}
+.sub-h{margin:26px 0 12px;font-size:1.05rem;color:var(--mut);font-weight:700}
+
+/* اللاعبون */
+.pgrid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(168px,1fr))}
+.pc{position:relative;overflow:hidden;padding:18px 16px 16px;text-align:center;transition:transform .18s,box-shadow .18s}
+.pc:hover{transform:translateY(-3px);box-shadow:0 14px 32px rgba(16,32,24,.14)}
+.pc .no{position:absolute;inset-inline-start:10px;top:10px;min-width:30px;height:30px;padding:0 8px;border-radius:99px;display:grid;place-items:center;font-size:.85rem;font-weight:800;background:var(--p-100);color:var(--p-900)}
+.pc .av{position:relative;width:64px;height:64px;margin:6px auto 10px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:800;font-size:1.25rem;background:linear-gradient(135deg,var(--p),var(--p-900));box-shadow:0 0 0 3px #fff,0 0 0 5px var(--gold)}
+.pc b{position:relative;display:block;font-size:.98rem;line-height:1.4}
+.pc .pos{position:relative;display:inline-block;margin-top:8px;background:var(--p-100);color:var(--p-900);border-radius:99px;padding:1px 12px;font-size:.78rem;font-weight:700}
+.pc .pos.gk{background:#fdf1cf;color:#6f5400}.pc .pos.df{background:#e1ecf8;color:#1d4e84}.pc .pos.fw{background:#fbe6e3;color:#a5301f}
+
+/* الطاقم */
+.sgrid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.st{display:flex;gap:14px;align-items:center;padding:16px 18px}
+.st .ic{flex:none;width:48px;height:48px;border-radius:14px;background:var(--p-100);color:var(--p-900);display:grid;place-items:center;font-weight:800;font-size:1.1rem}
+.st b{display:block}.st small{color:var(--mut)}
+
+/* الهدافون */
+.lb{padding:8px 6px}
+.lb-r{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line)}
+.lb-r:last-child{border-bottom:0}
+.rk{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:800;background:var(--p-100);color:var(--p-900)}
+.lb-r:nth-child(1) .rk{background:var(--gold);color:#2b2000}
+.lb-r .nm{font-weight:700}.lb-r small{display:block;color:var(--mut);font-weight:400}
+.bar{height:6px;border-radius:4px;background:var(--p-100);margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--p),var(--gold));border-radius:4px}
+.goals{font-weight:800;font-size:1.4rem;color:var(--p)}.goals small{display:inline;font-size:.78rem;color:var(--mut);font-weight:600;margin-inline-start:4px}
+.empty{color:var(--mut);padding:18px;text-align:center}
+
+/* ---------- التذييل ---------- */
+.ftr{background:var(--p-900);color:#dbe8e0;border-top:3px solid var(--gold)}
+.ftr-in{display:flex;align-items:center;gap:14px;padding-block:26px;flex-wrap:wrap}
+.ftr b{display:block;color:#fff}.ftr small{opacity:.8}.stamp{margin-inline-start:auto}
+
+/* ---------- الجوال ---------- */
+@media(max-width:860px){
+  .hero-in{grid-template-columns:minmax(0,1fr);padding-block:36px 40px;gap:24px}
+  .burger{display:block}
+  #snav{display:none;position:absolute;inset-inline:0;top:100%;flex-direction:column;background:rgba(8,40,24,.98);padding:10px 16px 16px;border-bottom:2px solid var(--gold)}
+  #snav.open{display:flex}#snav a{padding:12px 14px}
+  .hdr.open .burger span:nth-child(1){transform:translateY(7px) rotate(45deg)}.hdr.open .burger span:nth-child(2){opacity:0}.hdr.open .burger span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+}
+@media(max-width:520px){
+  .wrap{padding-inline:14px}.mgrid{grid-template-columns:minmax(0,1fr)}.pgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.sgrid{grid-template-columns:minmax(0,1fr)}
+  .sec-h{font-size:1.3rem}.about{padding:18px}.stat{padding:10px 12px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+@media print{.hdr,.burger{display:none}.hero{color:#000;background:#fff}.card{box-shadow:none}}
