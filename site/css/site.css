@@ -114,3 +114,6 @@ section.sec:first-child{margin-top:8px}
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 @media print{.hdr,.burger{display:none}.hero{color:#000;background:#fff}.card{box-shadow:none}}
+.av,.ic,.lav{overflow:hidden}.av img,.ic img,.lav img{width:100%;height:100%;object-fit:cover;display:block}
+.lbw{display:flex;align-items:center;gap:10px;min-width:0}.lbm{flex:1;min-width:0}
+.lav{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--p-100);color:var(--p-900);font-weight:800;font-size:.8rem}
