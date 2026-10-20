@@ -1,0 +1,14 @@
+:root{--p:#0b6b3a;--bg:#f6f7f5;--fg:#1c2420;--card:#fff;--line:#dfe4de}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,"Segoe UI",Tahoma,sans-serif;background:var(--bg);color:var(--fg);line-height:1.7}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px}
+.hero{background:var(--p);color:#fff;padding:28px 0}
+.hero h1{margin:0;font-size:1.8rem}.hero p{margin:4px 0 0;opacity:.9}
+.ann{background:#fff6d6;border-bottom:1px solid #e6d58a;padding:10px 16px;text-align:center}
+#snav{display:flex;flex-wrap:wrap;gap:8px;padding-top:14px;padding-bottom:6px}
+#snav a{color:var(--p);text-decoration:none;border:1px solid var(--p);border-radius:999px;padding:4px 14px;font-size:.95rem}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin:14px 0}
+section h2{margin:0 0 8px;color:var(--p);font-size:1.2rem}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%}
+th,td{text-align:right;padding:8px 10px;border-bottom:1px solid var(--line)}th{background:#eef2ec}
+footer{padding:20px 16px;color:#5a665e}
