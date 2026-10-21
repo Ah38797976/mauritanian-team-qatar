@@ -1,0 +1,135 @@
+/* لوحة الإدارة — النمط الداكن (أخضر داكن + ذهبي + أبيض). طبقة فوق admin.css دون تغيير أسماء الأصناف أو المعرّفات.
+   مستقلة عن الموقع العام (لا تشترك معه في أي ملف). بلا خطوط ولا مكتبات خارجية.
+   الخط: Cairo ثم Tajawal إن كانا مثبّتين محليًا، وإلا خطوط النظام العربية (انظر assets/fonts/README.txt). */
+@font-face{font-family:"Cairo";src:local("Cairo"),local("Cairo Regular");font-weight:300 700;font-display:swap}
+@font-face{font-family:"Tajawal";src:local("Tajawal"),local("Tajawal Regular");font-weight:300 700;font-display:swap}
+
+:root{
+  --bg:#06120c;--c:#0b1d14;--c2:#0f2b1e;--t:#e8f2ec;--m:#a9c4b5;--b:#17382a;--b2:#1d4430;
+  --ink-1:#062416;--ink-2:#0b1d14;
+  --gold:#d4af4f;--gold-soft:#2a2410;--red:#e0554a;--ok:#1fbf6b;
+  --p-dark:#6fe3a2;--p-soft:#0f2b1e;--p-line:#1d4430;
+  --side:100px;
+  --sh:0 1px 2px rgba(0,0,0,.3),0 10px 26px rgba(0,0,0,.25);
+  --sh-lg:0 24px 60px rgba(0,0,0,.6);
+  --focus:0 0 0 3px color-mix(in srgb,var(--gold) 65%,transparent);
+  --font:"Cairo","Tajawal","Segoe UI","Noto Naskh Arabic",Tahoma,"Geeza Pro","Arabic Typesetting",Arial,sans-serif;
+}
+html{color-scheme:dark}
+body{font-family:var(--font);background:radial-gradient(900px 520px at 85% -8%,#0f3a26 0,transparent 62%),var(--bg);color:var(--t)}
+a{color:#6fe3a2}
+
+/* ---------- القائمة الجانبية: أيقونات + اسم تحتها (سطح المكتب) ---------- */
+.side{background:var(--c);border-inline-end:1px solid var(--b)}
+.side-brand{border-bottom:1px solid var(--b)}
+.side-brand b{color:#fff}.side-brand small{color:var(--gold)}
+.grp{color:#6f9582}
+#nav a{color:#a9c4b5}
+#nav a:hover{background:rgba(255,255,255,.06);color:#fff}
+#nav a.on{background:#134d2f;color:#fff;box-shadow:inset 0 0 0 1px var(--ok)}
+#nav a.on::before{display:none}
+#nav a.on .ic{color:var(--gold)}
+.side-foot{border-top:1px solid var(--b)}
+.viewsite{border-color:var(--b2);color:#fff}
+.viewsite:hover{background:rgba(255,255,255,.07)}
+.logo{box-shadow:0 0 0 2px var(--gold)}
+
+@media(min-width:961px){
+  .shell{grid-template-columns:var(--side) minmax(0,1fr);gap:14px;padding:14px}
+  .side{top:14px;height:calc(100vh - 28px);border:1px solid var(--b);border-radius:20px;overflow:hidden}
+  .side-brand{justify-content:center;padding:14px 6px;gap:0}
+  .side-brand>div{display:none}
+  .logo{width:54px;height:54px}
+  #nav{padding:8px 8px;gap:3px;align-items:stretch}
+  .grp{margin:8px 6px 2px;padding-top:8px;border-top:1px solid var(--b);font-size:0;height:0;overflow:hidden;padding:0;border:0;margin:4px 8px}
+  .grp{height:1px;background:var(--b)}
+  #nav a{flex-direction:column;justify-content:center;gap:4px;min-height:60px;padding:6px 3px;text-align:center;border-radius:14px}
+  #nav a span{font-size:.7rem;line-height:1.2;font-weight:600}
+  #nav a.on span{font-weight:800}
+  .ic{width:22px;height:22px}
+  .side-foot{padding:8px}
+  .viewsite{padding:8px 2px;font-size:.68rem;line-height:1.3;border-radius:12px}
+  .col{gap:0}
+  .top{border:1px solid var(--b);border-radius:18px;margin-bottom:12px;position:sticky;top:14px}
+}
+
+/* ---------- الشريط العلوي ---------- */
+.top{background:rgba(11,29,20,.92);border-bottom:1px solid var(--b);color:var(--t)}
+.crumb small{color:#1fbf6b;font-weight:800;letter-spacing:.3px}
+.crumb b{color:#fff}
+.who{color:var(--m)}
+.who select{background:var(--c2);border-color:var(--b2);color:var(--t);min-height:44px;border-radius:12px}
+.menu{border-color:var(--b2);min-width:44px;min-height:44px}.menu span{background:#fff}.menu:hover{background:var(--c2)}
+.demo-note{background:var(--gold-soft);color:#f0dc9a;border:1px solid #5c4d1a;border-radius:12px;margin:0 0 12px}
+@media(min-width:961px){.demo-note{margin:0 0 4px}}
+
+/* ---------- المحتوى ---------- */
+main{padding-top:14px}
+h1{color:#fff}
+h2{color:#fff}
+.card{background:var(--c);border-color:var(--b);color:var(--t)}
+.kpi{color:var(--m)}
+.kpi::before{background:var(--gold)}
+.kpi b{color:var(--ok)}
+.note{background:var(--gold-soft);border-color:#5c4d1a;border-inline-start:4px solid var(--gold);color:#f0dc9a}
+.err{color:#ff9b90}
+small{color:var(--m)}
+
+/* ---------- الإدخال والأزرار ---------- */
+input,select,textarea{background:var(--c2);border-color:var(--b2);color:var(--t);min-height:44px;border-radius:12px}
+input::placeholder,textarea::placeholder{color:#6f9582}
+input:focus-visible,select:focus-visible,textarea:focus-visible{border-color:var(--ok);box-shadow:var(--focus)}
+button,.btnlink{background:var(--ok);border-color:var(--ok);color:#04140b;min-height:44px;border-radius:12px}
+button:hover,.btnlink:hover{background:#3ad884;border-color:#3ad884}
+button.sec{background:var(--c2);color:var(--t);border-color:var(--b2)}
+button.sec:hover{background:#134d2f;border-color:var(--ok)}
+button.dng{background:#2a1210;color:#ff9b90;border-color:#6b2a24}
+button.dng:hover{background:#3d1b17;border-color:#9a3c33}
+input[type=checkbox]{min-height:0;width:20px;height:20px;accent-color:var(--ok)}
+input[type=color]{background:var(--c2)}
+label.f span{color:#1fbf6b;font-weight:700;font-size:.78rem}
+.ck{background:var(--c2);border-color:var(--b)}.ck:hover{background:#134d2f;border-color:var(--ok)}
+
+/* ---------- الجداول ---------- */
+th{background:var(--c2);color:#1fbf6b}
+th,td{border-bottom-color:var(--b)}
+table tr:hover td{background:rgba(31,191,107,.06)}
+
+/* ---------- اللاعبون والملعب ---------- */
+.pc:hover{box-shadow:0 12px 28px rgba(0,0,0,.45);border-color:var(--b2)}
+.av{background:linear-gradient(160deg,#1c7a4a,#0a3d26);box-shadow:0 0 0 2px var(--c),0 0 0 3px var(--gold)}
+.tag{background:#134d2f;border-color:var(--b2);color:#6fe3a2}
+.tag.bad{background:#3a1714;border-color:#6b2a24;color:#ff9b90}
+.field{box-shadow:none;border:2px solid #7fd3a1;background:repeating-linear-gradient(0deg,#1d8a4c 0 52px,#1a7f45 52px 104px)}
+.pp .av{box-shadow:0 0 0 3px var(--gold),0 6px 14px rgba(0,0,0,.4)}
+.pp .no{background:var(--gold);color:#2b2000;font-weight:800}
+.pp .nm{background:rgba(4,20,11,.86)}
+.bench{background:var(--c2)}
+.pp.sm .nm{background:#1f2b25}
+.dot{background:#134d2f;color:#fff}
+.pitch{box-shadow:inset 0 0 0 3px rgba(255,255,255,.35)}
+
+/* ---------- النوافذ والتنبيهات ---------- */
+dialog{background:var(--c);color:var(--t);border:1px solid var(--b2);border-radius:20px}
+dialog::backdrop{background:rgba(2,10,6,.78)}
+#toast{background:#134d2f;border:1px solid var(--ok);color:#fff}
+
+/* ---------- الجوال: قائمة منزلقة داكنة ---------- */
+@media(max-width:960px){
+  body{padding-bottom:0}
+  .side{background:var(--c);width:min(300px,86vw)}
+  .side .side-brand>div{display:block}
+  .scrim{background:rgba(2,10,6,.7)}
+  .top{margin:0;border-radius:0}
+  main{padding-top:14px}
+  .tw table{min-width:0}
+}
+@media(max-width:560px){
+  .tools input,.tools select,.tools button{flex:1 1 100%}
+  .demo-note{font-size:.76rem}
+}
+@media print{body{background:#fff;color:#000}}
+
+/* أيقونة «الملعب» (لم تكن لها أيقونة في admin.css فكانت تظهر مربعًا رماديًا) */
+.ic-pitch{--i:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M3 5h18v14H3zM12 5v14M3 10h3v4H3M21 10h-3v4h3%22/%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%222.5%22/%3E%3C/svg%3E")}
+@media(max-width:960px){.who select{max-width:36vw}.crumb b{font-size:1.05rem}}
