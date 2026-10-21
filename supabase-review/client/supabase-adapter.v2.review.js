@@ -5,6 +5,10 @@
 //   F-3 players/staff carry `teamId`; player contacts are merged into the player object ONLY when the server returned them
 //   F-4 team members are read (RLS allows it only to roles holding matches/settings/roles) so the match form can list officers
 //   F-5 roster() = exactly what rpc_get_roster() returned (the SERVER decides the scope; the UI must not re-derive it)
+//        CONTRACT NOTE (F-5, docs-only; no behaviour change): this roster() is the SERVER-SCOPED list, NOT Store.roster().
+//        Store.roster() is [] for a match officer (privacy test run_tests_privacy B), whereas rpc_get_roster() returns the officer's
+//        own-match players (needed: RLS gives officers no direct read of `players`). Use this list to resolve player(id) /
+//        match-event candidates for officers; do not use it to render the general roster. See docs/06 section 'F-5'.
 //   + auth state changes (sign-out / expiry in another tab) clear or refresh the cache
 //   + photo upload uses the team id from the server-provided session context, never a caller argument
 //   + photo delete takes the storage path from the cache of server rows, never from the caller
