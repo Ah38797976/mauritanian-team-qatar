@@ -1,0 +1,9 @@
+# ملفات داخلية للمراجعة والاختبار: تبقى في المستودع ولا تُرفع عند النشر بـ Vercel CLI.
+# (مع النشر من Git يتولى حجبها قسم redirects في vercel.json.) لا شيء من هذه المجلدات يلزم الموقع أو اللوحة.
+mauritanian-team-prototype/
+supabase-review/
+verification/
+phase1-results/
+phase2a-results/
+tools/
+docs/

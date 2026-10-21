@@ -1,0 +1,16 @@
+{
+  "trailingSlash": true,
+  "redirects": [
+    { "source": "/(mauritanian-team-prototype|supabase-review|verification|phase1-results|phase2a-results|tools|docs)", "destination": "/", "permanent": false },
+    { "source": "/(mauritanian-team-prototype|supabase-review|verification|phase1-results|phase2a-results|tools|docs)/(.*)", "destination": "/", "permanent": false }
+  ],
+  "headers": [
+    { "source": "/admin/(.*)", "headers": [ { "key": "X-Robots-Tag", "value": "noindex, nofollow" }, { "key": "Cache-Control", "value": "no-store" } ] },
+    { "source": "/(mauritanian-team-prototype|supabase-review|verification|phase1-results|phase2a-results|tools|docs)/(.*)", "headers": [ { "key": "X-Robots-Tag", "value": "noindex, nofollow" } ] },
+    { "source": "/(.*)", "headers": [
+      { "key": "X-Content-Type-Options", "value": "nosniff" },
+      { "key": "Referrer-Policy", "value": "no-referrer" },
+      { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'" }
+    ] }
+  ]
+}
