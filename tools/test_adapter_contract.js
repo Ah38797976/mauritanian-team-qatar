@@ -93,6 +93,23 @@ const CFG = { SUPABASE_URL: 'https://abcdefgh.supabase.co', SUPABASE_PUBLISHABLE
     ok('v2 F-4: no members for a role that cannot read them', AD.officers().length === 0); }
   { const { AD } = load('supabase-adapter.v2.review.js', base('treasurer')); AD.init(CFG); await AD.refresh();
     ok('v2 F-5: names-only roster stays names-only (no undefined pos/status)', JSON.stringify(AD.roster()[0]) === JSON.stringify({ id: 'p1', name: 'n' }), JSON.stringify(AD.roster()[0])); }
+  // F-5 contract (docs-only fix): the adapter's roster() is the SERVER-SCOPED list, which for a match officer is NOT Store.roster() ([]).
+  { const t = base('officer'); t.players = [];                                  // RLS: an officer has no direct read of `players`
+    t.__rpc.rpc_get_roster = () => ({ data: [{ id: 'p1', name: 'n', num: 1, pos: 'gk', status: 'active' }] });   // own-match players only
+    const { AD } = load('supabase-adapter.v2.review.js', t); AD.init(CFG); await AD.refresh();
+    ok('v2 F-5 officer: roster() is the server own-match list, labels mapped, no city', AD.roster().length === 1 && AD.roster()[0].pos === 'حارس' && AD.roster()[0].status === 'نشط' && !('city' in AD.roster()[0]), JSON.stringify(AD.roster()));
+    ok('v2 F-5 officer: cache.players is empty (only the server roster carries the officer\'s player names)', AD.cache().players.length === 0 && AD.roster()[0].name === 'n');
+    t.__rpc.rpc_get_roster = () => ({ data: [] });
+    const r2 = load('supabase-adapter.v2.review.js', t); r2.AD.init(CFG); await r2.AD.refresh();
+    ok('v2 F-5 officer: an empty server list stays empty (the adapter never re-derives scope)', Array.isArray(r2.AD.roster()) && r2.AD.roster().length === 0); }
+  // F-5 contract: static cross-checks of the three sources that define it (text only; does NOT prove PostgreSQL/RLS behaviour)
+  { const rd = f => fs.readFileSync(path.join(root, f), 'utf8'), has = (f, re) => re.test(rd(f));
+    ok('F-5 static: SQL officer branch of rpc_get_roster exists (own-match players)', /match officer: only players of their own matches/.test(sql));
+    ok('F-5 static: rls_matrix expects a non-empty scoped roster for officer1', has('supabase-review/sql/tests/rls_matrix.sql', /officer1: scoped roster returned/));
+    ok('F-5 static: rls_matrix expects NO direct players read for an officer', has('supabase-review/sql/tests/rls_matrix.sql', /officer: no direct player table access/));
+    ok('F-5 static: prototype privacy test expects Store.roster() == [] for an officer', has('mauritanian-team-prototype/tests/run_tests_privacy.py', /ro'\] == \[\]/));
+    ok('F-5 static: Store.roster() returns [] without viewPlayers/lineup/viewNames', /roster\(\) \{\s*\n\s*if \(St\.canSeeRoster\(\)\)[^\n]*\n\s*return St\.can\('viewNames'\)[^\n]*: \[\];/.test(rd('admin/js/store.js')));
+    ok('F-5 docs: docs/06 documents the F-5 contract', has('supabase-review/docs/06-appjs-async-refactor-plan.md', /عقد F-5/)); }
   { const t = base('secretary'); const { AD, calls } = load('supabase-adapter.v2.review.js', t); AD.init(CFG); await AD.refresh(); calls.length = 0;
     await AD.savePlayer({ id: 'p1', name: 'n', num: 1, pos: 'حارس', status: 'نشط', city: 'c' });
     const sent = calls.find(x => x[0] === 'rpc_save_player')[1].p;
