@@ -1,0 +1,194 @@
+/* الموقع العام — النمط الداكن: أخضر داكن + ذهبي + أبيض. طبقة فوق site.css دون تغيير أسماء الأصناف.
+   مستقل عن لوحة الإدارة. بلا خطوط ولا مكتبات خارجية.
+   الخط: Cairo ثم Tajawal إن كانا مثبّتين على الجهاز (local)، وإلا خطوط النظام العربية.
+   لتضمين Cairo ضمن المشروع: ضع ملفات woff2 في assets/fonts/ وأضف @font-face (انظر assets/fonts/README.txt). */
+@font-face{font-family:"Cairo";src:local("Cairo"),local("Cairo Regular");font-weight:300 700;font-display:swap}
+@font-face{font-family:"Tajawal";src:local("Tajawal"),local("Tajawal Regular");font-weight:300 700;font-display:swap}
+
+:root{
+  --bg:#06120c;--card:#0b1d14;--card2:#0f2b1e;--ink:#e8f2ec;--mut:#a9c4b5;--line:#17382a;--line2:#1d4430;
+  --gold:#d4af4f;--gold-d:#e0bf6a;--ok:#1fbf6b;
+  --p-900:#062416;--p-700:#0a3d26;--p-100:#134d2f;--p-50:#0f2b1e;
+  /* الأبيض: بطاقات ورقية فاتحة تكسر لون الأخضر الواحد */
+  --paper:#f8f5ea;--paper-ink:#0b2a1b;--paper-mut:#52695b;--paper-line:#e3ddc9;--gold-ink:#7a5c0a;
+  --sh:0 1px 2px rgba(0,0,0,.3),0 10px 28px rgba(0,0,0,.28);
+  --rail:96px;
+  --font:"Cairo","Tajawal","Segoe UI","Noto Naskh Arabic","Geeza Pro",Tahoma,Arial,sans-serif;
+}
+html{scroll-padding-top:16px;color-scheme:dark}
+body{font-family:var(--font);background:radial-gradient(900px 520px at 85% -8%,#0f3a26 0,transparent 62%),var(--bg);color:var(--ink)}
+.skip{position:absolute;inset-inline-start:8px;top:-60px;z-index:100;background:var(--gold);color:#2b2000;padding:10px 16px;border-radius:10px;font-weight:800}
+.skip:focus{top:8px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- هيكل التطبيق: قائمة أيقونات جانبية + المحتوى ---------- */
+.app{display:grid;grid-template-columns:var(--rail) minmax(0,1fr);gap:14px;padding:14px;min-height:100vh;align-items:start}
+.appmain{min-width:0;display:flex;flex-direction:column;gap:14px}
+.rail{position:sticky;top:14px;z-index:30;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:12px 8px;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--ink);max-height:calc(100vh - 28px);overflow-y:auto}
+.rail .brand{margin:0 0 8px;min-height:0}
+.rail .logo{width:54px;height:54px;box-shadow:0 0 0 2px var(--gold);object-fit:cover}
+.burger{display:none!important}
+#snav{display:flex;flex-direction:column;gap:4px;width:100%;position:static;background:none;padding:0;border:0}
+#snav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:60px;padding:6px 4px;border-radius:14px;color:#a9c4b5;font-size:.72rem;font-weight:600;line-height:1.2;text-align:center;text-decoration:none;background:none}
+#snav a svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+/* التمرير بالمؤشر فقط: على الجوال يبقى :hover عالقًا بعد اللمس فيظهر زر مظلَّل بلا سبب */
+@media(hover:hover){#snav a:hover{background:rgba(255,255,255,.06);color:#fff}}
+#snav a.on,#snav a[aria-current]{background:var(--p-100);color:#fff;box-shadow:inset 0 0 0 1px var(--ok)}
+#snav a:focus-visible,.pp:focus-visible,.pm-x:focus-visible,.pm-nav button:focus-visible,.stf-card:focus-visible{outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--gold) 70%,transparent)}
+
+.appmain>*{margin:0}
+.appmain .wrap{width:100%;margin:0}
+.ann{border-radius:14px}
+.wrap{max-width:1180px;padding-inline:0}
+
+/* ---------- البطل ---------- */
+.hero{border-radius:22px;border:1px solid var(--line2);border-top:3px solid var(--gold);background:radial-gradient(700px 300px at 90% -20%,#1a6a41 0,transparent 65%),linear-gradient(135deg,#12452c,#0b1d14 72%)}
+.hero::before{display:none}
+.hero::after{border-color:rgba(255,255,255,.06);box-shadow:0 0 0 40px rgba(255,255,255,.02)}
+.hero-in{padding:30px 32px;gap:28px}
+.hero .wrap,.hero-in{max-width:none}
+.eyebrow{color:var(--gold);font-weight:800}
+.hero h1{color:#fff}
+.sub{opacity:1;color:var(--mut)}
+.stat{background:var(--card);border:1px solid var(--line2);border-radius:14px}
+.stat b{color:var(--ok)}
+.stat span{color:var(--mut);opacity:1}
+/* المباراة القادمة: بطاقة بيضاء بنص أخضر داكن */
+.hero-card{background:var(--paper);color:var(--paper-ink);border:1px solid var(--paper-line);border-top:4px solid var(--gold);box-shadow:0 20px 50px rgba(0,0,0,.45)}
+.hero-card .lbl{color:var(--paper-mut);font-weight:700}
+.hero-card .pill{background:var(--gold);color:#2b2000;font-weight:800}
+.hero-card .vs .tm{color:var(--paper-ink);font-weight:800}
+.hero-card .vs .mid{color:var(--gold-ink)}
+.hero-card .meta{color:var(--paper-mut)}
+.vs .mid{color:var(--gold)}
+.meta{color:var(--mut)}
+
+/* ---------- الأقسام ---------- */
+main#sv{padding:0;display:flex;flex-direction:column;gap:14px;max-width:none}
+section.sec,section.sec:first-child{margin:0;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px 22px}
+.sec-h{color:#fff;font-size:1.3rem;margin-bottom:14px}
+.sec-h::before{background:var(--gold);width:5px}
+.card{background:var(--card2);border-color:var(--line);box-shadow:none;color:var(--ink)}
+/* «عن الفريق»: بطاقة بيضاء */
+.about{background:var(--paper);border:1px solid var(--paper-line);border-inline-start:5px solid var(--gold);color:var(--paper-ink);line-height:1.9}
+.about p{color:var(--paper-ink)}
+.sub-h{color:var(--ok);font-size:.9rem;letter-spacing:.3px}
+.empty{color:var(--mut)}
+
+/* المباريات: بطاقات بيضاء */
+.card.m{background:var(--paper);border:1px solid var(--paper-line);color:var(--paper-ink)}
+.card.m .top{color:var(--paper-mut)}
+.card.m .vs .tm{color:var(--paper-ink);font-weight:800}
+.card.m .vs .mid{color:var(--gold-ink)}
+.card.m .sc{color:var(--gold-ink);font-weight:900}
+.res.w{background:#d6f1e1;color:#0a6b3a}.res.d{background:#ebe8da;color:#4d5a52}.res.l{background:#fbdfda;color:#a3271b}.res.u{background:var(--gold);color:#2b2000}
+
+.pc:hover{box-shadow:0 12px 28px rgba(0,0,0,.4);border-color:var(--line2)}
+.pc .no{background:var(--p-100);color:#fff}
+.pc .av{background:linear-gradient(160deg,#1c7a4a,#0a3d26);box-shadow:0 0 0 3px var(--card2),0 0 0 5px var(--gold)}
+.pc .pos{background:var(--p-100);color:#6fe3a2}.pc .pos.gk{background:#3a3210;color:#f0dc9a}.pc .pos.df{background:#12304a;color:#9cc7f0}.pc .pos.fw{background:#3a1714;color:#ff9b90}
+.lb-r small{color:var(--mut)}
+.lb-r{border-color:var(--line)}
+.rk{background:var(--p-100);color:#fff}
+.lav{background:var(--p-100);color:#fff}
+.bar{background:var(--p-700)}.bar i{background:linear-gradient(90deg,var(--ok),var(--gold))}
+.goals{color:var(--ok)}.goals small{color:var(--mut)}
+
+/* ---------- ملعب اللاعبين ---------- */
+.field,.field *,.bench,.stf-grid,.stf-card,.pm-box,.pm-body,.pm-nav,.pstats,.ps,.pcard-top,.pcard-av{box-sizing:border-box}
+.lineup{background:transparent;border:0;padding:0}
+.lineup .hint{color:var(--mut);margin:0 0 12px}
+.field{position:relative;width:100%;max-width:560px;min-height:600px;margin:0 auto;padding:44px 6px 26px;border:3px solid #fff;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;gap:10px;box-shadow:0 14px 34px rgba(0,0,0,.45);background:repeating-linear-gradient(0deg,#1f9150 0 56px,#1a8046 56px 112px)}
+.field>i{position:absolute;pointer-events:none;border:2px solid rgba(255,255,255,.7)}
+.field .m-h{left:0;right:0;top:50%;height:0;border-width:2px 0 0}
+.field .m-c{left:50%;top:50%;width:112px;height:112px;margin:-56px 0 0 -56px;border-radius:50%}
+.field .m-b{left:50%;width:58%;height:96px;margin-left:-29%}
+.field .m-b.t{top:-2px;border-top:0}
+.field .m-b.b{bottom:-2px;border-bottom:0}
+.field .fm{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:3;padding:3px 14px;border-radius:999px;background:rgba(255,255,255,.94);color:var(--paper-ink);font-size:.78rem;font-weight:800;white-space:nowrap}
+.line{position:relative;z-index:2;display:flex;flex-wrap:wrap;justify-content:space-evenly;align-items:flex-start;gap:12px 4px}
+.pp{position:relative;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:56px;min-height:44px;padding:2px;margin:0;background:none;border:0;color:#fff;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pp .av{position:relative;display:block;width:58px;height:58px;border-radius:50%;overflow:hidden;background:linear-gradient(160deg,#1c7a4a,#0a3d26);box-shadow:0 0 0 3px #fff,0 8px 16px rgba(0,0,0,.45)}
+.pp .av img{width:100%;height:100%;object-fit:cover;display:block}
+.pp .no{position:absolute;top:-4px;left:calc(50% + 10px);z-index:2;min-width:24px;height:24px;padding:0 5px;border-radius:12px;display:grid;place-items:center;background:var(--gold);color:#2b2000;font-size:.78rem;font-weight:900;box-shadow:0 0 0 2px #fff}
+.pp .nm{max-width:88px;padding:2px 9px;border-radius:999px;background:rgba(255,255,255,.95);color:var(--paper-ink);font-size:.72rem;font-weight:800;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pp.sm .av{width:50px;height:50px;background:linear-gradient(160deg,#3d4d44,#1f2b25);box-shadow:0 0 0 2px #fff}
+.pp.sm .no{background:#fff;color:var(--paper-ink);box-shadow:none}
+.pp.sm .nm{background:var(--paper);color:var(--paper-ink)}
+.bench-h{margin:18px 0 10px}
+.bench{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--card2)}
+.bench .pp{color:var(--ink)}
+.sil{width:100%;height:100%;display:block}.sil circle{fill:#cfe3d6}.sil path{fill:#e8f2ec}
+
+/* ---------- الطاقم: بطاقة بيضاء بصورة لكل عضو ---------- */
+.stf-h{display:flex;align-items:center;gap:10px;margin:18px 0 12px;font-size:1rem;font-weight:800;color:#fff}
+.stf-h:first-child{margin-top:0}
+.stf-h::after{content:"";flex:1;height:1px;background:var(--line2)}
+.stf-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.stf-card{display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px 10px 16px;text-align:center;background:var(--paper);border:1px solid var(--paper-line);border-top:4px solid var(--gold);border-radius:18px;color:var(--paper-ink);cursor:pointer;-webkit-tap-highlight-color:transparent}
+@media(hover:hover){.stf-card:hover{box-shadow:0 12px 28px rgba(0,0,0,.4)}}
+.stf-av{display:block;width:92px;height:92px;border-radius:50%;overflow:hidden;background:linear-gradient(160deg,#1c7a4a,#0a3d26);box-shadow:0 0 0 3px var(--paper),0 0 0 5px var(--gold)}
+.stf-av img{width:100%;height:100%;object-fit:cover;display:block}
+.stf-nm{margin-top:8px;font-size:1rem;font-weight:800;line-height:1.4;color:var(--paper-ink)}
+.stf-role{font-size:.85rem;color:var(--paper-mut);line-height:1.4}
+.stf-kind{margin-top:2px;padding:3px 12px;border-radius:999px;font-size:.74rem;font-weight:800}
+.stf-kind.adm{background:#f3e7bd;color:var(--gold-ink)}
+.stf-kind.tech{background:#d6f1e1;color:#0a6b3a}
+
+/* ---------- بطاقة اللاعب / عضو الطاقم (نافذة) ---------- */
+html.pm-lock{overflow:hidden}
+.pmodal{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:12px}
+.pmodal[hidden]{display:none}
+.pm-bd{position:absolute;inset:0;background:rgba(2,10,6,.82)}
+.pm-box{position:relative;display:flex;flex-direction:column;width:min(440px,100%);max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;background:var(--card);border:1px solid var(--line2);border-radius:26px;color:var(--ink)}
+.pm-x{position:absolute;top:12px;left:12px;right:auto;z-index:5;width:44px;height:44px;padding:0;display:grid;place-items:center;border-radius:50%;border:1px solid rgba(255,255,255,.55);background:rgba(4,20,11,.72);color:#fff;font:inherit;font-size:1.7rem;line-height:1;cursor:pointer}
+.pcard-top{position:relative;flex:none;height:230px;overflow:hidden;border-bottom:3px solid var(--gold);background:radial-gradient(300px 200px at 50% 45%,#22915a,#0a3d26 72%)}
+.pcard-av{position:absolute;left:50%;top:50%;width:150px;height:150px;margin:-75px 0 0 -75px;border-radius:50%;overflow:hidden;background:linear-gradient(160deg,#1c7a4a,#0a3d26);box-shadow:0 0 0 4px #fff,0 0 0 8px var(--gold),0 14px 34px rgba(0,0,0,.45)}
+.pcard-av img{width:100%;height:100%;object-fit:cover;display:block}
+.pcard-no{position:absolute;right:18px;bottom:-14px;font-size:6.5rem;line-height:1;font-weight:900;color:rgba(255,255,255,.16);pointer-events:none}
+.pm-body{padding:0 22px 6px}
+.pm-body h3{margin:20px 0 10px;font-size:1.6rem;line-height:1.3;color:#fff}
+.pcard-tags{display:flex;flex-wrap:wrap;gap:8px}
+.pcard-tags .pos,.tag2{display:inline-block;padding:4px 14px;border-radius:999px;font-size:.82rem;font-weight:700;line-height:1.5}
+.pcard-tags .pos{background:#134d2f;color:#6fe3a2}.pcard-tags .pos.gk{background:#3a3210;color:#f0dc9a}.pcard-tags .pos.df{background:#12304a;color:#9cc7f0}.pcard-tags .pos.fw{background:#3a1714;color:#ff9b90}
+.tag2{border:1px solid var(--line2);color:var(--ink);background:var(--card2)}
+.tag2.on{border-color:#5c4d1a;background:#2a2410;color:#f0dc9a}
+.pstats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0 6px}
+.ps{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px 8px;border:1px solid var(--line);border-radius:14px;background:var(--card2);text-align:center}
+.ps b{display:block;font-size:1.7rem;line-height:1.2;color:#fff}
+.ps span{display:block;font-size:.8rem;color:var(--mut)}
+.ps.g b{color:var(--ok)}.ps.y b{color:#e5c13a}.ps.r b{color:#e0554a}
+.pm-nav{position:sticky;bottom:0;display:flex;gap:10px;padding:12px 22px 18px;background:linear-gradient(180deg,rgba(11,29,20,0),var(--card) 30%)}
+.pm-nav[hidden]{display:none}
+.pm-nav button{flex:1;min-height:48px;border:1px solid var(--line2);border-radius:14px;background:var(--card2);color:var(--ink);font:inherit;font-weight:700;cursor:pointer}
+@media(hover:hover){.pm-nav button:hover{background:#134d2f}}
+.pm-nav button[data-go="1"]{background:var(--ok);border-color:var(--ok);color:#04140b}
+@media(hover:hover){.pm-nav button[data-go="1"]:hover{background:#3ad884}}
+
+/* ---------- التذييل ---------- */
+.ftr{background:var(--card);color:var(--ink);border:1px solid var(--line);border-top:2px solid var(--gold);border-radius:20px}
+.ftr-in{padding-block:18px}
+.ftr small{color:var(--mut);opacity:1}
+.logo{object-fit:cover}
+
+/* ---------- الجوال والتابلت: شريط تنقل سفلي ---------- */
+@media(max-width:860px){
+  .app{grid-template-columns:minmax(0,1fr);padding:10px 10px 92px;gap:10px}
+  .rail{position:fixed;inset-inline:8px;bottom:8px;top:auto;max-height:none;flex-direction:row;justify-content:center;padding:6px;border-radius:20px;background:rgba(11,29,20,.97);backdrop-filter:blur(8px);box-shadow:0 10px 30px rgba(0,0,0,.5);overflow:visible}
+  .rail .brand{display:none}
+  #snav{display:flex!important;flex-direction:row;justify-content:space-around;gap:2px;position:static;padding:0}
+  #snav a{flex:1 1 0;min-width:0;min-height:54px;font-size:.66rem;padding:4px 2px}
+  .hero-in{grid-template-columns:minmax(0,1fr);padding:22px 18px;gap:20px}
+  section.sec,section.sec:first-child{padding:16px 14px}
+}
+@media(min-width:600px){.stf-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}}
+@media(max-width:520px){
+  .hero h1{font-size:2.1rem}
+  .pgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .field{min-height:560px;padding-top:42px}
+  .pp .av{width:54px;height:54px}
+  .pcard-av{width:132px;height:132px;margin:-66px 0 0 -66px}
+  .pcard-top{height:210px}
+  .pm-body h3{font-size:1.45rem}
+}
+@media print{.rail{display:none}.app{display:block;padding:0}body{background:#fff;color:#000}section.sec{background:#fff;border:0}}
