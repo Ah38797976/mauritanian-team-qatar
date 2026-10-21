@@ -31,10 +31,10 @@
   const dot = (p, i, sm) => `<button type="button" class="pp${sm ? ' sm' : ''}" data-i="${i}" aria-haspopup="dialog" aria-label="بطاقة ${esc(p.name)}"><span class="av">${av(p)}</span><b class="no">${num(p.num)}</b><span class="nm">${esc(p.name)}</span></button>`;
   function squadHtml(s) {
     SQ = s.players; LST = SQ; if (!SQ.length) return '<p class="empty">لا لاعبين بعد.</p>';
-    const st = SQ.map((p, i) => [p, i]).filter(([p]) => p.st === 1);
-    if (!st.length) // لقطة قديمة بلا تشكيلة: شبكة البطاقات، وكل بطاقة تفتح ملف اللاعب
-      return `<div class="pgrid">${SQ.map((p, i) => `<article class="card pc" data-i="${i}" tabindex="0" role="button" aria-haspopup="dialog" aria-label="بطاقة ${esc(p.name)}"><span class="no" aria-hidden="true">#${num(p.num)}</span><div class="av">${av(p)}</div><b>${esc(p.name)}</b><span class="pos ${POSCLS[p.pos] || ''}">${esc(p.pos)}</span></article>`).join('')}</div>`;
-    const bench = SQ.map((p, i) => [p, i]).filter(([p]) => p.st !== 1);
+    const all = SQ.map((p, i) => [p, i]), flagged = all.filter(([p]) => p.st === 1);
+    // إن لم تُحدَّد تشكيلة أساسية في لوحة الإدارة: كل اللاعبين على الملعب موزّعين حسب المركز. ومن مركزه غير معروف يذهب إلى الاحتياط
+    const st = (flagged.length ? flagged : all).filter(([p]) => LINES.includes(p.pos));
+    const bench = flagged.length ? all.filter(([p]) => p.st !== 1 || !LINES.includes(p.pos)) : all.filter(([p]) => !LINES.includes(p.pos));
     const lines = LINES.map(pos => st.filter(([p]) => p.pos === pos)).filter(l => l.length).map(l => `<div class="line">${l.map(([p, i]) => dot(p, i)).join('')}</div>`).join('');
     const fm = typeof s.formation === 'string' && /^\d(-\d){1,3}$/.test(s.formation) ? `<span class="fm">التشكيلة <bdi dir="ltr">${esc(s.formation)}</bdi></span>` : '';
     return `<div class="card lineup"><p class="hint">اضغط على أي لاعب لفتح بطاقته الكاملة.</p><div class="field">${fm}<i class="m-c"></i><i class="m-h"></i><i class="m-b t"></i><i class="m-b b"></i>${lines}</div>${bench.length ? `<h3 class="sub-h bench-h">الاحتياط</h3><div class="bench">${bench.map(([p, i]) => dot(p, i, true)).join('')}</div>` : ''}</div>`;
@@ -51,7 +51,7 @@
   }
   function staffCardHtml(x) {
     const ph = photo(x, x.name);
-    return `<div class="pcard-top"><div class="pcard-av">${ph || `<span>${ini(x.name)}</span>`}</div></div>
+    return `<div class="pcard-top"><div class="pcard-av">${ph || SIL}</div></div>
       <h3 id="pcard-t">${esc(x.name)}</h3>
       <div class="pcard-tags"><span class="pos">${esc(x.role)}</span><span class="tag2 ${x.kind === 'إداري' ? 'on' : ''}">${x.kind === 'إداري' ? 'الإدارة' : 'الطاقم الفني'}</span></div>`;
   }
@@ -78,7 +78,12 @@
   const R = {
     about: s => `<div class="card about"><p>${esc(s.text)}</p></div>`,
     squad: s => squadHtml(s),
-    staff: s => { SF = s.staff; return SF.length ? `<div class="sgrid">${SF.map((x, i) => `<article class="card st" data-s="${i}" tabindex="0" role="button" aria-haspopup="dialog" aria-label="بطاقة ${esc(x.name)}"><div class="ic">${photo(x, x.name) || ini(x.name)}</div><div><b>${esc(x.name)}</b><small>${esc(x.role)} · ${esc(x.kind)}</small></div></article>`).join('')}</div>` : '<p class="empty">لا أعضاء بعد.</p>'; },
+    staff: s => {
+      SF = s.staff; if (!SF.length) return '<p class="empty">لا أعضاء بعد.</p>';
+      const card = (x, i) => `<article class="stf-card" data-s="${i}" tabindex="0" role="button" aria-haspopup="dialog" aria-label="بطاقة ${esc(x.name)}"><span class="stf-av">${photo(x, x.name) || SIL}</span><b class="stf-nm">${esc(x.name)}</b><span class="stf-role">${esc(x.role)}</span><span class="stf-kind ${x.kind === 'إداري' ? 'adm' : 'tech'}">${x.kind === 'إداري' ? 'الإدارة' : 'الطاقم الفني'}</span></article>`;
+      const grp = (title, f) => { const l = SF.map((x, i) => [x, i]).filter(([x]) => f(x)); return l.length ? `<h3 class="stf-h">${title}</h3><div class="stf-grid">${l.map(([x, i]) => card(x, i)).join('')}</div>` : ''; };
+      return grp('الإدارة', x => x.kind === 'إداري') + grp('الطاقم الفني', x => x.kind !== 'إداري');
+    },
     matches: s => {
       const up = s.matches.filter(m => !m.played).sort((a, b) => String(a.date).localeCompare(String(b.date))), pl = s.matches.filter(m => m.played).sort((a, b) => String(b.date).localeCompare(String(a.date)));
       return (up.length ? `<h3 class="sub-h">المباريات القادمة</h3><div class="mgrid">${up.map(matchCard).join('')}</div>` : '') + (pl.length ? `<h3 class="sub-h">النتائج</h3><div class="mgrid">${pl.map(matchCard).join('')}</div>` : '') || '<p class="empty">لا مباريات بعد.</p>';
@@ -119,7 +124,7 @@
   // تحميل أولي: لقطة محلية نشرتها لوحة التحكم في هذا المتصفح إن وُجدت، وإلا النسخة الافتراضية
   let local = null; try { local = localStorage.getItem(KEY); } catch (e) {}
   if (!(local && draw(local))) {
-    fetch('data/public.json', { cache: 'no-cache' }).then(r => r.json()).then(j => { if (!draw(j)) throw 0; }).catch(() => { $('#sv').innerHTML = '<p class="empty">تعذّر تحميل المحتوى. حدّث الصفحة أو حاول لاعبًا.</p>'; });
+    fetch('data/public.json', { cache: 'no-cache' }).then(r => r.json()).then(j => { if (!draw(j)) throw 0; }).catch(() => { $('#sv').innerHTML = '<p class="empty">تعذّر تحميل المحتوى. حدّث الصفحة أو حاول لاحقًا.</p>'; });
   }
   try { new BroadcastChannel(CH).onmessage = e => draw(e.data); } catch (e) {}
   window.addEventListener('storage', e => { if (e.key === KEY && e.newValue) draw(e.newValue); });
