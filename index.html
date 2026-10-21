@@ -3,36 +3,44 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="robots" content="noindex, nofollow">
+<title>فريق الجالية الموريتانية في قطر</title>
+<meta name="description" content="الموقع الرسمي لفريق كرة القدم للجالية الموريتانية في قطر: المباريات والنتائج واللاعبون والهدافون.">
 <meta name="theme-color" content="#06120c">
-<title>لوحة الإدارة — فريق الجالية الموريتانية في قطر</title>
-<link rel="icon" href="../assets/logo.png">
-<link rel="stylesheet" href="css/admin.css">
-<link rel="stylesheet" href="css/theme-dark.css">
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="site/css/site.css">
+<link rel="stylesheet" href="site/css/theme-dark.css">
 </head>
 <body>
-<div class="shell">
-  <aside class="side" id="side" aria-label="القائمة الجانبية">
-    <div class="side-brand"><span class="logo" role="img" aria-label="شعار الجالية الموريتانية في قطر"></span><div><b id="teamName"></b><small>لوحة الإدارة</small></div></div>
-    <nav id="nav" aria-label="التنقل الرئيسي"></nav>
-    <div class="side-foot"><a class="viewsite" id="viewSite" href="../" target="_blank" rel="noopener">عرض الموقع العام ↗</a></div>
-  </aside>
-  <div class="scrim" id="scrim"></div>
-  <div class="col">
-    <header class="top">
-      <button class="menu" id="menuBtn" aria-label="فتح القائمة" aria-expanded="false" aria-controls="side"><span></span><span></span><span></span></button>
-      <div class="crumb"><small>إدارة الفريق</small><b id="crumb"></b></div>
-      <label class="who"><span>عرض بصفة</span><select id="userSel"></select></label>
-    </header>
-    <div class="demo-note" id="demoNote" role="note"><b>تنبيه:</b> البيانات هنا تجريبية ومحفوظة في ذاكرة الصفحة فقط. أي إضافة أو تعديل أو حذف يختفي عند تحديث الصفحة، وتعود البيانات الأصلية.</div>
-    <main id="view" tabindex="-1"></main>
+<a class="skip" href="#sv">تخطَّ إلى المحتوى</a>
+<div class="app">
+<aside class="rail hdr" id="hdr">
+  <a class="brand" href="#top" aria-label="الصفحة الرئيسية"><img class="logo" src="assets/logo.png" alt="شعار الجالية الموريتانية في قطر" width="52" height="52"><span id="bname" class="sr">فريق الجالية</span></a>
+  <button class="burger" id="burger" aria-label="القائمة" aria-expanded="false" aria-controls="snav"><span></span><span></span><span></span></button>
+  <nav id="snav" aria-label="أقسام الموقع"></nav>
+</aside>
+<div class="appmain">
+<div id="ann" class="ann" role="note" hidden></div>
+<div class="hero" id="top">
+  <div class="wrap hero-in">
+    <div class="hero-txt">
+      <p class="eyebrow">الجالية الموريتانية في دولة قطر</p>
+      <h1 id="tname">فريق الجالية</h1>
+      <p class="sub" id="tcity"></p>
+      <div class="stats" id="stats"></div>
+    </div>
+    <div class="hero-card" id="heroNext" hidden></div>
   </div>
 </div>
-<dialog id="modal"></dialog>
-<div id="toast" role="status"></div>
-<script src="js/data.js"></script>
-<script src="js/store.js"></script>
-<script src="js/app.js"></script>
-<script src="js/publish.js"></script>
+<main id="sv" class="wrap"><p class="empty">جارٍ التحميل…</p></main>
+<footer class="ftr">
+  <div class="wrap ftr-in">
+    <img class="logo" src="assets/logo.png" alt="" width="48" height="48">
+    <div><b id="fname">فريق الجالية</b><small>المكتب التنفيذي للجالية الموريتانية في دولة قطر</small></div>
+    <small class="stamp" id="stamp"></small>
+  </div>
+</footer>
+</div>
+</div>
+<script src="site/js/site.js"></script>
 </body>
 </html>
