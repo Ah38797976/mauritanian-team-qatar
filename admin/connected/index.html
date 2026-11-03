@@ -1,1 +1,56 @@
-x
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: https://ddrbrskusreoktqabkvi.supabase.co; font-src 'self'; connect-src https://ddrbrskusreoktqabkvi.supabase.co; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>لوحة الإدارة (نسخة متصلة تجريبية) — فريق الجالية الموريتانية في قطر</title>
+<link rel="icon" href="../../assets/logo.png">
+<link rel="stylesheet" href="connected.css">
+</head>
+<body>
+<main id="app">
+  <header class="top">
+    <h1>لوحة الإدارة — نسخة متصلة</h1>
+    <p class="notice" role="note"><b>للقراءة فقط:</b> نسخة تجريبية تتصل بمشروع Supabase التجريبي (staging) وببياناته التجريبية. لا تُدخل بيانات حقيقية. الصلاحيات تُفرض في الخادم (RLS/RPC)، وهذه الواجهة تعرض فقط ما يعيده الخادم لدورك.</p>
+  </header>
+  <p id="fatal" class="fatal" role="alert" hidden></p>
+  <p id="status" class="status" role="status" aria-live="polite"></p>
+
+  <section id="loginView" class="card" aria-labelledby="loginTitle">
+    <h2 id="loginTitle">تسجيل الدخول</h2>
+    <form id="loginForm" method="post" autocomplete="off">
+      <label for="email">البريد الإلكتروني</label>
+      <input id="email" name="email" type="email" autocomplete="username" spellcheck="false" required>
+      <label for="password">كلمة المرور</label>
+      <input id="password" name="password" type="password" autocomplete="current-password" required>
+      <button id="loginBtn" type="submit">دخول</button>
+    </form>
+  </section>
+
+  <div id="mainView" hidden>
+    <section class="card" aria-labelledby="who">
+      <h2 id="who">الحساب والفريق</h2>
+      <dl class="meta">
+        <dt>الفريق</dt><dd id="teamName"></dd>
+        <dt>الدور</dt><dd id="roleLabel"></dd>
+        <dt>الاسم المعروض</dt><dd id="displayName"></dd>
+      </dl>
+      <p class="muted">الصلاحيات الممنوحة لدورك:</p>
+      <ul id="perms" class="chips"></ul>
+      <div class="actions">
+        <button id="refreshBtn" type="button" class="secondary">تحديث البيانات</button>
+        <button id="signOutBtn" type="button" class="secondary">تسجيل الخروج</button>
+      </div>
+    </section>
+    <div id="sections"></div>
+  </div>
+</main>
+<script src="config.public.js"></script>
+<script src="vendor/supabase.min.js"></script>
+<script src="adapter/supabase-adapter.v2.js"></script>
+<script src="connected.js"></script>
+</body>
+</html>
