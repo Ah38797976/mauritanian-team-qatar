@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: https://ddrbrskusreoktqabkvi.supabase.co; font-src 'self'; connect-src https://ddrbrskusreoktqabkvi.supabase.co; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="theme-color" content="#06120c">
+<title>لوحة الإدارة (متصلة) — فريق الجالية الموريتانية في قطر</title>
+<link rel="icon" href="../../assets/logo.png">
+<link rel="stylesheet" href="../css/admin.css">
+<link rel="stylesheet" href="../css/theme-dark.css">
+</head>
+<body>
+<main id="loginView" class="card" style="max-width:420px;margin:12vh auto 0;padding:18px" aria-labelledby="loginTitle">
+  <h1 id="loginTitle">تسجيل الدخول</h1>
+  <p id="loginMsg" role="alert" class="note" hidden></p>
+  <form id="loginForm" method="post" autocomplete="off">
+    <label class="f"><span>البريد الإلكتروني</span><input id="email" name="email" type="email" autocomplete="username" spellcheck="false" required></label>
+    <label class="f"><span>كلمة المرور</span><input id="password" name="password" type="password" autocomplete="current-password" required></label>
+    <button id="loginBtn" type="submit">دخول</button>
+  </form>
+</main>
+<div class="shell" id="shell" hidden>
+  <aside class="side" id="side" aria-label="القائمة الجانبية">
+    <div class="side-brand"><span class="logo" role="img" aria-label="شعار الجالية الموريتانية في قطر"></span><div><b id="teamName"></b><small>لوحة الإدارة</small></div></div>
+    <nav id="nav" aria-label="التنقل الرئيسي"></nav>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+  <div class="col">
+    <header class="top">
+      <button class="menu" id="menuBtn" aria-label="فتح القائمة" aria-expanded="false" aria-controls="side"><span></span><span></span><span></span></button>
+      <div class="crumb"><small>إدارة الفريق</small><b id="crumb"></b></div>
+      <div class="who"><span id="whoName"></span> <button type="button" class="sec" id="signOutBtn">خروج</button></div>
+    </header>
+    <main id="view" tabindex="-1"></main>
+  </div>
+</div>
+<dialog id="modal"></dialog>
+<div id="toast" role="status"></div>
+<script src="../connected/config.public.js"></script>
+<script src="../connected/vendor/supabase.min.js"></script>
+<script src="live-adapter.js"></script>
+<script src="live-store.js"></script>
+<script src="live-app.js"></script>
+<script src="live-boot.js"></script>
+</body>
+</html>
