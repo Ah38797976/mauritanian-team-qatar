@@ -1,5 +1,5 @@
 // الموقع العام: يعرض «لقطة عامة» فقط ولا يحتوي أي محتوى ثابت ولا يحمّل أي كود من لوحة التحكم (لا Store ولا data ولا صلاحيات).
-// مصدر اللقطة: (1) إن نشرت لوحة التحكم تعديلًا في هذا المتصفح نفسه (localStorage/BroadcastChannel) فهو الأحدث، (2) وإلا data/public.json (النسخة الافتراضية للزوّار).
+// مصدر المحتوى: دالة Supabase العامة rpc_public_site التي تتحكم فيها لوحة التحكم (لا لقطة محلية ولا بيانات ثابتة).
 // كل نص يمر عبر esc() وكل رقم عبر num() قبل دخوله في HTML.
 (function () {
   const KEY = 'mt.public.snapshot.v1', CH = 'mt-public-site', $ = s => document.querySelector(s);
@@ -121,11 +121,24 @@
   const setMenu = o => { nav.classList.toggle('open', o); hdr.classList.toggle('open', o); burger.setAttribute('aria-expanded', String(o)); };
   burger.onclick = () => setMenu(!nav.classList.contains('open'));
   nav.addEventListener('click', e => { if (e.target.closest('a')) setMenu(false); });
-  // تحميل أولي: لقطة محلية نشرتها لوحة التحكم في هذا المتصفح إن وُجدت، وإلا النسخة الافتراضية
-  let local = null; try { local = localStorage.getItem(KEY); } catch (e) {}
-  if (!(local && draw(local))) {
-    fetch('data/public.json', { cache: 'no-cache' }).then(r => r.json()).then(j => { if (!draw(j)) throw 0; }).catch(() => { $('#sv').innerHTML = '<p class="empty">تعذّر تحميل المحتوى. حدّث الصفحة أو حاول لاحقًا.</p>'; });
-  }
-  try { new BroadcastChannel(CH).onmessage = e => draw(e.data); } catch (e) {}
-  window.addEventListener('storage', e => { if (e.key === KEY && e.newValue) draw(e.newValue); });
+  // تحميل المحتوى من Supabase: الدالة العامة rpc_public_site (قائمة بيضاء من الحقول؛ لا هاتف ولا بريد). ما تُطفئه لوحة التحكم لا يُرسل أصلًا.
+  const CFG = window.PUBLIC_CONFIG || {};
+  const toSnap = j => {
+    if (!j || !j.team) throw 0;
+    const S = j.sections || {}, secs = [];
+    if (j.about) secs.push({ key: 'about', label: 'عن الفريق', text: j.about });
+    if (S.players) secs.push({ key: 'squad', label: 'اللاعبون', players: (j.players || []).map(p => ({ name: p.name, num: p.num, pos: p.pos })) });
+    if (S.staff) secs.push({ key: 'staff', label: 'الطاقم', staff: (j.staff || []).map(x => ({ name: x.name, role: x.role, kind: x.kind })) });
+    if (S.matches) secs.push({ key: 'matches', label: 'المباريات والنتائج', matches: (j.matches || []).map(m => ({ opp: m.opp, date: m.date, home: m.home, played: m.played, us: m.us, them: m.them })) });
+    if (S.stats) secs.push({ key: 'scorers', label: 'الهدافون', rows: (j.scorers || []).map(r => ({ name: r.name, goals: r.goals, apps: r.apps })) });
+    return { v: 1, t: new Date().toISOString(), data: { team: j.team, announcement: j.announcement || '', sections: secs } };
+  };
+  const load = first => {
+    if (!CFG.SUPABASE_URL || !CFG.SUPABASE_PUBLISHABLE_KEY) { if (first) $('#sv').innerHTML = '<p class="empty">تعذّر تحميل المحتوى. حاول لاحقًا.</p>'; return; }
+    fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/rpc_public_site', { method: 'POST', cache: 'no-store', headers: { apikey: CFG.SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' }, body: '{}' })
+      .then(r => { if (!r.ok) throw 0; return r.json(); }).then(j => { if (!draw(toSnap(j))) throw 0; })
+      .catch(() => { if (first) $('#sv').innerHTML = '<p class="empty">تعذّر تحميل المحتوى. حدّث الصفحة أو حاول لاحقًا.</p>'; });
+  };
+  load(true);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') load(false); });
 })();
