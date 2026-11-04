@@ -1,0 +1,30 @@
+/* نسخة متصلة (C1): تنسيق مستقل. لا أنماط مضمّنة؛ يتوافق مع style-src 'self'. */
+:root{color-scheme:dark;--bg:#06120c;--card:#0d2017;--line:#1e3a2b;--text:#eaf3ee;--muted:#9bb5a6;--green:#1f8f55;--red:#f19999;--gold:#d9b45a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;line-height:1.65;padding:16px}
+#app{max-width:960px;margin:0 auto}
+h1{font-size:1.4rem;margin:0 0 8px;color:var(--gold)}
+h2{font-size:1.1rem;margin:0 0 10px}
+.notice{background:#10281d;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:.92rem;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+label{display:block;margin-top:12px;font-weight:650}
+input{display:block;width:100%;font:inherit;padding:11px;margin-top:5px;border-radius:9px;border:1px solid #3b5b49;background:#0a1a12;color:var(--text);direction:ltr;text-align:left}
+button{font:inherit;font-weight:650;border:0;border-radius:9px;padding:11px 16px;margin-top:14px;cursor:pointer;background:var(--green);color:#fff}
+button.secondary{background:#2b4a3a}
+button:disabled{opacity:.55;cursor:wait}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.status{min-height:1.6em;margin:8px 0;color:var(--muted)}
+.status.err{color:var(--red);font-weight:650}
+.status.ok{color:#8fd8b0}
+.fatal{background:#3a1010;border:1px solid #8a3030;border-radius:10px;padding:12px;font-weight:650}
+.muted{color:var(--muted)}
+.meta{display:grid;grid-template-columns:max-content 1fr;gap:6px 14px;margin:0 0 10px}
+.meta dt{color:var(--muted)}
+.meta dd{margin:0;font-weight:650}
+.chips{list-style:none;display:flex;flex-wrap:wrap;gap:6px;padding:0;margin:6px 0}
+.chips li{background:#143324;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.88rem}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{border-bottom:1px solid var(--line);padding:7px 9px;text-align:right;white-space:nowrap}
+th{color:var(--muted);font-weight:650}
+td[dir]{direction:ltr}
