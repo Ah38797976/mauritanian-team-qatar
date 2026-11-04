@@ -89,17 +89,16 @@
   // حقلا الهاتف والبريد لا يدخلان النموذج (ولا الـ HTML) إلا لمن يملك صلاحية عرضهما
   // الصورة: JPEG/PNG/WebP حتى 2 م.ب، تُرفع إلى Storage ثم تُسجَّل عبر RPC (الفحص الفعلي في الخادم). للاعب الموجود فقط (يلزم معرّفه).
   // تصغير موحّد قبل الرفع: قصّ مربع (مع ميل للأعلى للحفاظ على الوجه) 640×640 كحد أقصى، JPEG بجودة 0.86 — أخف وأسرع وبمظهر ثابت
-  const shrink = file => new Promise((ok, no) => {
-    const u = URL.createObjectURL(file), im = new Image();
-    im.onload = () => { try {
-      const w = im.naturalWidth, h = im.naturalHeight, side = Math.min(w, h), sx = (w - side) / 2, sy = h > w ? (h - side) * 0.3 : 0, out = Math.min(640, side);
-      const c = document.createElement('canvas'); c.width = c.height = out; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, out, out); x.drawImage(im, sx, sy, side, side, 0, 0, out, out);
-      c.toBlob(b => { URL.revokeObjectURL(u); b ? ok(new File([b], 'photo.jpg', { type: 'image/jpeg' })) : no(new Error('blob')); }, 'image/jpeg', 0.86);
-    } catch (e) { URL.revokeObjectURL(u); no(e); } };
-    im.onerror = () => { URL.revokeObjectURL(u); no(new Error('img')); }; im.src = u;
-  });
-  const photoFld = p => { const cur = TD.primaryPhoto ? TD.primaryPhoto(p.id) : null; return `<div class="f photof"><span>الصورة (اختيارية)</span><div class="row"><div class="av big" id="pprev">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : '؟'}</div><div><label class="btnlink filebtn">اختيار صورة<input type="file" name="photoFile" accept="image/jpeg,image/png,image/webp" hidden></label>${cur ? ' <label class="rm"><input type="checkbox" name="rmphoto"> حذف الصورة الحالية</label>' : ''}<div class="hint">JPEG أو PNG أو WebP حتى 2 م.ب. — تُقصّ مربعة وتُصغَّر تلقائيًا.</div></div></div></div>`; };
-  document.addEventListener('change', e => { const t = e.target; if (!t || t.name !== 'photoFile') return; const f = t.files && t.files[0], pv = $('#pprev'); if (!f || !pv) return; if (f.size > 2097152 || !['image/jpeg', 'image/png', 'image/webp'].includes(f.type)) { t.value = ''; const er = $('#err'); if (er) er.textContent = 'نوع الصورة أو حجمها غير مقبول'; return; } const u = URL.createObjectURL(f), im = document.createElement('img'); im.alt = ''; im.onload = () => URL.revokeObjectURL(u); im.src = u; pv.textContent = ''; pv.appendChild(im); });
+  const readUrl = file => new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.onerror = () => no(new Error('read')); r.readAsDataURL(file); });   // data: مسموح في CSP، أما blob: فلا
+  const loadImg = url => new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = () => no(new Error('img')); im.src = url; });
+  const shrink = async file => {
+    const im = await loadImg(await readUrl(file)), w = im.naturalWidth, h = im.naturalHeight, side = Math.min(w, h), sx = (w - side) / 2, sy = h > w ? (h - side) * 0.3 : 0, out = Math.min(640, side);
+    const c = document.createElement('canvas'); c.width = c.height = out; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, out, out); x.drawImage(im, sx, sy, side, side, 0, 0, out, out);
+    const b = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.86)); if (!b) throw new Error('blob');
+    return new File([b], 'photo.jpg', { type: 'image/jpeg' });
+  };
+  const photoFld = p => { const cur = TD.primaryPhoto ? TD.primaryPhoto(p.id) : null; return `<div class="f photof"><span>الصورة (اختيارية)</span><div class="row"><div class="av big" id="pprev">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : '؟'}</div><div><label class="btnlink filebtn">اختيار صورة<input type="file" name="photoFile" accept="image/*" hidden></label>${cur ? ' <label class="rm"><input type="checkbox" name="rmphoto"> حذف الصورة الحالية</label>' : ''}<div class="hint">أي صورة من الجوال أو الكمبيوتر — تُقصّ مربعة وتُصغَّر تلقائيًا قبل الرفع.</div></div></div></div>`; };
+  document.addEventListener('change', e => { const t = e.target; if (!t || t.name !== 'photoFile') return; const f = t.files && t.files[0], pv = $('#pprev'); if (!f || !pv) return; if (f.size > 25 * 1048576 || !/^image\//.test(f.type)) { t.value = ''; const er = $('#err'); if (er) er.textContent = 'ملف الصورة غير مقبول أو كبير جدًا'; return; } shrink(f).then(readUrl).then(u => { const im = document.createElement('img'); im.alt = ''; im.src = u; pv.textContent = ''; pv.appendChild(im); const er = $('#err'); if (er) er.textContent = ''; }).catch(() => { t.value = ''; const er = $('#err'); if (er) er.textContent = 'تعذّر قراءة الصورة، جرّب صورة JPEG أو PNG'; }); });
   const playerForm = p => { const c = St.can('contactPlayers'); p = p || { name: '', num: '', pos: 'وسط', city: '', status: 'نشط', phone: '', email: '' };
     modal(p.id ? 'تعديل لاعب' : 'إضافة لاعب', fld('الاسم', 'name', p.name) + fld('رقم القميص', 'num', p.num, 'number', 'min=1 max=99') + sel('المركز', 'pos', POS, p.pos) + sel('الحالة', 'status', STAT, p.status) + fld('المدينة', 'city', p.city) + (p.id ? photoFld(p) : '<p class="hint">يمكن إضافة الصورة بعد الحفظ، من «تعديل» اللاعب.</p>') + (c ? fld('الهاتف', 'phone', p.phone) + fld('البريد', 'email', p.email, 'email') : ''),
       async f => {
