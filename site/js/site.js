@@ -7,8 +7,10 @@
   const num = v => Number.isFinite(+v) ? +v : 0;
   const color = c => /^#[0-9a-fA-F]{6}$/.test(c) ? c : '#0b6b3a';
   const ini = n => esc(String(n ?? '').trim().split(/\s+/).slice(0, 2).map(w => w[0]).join(' '));
-  // الصورة: JPEG data URL فقط (تأتي من لوحة التحكم)؛ أي قيمة أخرى تُتجاهل
-  const photo = (p, alt) => typeof p.photo === 'string' && p.photo.length < 150000 && /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(p.photo) ? `<img src="${p.photo}" alt="${esc(alt)}" loading="lazy">` : null;
+  // الصورة: مسار تخزين من الخادم (UUID/UUID/UUID.jpg|png|webp) يُحوَّل إلى رابط عام لحاوية player-photos فقط، أو JPEG data URL؛ أي قيمة أخرى تُتجاهل
+  const PH_RE = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(jpg|png|webp)$/, SB_RE = /^https:\/\/[a-z0-9]{10,30}\.supabase\.co$/;
+  const photoUrl = path => { const u = (window.PUBLIC_CONFIG || {}).SUPABASE_URL; return typeof path === 'string' && PH_RE.test(path) && SB_RE.test(u || '') ? u + '/storage/v1/object/public/player-photos/' + path : null; };
+  const photo = (p, alt) => { const u = photoUrl(p.photo); if (u) return `<img src="${esc(u)}" alt="${esc(alt)}" loading="lazy" decoding="async">`; return typeof p.photo === 'string' && p.photo.length < 150000 && /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(p.photo) ? `<img src="${p.photo}" alt="${esc(alt)}" loading="lazy">` : null; };
   const POSCLS = { 'حارس': 'gk', 'مدافع': 'df', 'مهاجم': 'fw' };
   const fmt = (d, o) => { const t = new Date(String(d) + 'T00:00:00'); return isNaN(t) ? esc(d) : esc(t.toLocaleDateString('ar-u-nu-latn', o)); };
   const longDate = d => fmt(d, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -134,7 +136,7 @@
     if (!j || !j.team) throw 0;
     const S = j.sections || {}, secs = [];
     if (j.about) secs.push({ key: 'about', label: 'عن الفريق', text: j.about });
-    if (S.players) secs.push({ key: 'squad', label: 'اللاعبون', players: (j.players || []).map(p => ({ name: p.name, num: p.num, pos: p.pos })) });
+    if (S.players) secs.push({ key: 'squad', label: 'اللاعبون', players: (j.players || []).map(p => ({ name: p.name, num: p.num, pos: p.pos, photo: p.photo })) });
     if (S.staff) secs.push({ key: 'staff', label: 'الطاقم', staff: (j.staff || []).map(x => ({ name: x.name, role: x.role, kind: x.kind })) });
     if (S.matches) secs.push({ key: 'matches', label: 'المباريات والنتائج', matches: (j.matches || []).map(m => ({ opp: m.opp, date: m.date, home: m.home, played: m.played, us: m.us, them: m.them })) });
     if (S.stats) secs.push({ key: 'scorers', label: 'الهدافون', rows: (j.scorers || []).map(r => ({ name: r.name, goals: r.goals, apps: r.apps })) });

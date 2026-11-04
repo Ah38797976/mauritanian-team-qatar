@@ -88,7 +88,17 @@
   };
   // حقلا الهاتف والبريد لا يدخلان النموذج (ولا الـ HTML) إلا لمن يملك صلاحية عرضهما
   // الصورة: JPEG/PNG/WebP حتى 2 م.ب، تُرفع إلى Storage ثم تُسجَّل عبر RPC (الفحص الفعلي في الخادم). للاعب الموجود فقط (يلزم معرّفه).
-  const photoFld = p => { const cur = TD.primaryPhoto ? TD.primaryPhoto(p.id) : null; return `<div class="f photof"><span>الصورة (اختيارية)</span><div class="row"><div class="av big" id="pprev">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : '؟'}</div><div><label class="btnlink filebtn">اختيار صورة<input type="file" name="photoFile" accept="image/jpeg,image/png,image/webp" hidden></label>${cur ? ' <label class="rm"><input type="checkbox" name="rmphoto"> حذف الصورة الحالية</label>' : ''}<div class="hint">JPEG أو PNG أو WebP، حتى 2 م.ب.</div></div></div></div>`; };
+  // تصغير موحّد قبل الرفع: قصّ مربع (مع ميل للأعلى للحفاظ على الوجه) 640×640 كحد أقصى، JPEG بجودة 0.86 — أخف وأسرع وبمظهر ثابت
+  const shrink = file => new Promise((ok, no) => {
+    const u = URL.createObjectURL(file), im = new Image();
+    im.onload = () => { try {
+      const w = im.naturalWidth, h = im.naturalHeight, side = Math.min(w, h), sx = (w - side) / 2, sy = h > w ? (h - side) * 0.3 : 0, out = Math.min(640, side);
+      const c = document.createElement('canvas'); c.width = c.height = out; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, out, out); x.drawImage(im, sx, sy, side, side, 0, 0, out, out);
+      c.toBlob(b => { URL.revokeObjectURL(u); b ? ok(new File([b], 'photo.jpg', { type: 'image/jpeg' })) : no(new Error('blob')); }, 'image/jpeg', 0.86);
+    } catch (e) { URL.revokeObjectURL(u); no(e); } };
+    im.onerror = () => { URL.revokeObjectURL(u); no(new Error('img')); }; im.src = u;
+  });
+  const photoFld = p => { const cur = TD.primaryPhoto ? TD.primaryPhoto(p.id) : null; return `<div class="f photof"><span>الصورة (اختيارية)</span><div class="row"><div class="av big" id="pprev">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : '؟'}</div><div><label class="btnlink filebtn">اختيار صورة<input type="file" name="photoFile" accept="image/jpeg,image/png,image/webp" hidden></label>${cur ? ' <label class="rm"><input type="checkbox" name="rmphoto"> حذف الصورة الحالية</label>' : ''}<div class="hint">JPEG أو PNG أو WebP حتى 2 م.ب. — تُقصّ مربعة وتُصغَّر تلقائيًا.</div></div></div></div>`; };
   document.addEventListener('change', e => { const t = e.target; if (!t || t.name !== 'photoFile') return; const f = t.files && t.files[0], pv = $('#pprev'); if (!f || !pv) return; if (f.size > 2097152 || !['image/jpeg', 'image/png', 'image/webp'].includes(f.type)) { t.value = ''; const er = $('#err'); if (er) er.textContent = 'نوع الصورة أو حجمها غير مقبول'; return; } const u = URL.createObjectURL(f), im = document.createElement('img'); im.alt = ''; im.onload = () => URL.revokeObjectURL(u); im.src = u; pv.textContent = ''; pv.appendChild(im); });
   const playerForm = p => { const c = St.can('contactPlayers'); p = p || { name: '', num: '', pos: 'وسط', city: '', status: 'نشط', phone: '', email: '' };
     modal(p.id ? 'تعديل لاعب' : 'إضافة لاعب', fld('الاسم', 'name', p.name) + fld('رقم القميص', 'num', p.num, 'number', 'min=1 max=99') + sel('المركز', 'pos', POS, p.pos) + sel('الحالة', 'status', STAT, p.status) + fld('المدينة', 'city', p.city) + (p.id ? photoFld(p) : '<p class="hint">يمكن إضافة الصورة بعد الحفظ، من «تعديل» اللاعب.</p>') + (c ? fld('الهاتف', 'phone', p.phone) + fld('البريد', 'email', p.email, 'email') : ''),
@@ -96,7 +106,7 @@
         const er = await St.savePlayer({ id: p.id, name: f.name, num: f.num, pos: f.pos, status: f.status, city: f.city, ...(c ? { phone: f.phone, email: f.email } : {}) }); if (er) return er;
         if (!p.id) return '';
         const file = f.photoFile, old = TD.primaryPhoto(p.id);
-        if (file && file.size) { const r = await TD.uploadPhoto(p.id, file, true); if (r) return 'حُفظ اللاعب لكن تعذّر رفع الصورة: ' + r; if (old) await TD.deletePhoto(old.id); }   // القديمة تُحذف بعد نجاح الجديدة
+        if (file && file.size) { let up; try { up = await shrink(file); } catch (_) { return 'حُفظ اللاعب لكن تعذّر قراءة الصورة'; } const r = await TD.uploadPhoto(p.id, up, true); if (r) return 'حُفظ اللاعب لكن تعذّر رفع الصورة: ' + r; if (old) await TD.deletePhoto(old.id); }   // القديمة تُحذف بعد نجاح الجديدة
         else if (f.rmphoto === 'on' && old) { const r = await TD.deletePhoto(old.id); if (r) return 'حُفظ اللاعب لكن تعذّر حذف الصورة: ' + r; }
         return '';
       }); };
@@ -192,7 +202,7 @@
   V.audit = () => !St.can('audit') ? denied('سجل العمليات') : `<h1>سجل العمليات</h1>${tw('سجل العمليات', `<tr><th>الوقت</th><th>المنفّذ</th><th>الدور</th><th>العملية</th><th>التفاصيل</th></tr>${St.logs().map(l => `<tr><td><bdi>${esc(l.t)}</bdi></td><td>${esc(l.who)}</td><td>${esc(St.ROLES[l.role])}</td><td>${esc(l.a)}</td><td>${esc(l.d)}</td></tr>`).join('')}`)}`;
   V.settings = () => { const t = St.team(), ed = St.can('settings'); return `<h1>إعدادات الفريق</h1><div class="card"><form id="tf">${fld('اسم الفريق', 'name', t.name, 'text', ed ? '' : 'disabled')}${fld('المدينة', 'city', t.city, 'text', ed ? '' : 'disabled')}${fld('اللون الرئيسي', 'color', t.color, 'color', ed ? '' : 'disabled')}${ed ? '<button>حفظ</button>' : '<small>عرض فقط</small>'}</form></div>`; };
   // إدارة الموقع العام: ما تفعّله هنا يظهر للزوار في الموقع؛ وما تُطفئه يختفي. لا هواتف ولا بريد ولا مدن في الموقع أبدًا (الخادم يرجع قائمة بيضاء فقط).
-  const SEC = [['players', 'اللاعبون', 'الاسم والرقم والمركز فقط'], ['staff', 'الطاقم', 'الاسم والدور فقط'], ['matches', 'المباريات والنتائج', 'الخصم والتاريخ والنتيجة'], ['stats', 'الهدافون', 'الاسم والأهداف والمشاركات']];
+  const SEC = [['players', 'اللاعبون', 'الاسم والرقم والمركز فقط'], ['staff', 'الطاقم', 'الاسم والدور فقط'], ['matches', 'المباريات والنتائج', 'الخصم والتاريخ والنتيجة'], ['stats', 'الهدافون', 'الاسم والأهداف والمشاركات'], ['photos', 'صور اللاعبين', 'تظهر صورة كل لاعب في الملعب وبطاقته؛ الصور المرفوعة تصبح قابلة للفتح برابطها العام']];
   V.site = () => { if (!isPanelUser() || !St.can('settings')) return denied('إدارة الموقع العام'); return `<h1>إدارة الموقع العام</h1><div class="note">يظهر في الموقع ما تفعّله هنا فقط. كل الأقسام مطفأة افتراضيًا. لا يُنشر في الموقع أي هاتف أو بريد أو مدينة لأي لاعب أو عضو.</div><div class="card" id="sitebox"><p>جارٍ التحميل…</p></div>`; };
   const siteForm = r => { const s = r.sections || {};
     return `<div class="row between"><h2>محتوى الموقع</h2><a class="btnlink" href="../../" target="_blank" rel="noopener">عرض الموقع ↗</a></div><form id="sf"><label class="f"><span>نبذة عن الفريق (اختيارية)</span><textarea name="about" rows="3" maxlength="500">${esc(r.about)}</textarea></label><label class="f"><span>إعلان أعلى الموقع (اختياري)</span><input name="announcement" maxlength="200" value="${esc(r.announcement)}"></label><h2>الأقسام الظاهرة في الموقع</h2><div class="secs">${SEC.map(([k, l, n]) => `<label class="ck"><input type="checkbox" name="sec_${esc(k)}" ${s[k] === true ? 'checked' : ''}><span><b>${esc(l)}</b><small>${esc(n)}</small></span></label>`).join('')}</div><button>حفظ الموقع</button></form>`; };
