@@ -2,6 +2,21 @@
   "trailingSlash": true,
   "redirects": [
     {
+      "source": "/admin",
+      "destination": "/admin/live/",
+      "permanent": false
+    },
+    {
+      "source": "/admin/",
+      "destination": "/admin/live/",
+      "permanent": false
+    },
+    {
+      "source": "/admin/index.html",
+      "destination": "/admin/live/",
+      "permanent": false
+    },
+    {
       "source": "/(mauritanian-team-prototype|supabase-review|verification|phase1-results|phase2a-results|tools|docs)",
       "destination": "/",
       "permanent": false
