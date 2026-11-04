@@ -23,7 +23,7 @@
   const GROUPS = () => [
     ['', [['dash', 'نظرة عامة', isPanelUser()]]],
     ['الفريق', [['players', 'اللاعبون', St.can('viewPlayers')], ['matches', 'المباريات', St.canViewMatches()], ['stats', 'الإحصائيات', St.canViewMatches()], ['pitch', 'الملعب', St.canSeeRoster()], ['coach', 'التشكيلة والحضور', St.can('lineup') || St.can('viewPlayers')], ['staff', 'الطاقم', St.can('staff') || St.can('viewStaff')]]],
-    ['الإدارة', [['finance', 'المالية', St.can('finance')], ['audit', 'سجل العمليات', St.can('audit')]]],
+    ['الإدارة', [['finance', 'المالية', St.can('finance')], ['users', 'المستخدمون', St.user().role === 'founder'], ['roles', 'الصلاحيات', St.user().role === 'founder'], ['audit', 'سجل العمليات', St.can('audit')]]],
     ['الإعدادات', [['site', 'إدارة الموقع العام', isPanelUser() && St.can('settings')], ['settings', 'إعدادات الفريق', isPanelUser()]]]
   ];
   const TITLES = { dash: 'لوحة التحكم', players: 'اللاعبون', player: 'بطاقة لاعب', pitch: 'الملعب', member: 'ملف عضو الطاقم', matches: 'المباريات والنتائج', stats: 'الإحصائيات', coach: 'التشكيلة والحضور', staff: 'الطاقم', users: 'المستخدمون', roles: 'الصلاحيات', finance: 'المالية', audit: 'سجل العمليات', site: 'إدارة الموقع العام', settings: 'إعدادات الفريق' };
@@ -87,9 +87,19 @@
     $('#plist').innerHTML = r.map(p => `<a class="card pc" href="#/player/${esc(p.id)}">${avatar(p)}<div><b>${esc(p.name)}</b><br>${tag(p)}</div></a>`).join('') || '<p>لا نتائج.</p>';
   };
   // حقلا الهاتف والبريد لا يدخلان النموذج (ولا الـ HTML) إلا لمن يملك صلاحية عرضهما
+  // الصورة: JPEG/PNG/WebP حتى 2 م.ب، تُرفع إلى Storage ثم تُسجَّل عبر RPC (الفحص الفعلي في الخادم). للاعب الموجود فقط (يلزم معرّفه).
+  const photoFld = p => { const cur = TD.primaryPhoto ? TD.primaryPhoto(p.id) : null; return `<div class="f photof"><span>الصورة (اختيارية)</span><div class="row"><div class="av big" id="pprev">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : '؟'}</div><div><label class="btnlink filebtn">اختيار صورة<input type="file" name="photoFile" accept="image/jpeg,image/png,image/webp" hidden></label>${cur ? ' <label class="rm"><input type="checkbox" name="rmphoto"> حذف الصورة الحالية</label>' : ''}<div class="hint">JPEG أو PNG أو WebP، حتى 2 م.ب.</div></div></div></div>`; };
+  document.addEventListener('change', e => { const t = e.target; if (!t || t.name !== 'photoFile') return; const f = t.files && t.files[0], pv = $('#pprev'); if (!f || !pv) return; if (f.size > 2097152 || !['image/jpeg', 'image/png', 'image/webp'].includes(f.type)) { t.value = ''; const er = $('#err'); if (er) er.textContent = 'نوع الصورة أو حجمها غير مقبول'; return; } const u = URL.createObjectURL(f), im = document.createElement('img'); im.alt = ''; im.onload = () => URL.revokeObjectURL(u); im.src = u; pv.textContent = ''; pv.appendChild(im); });
   const playerForm = p => { const c = St.can('contactPlayers'); p = p || { name: '', num: '', pos: 'وسط', city: '', status: 'نشط', phone: '', email: '' };
-    modal(p.id ? 'تعديل لاعب' : 'إضافة لاعب', fld('الاسم', 'name', p.name) + fld('رقم القميص', 'num', p.num, 'number', 'min=1 max=99') + sel('المركز', 'pos', POS, p.pos) + sel('الحالة', 'status', STAT, p.status) + fld('المدينة', 'city', p.city) + (c ? fld('الهاتف', 'phone', p.phone) + fld('البريد', 'email', p.email, 'email') : ''),
-      f => St.savePlayer({ id: p.id, name: f.name, num: f.num, pos: f.pos, status: f.status, city: f.city, ...(c ? { phone: f.phone, email: f.email } : {}) })); };
+    modal(p.id ? 'تعديل لاعب' : 'إضافة لاعب', fld('الاسم', 'name', p.name) + fld('رقم القميص', 'num', p.num, 'number', 'min=1 max=99') + sel('المركز', 'pos', POS, p.pos) + sel('الحالة', 'status', STAT, p.status) + fld('المدينة', 'city', p.city) + (p.id ? photoFld(p) : '<p class="hint">يمكن إضافة الصورة بعد الحفظ، من «تعديل» اللاعب.</p>') + (c ? fld('الهاتف', 'phone', p.phone) + fld('البريد', 'email', p.email, 'email') : ''),
+      async f => {
+        const er = await St.savePlayer({ id: p.id, name: f.name, num: f.num, pos: f.pos, status: f.status, city: f.city, ...(c ? { phone: f.phone, email: f.email } : {}) }); if (er) return er;
+        if (!p.id) return '';
+        const file = f.photoFile, old = TD.primaryPhoto(p.id);
+        if (file && file.size) { const r = await TD.uploadPhoto(p.id, file, true); if (r) return 'حُفظ اللاعب لكن تعذّر رفع الصورة: ' + r; if (old) await TD.deletePhoto(old.id); }   // القديمة تُحذف بعد نجاح الجديدة
+        else if (f.rmphoto === 'on' && old) { const r = await TD.deletePhoto(old.id); if (r) return 'حُفظ اللاعب لكن تعذّر حذف الصورة: ' + r; }
+        return '';
+      }); };
 
   V.player = id => {
     if (!St.can('viewPlayers')) return denied('ملفات اللاعبين');
@@ -157,6 +167,28 @@
     return `<h1>الإحصائيات</h1>${scoped ? '<div class="note">تعرض هذه الصفحة إحصائيات اللاعبين في مبارياتك المكلّف بها فقط.</div>' : ''}${tw('جدول الإحصائيات', `<tr><th>اللاعب</th><th>مشاركات</th><th>أهداف</th><th>صفراء</th><th>حمراء</th></tr>${rows.map(({ p, s }) => `<tr><td>${esc(p.name)}${p.status === St.ARCH ? ' <small>(غير مسجّل)</small>' : ''}</td><td>${s.apps}</td><td>${s.goals}</td><td>${s.yellow}</td><td>${s.red}</td></tr>`).join('')}`)}<small>تُحسب تلقائيًا من أحداث المباريات المنتهية. الترتيب: الأهداف ثم المشاركات (تنازليًا) ثم الاسم أبجديًا؛ وعند تعادل الأهداف تُعرض لوحة التحكم جميع المتعادلين على الصدارة.</small>`;
   };
 
+
+  // ---- الصلاحيات والمستخدمون (للمؤسس فقط؛ الخادم يفرض ذلك أيضًا) ----
+  const isFounder = () => St.user().role === 'founder';
+  const ROLE_KEYS = ['admin', 'secretary', 'coach', 'officer', 'treasurer'];
+  V.roles = () => !isFounder() ? denied('الصلاحيات') : `<h1>الصلاحيات</h1><div class="note">المؤسس يملك كل الصلاحيات دائمًا. فعّل أو ألغِ الصلاحية لكل دور؛ يُسجَّل كل تغيير في سجل العمليات. دور «مسؤول المباراة» لا يحصل على صلاحيات الطاقم.</div><div id="rolebox"><p>جارٍ التحميل…</p></div>`;
+  const loadRoles = () => TD.getRoles().then(r => {
+    const b = $('#rolebox'); if (!b || route().page !== 'roles') return;
+    if (!r) { b.innerHTML = '<p>تعذّر تحميل الصلاحيات.</p>'; return; }
+    const head = ROLE_KEYS.map(k => `<th>${esc(St.ROLES[k])}</th>`).join('');
+    const rows = r.catalog.map(c => `<tr><td>${esc(c.label_ar)}<br><small dir="ltr">${esc(c.code)}</small></td>${ROLE_KEYS.map(k => {
+      const blocked = k === 'officer' && St.STAFF_MODS.includes(c.code), on = (r.matrix[k] || []).includes(c.code);
+      return `<td><input type="checkbox" data-rp="${esc(k)}|${esc(c.code)}" aria-label="${esc(c.label_ar)} — ${esc(St.ROLES[k])}" ${on ? 'checked' : ''} ${blocked ? 'disabled' : ''}></td>`; }).join('')}</tr>`).join('');
+    b.innerHTML = tw('جدول الصلاحيات', `<thead><tr><th>الصلاحية</th>${head}</tr></thead><tbody>${rows}</tbody>`);
+  });
+  V.users = () => !isFounder() ? denied('المستخدمون') : `<h1>المستخدمون</h1><div class="note">لإضافة مستخدم جديد: أنشئ حسابه (بريد وكلمة مرور) من لوحة Supabase → Authentication، ثم اربطه هنا بالبريد نفسه وبالدور المطلوب.</div><div class="card"><h2>ربط حساب بالفريق</h2><form id="uf">${fld('البريد الإلكتروني', 'email', '', 'email', 'required')}${fld('الاسم المعروض', 'name', '', 'text', 'required maxlength="60"')}${sel('الدور', 'role', ROLE_KEYS.map(k => [k, St.ROLES[k]]), 'coach')}<button>إضافة</button></form></div><div id="userbox"><p>جارٍ التحميل…</p></div>`;
+  const loadUsers = () => TD.getMembers().then(ms => {
+    const b = $('#userbox'); if (!b || route().page !== 'users') return;
+    if (!ms) { b.innerHTML = '<p>تعذّر تحميل المستخدمين.</p>'; return; }
+    const rows = ms.map(m => { const f = m.role === 'founder';
+      return `<tr><td>${esc(m.display_name)}</td><td>${f ? esc(St.ROLES.founder) : `<select data-ur="${esc(m.user_id)}" aria-label="دور ${esc(m.display_name)}">${ROLE_KEYS.map(k => `<option value="${k}" ${k === m.role ? 'selected' : ''}>${esc(St.ROLES[k])}</option>`).join('')}</select>`}</td><td><span class="tag ${m.active ? '' : 'bad'}">${m.active ? 'فعّال' : 'موقوف'}</span></td><td>${f ? '' : `<button type="button" class="sec" data-ua="${esc(m.user_id)}" data-to="${m.active ? '0' : '1'}">${m.active ? 'إيقاف' : 'تفعيل'}</button>`}</td></tr>`; }).join('');
+    b.innerHTML = tw('المستخدمون', `<thead><tr><th>الاسم</th><th>الدور</th><th>الحالة</th><th></th></tr></thead><tbody>${rows}</tbody>`);
+  });
   V.audit = () => !St.can('audit') ? denied('سجل العمليات') : `<h1>سجل العمليات</h1>${tw('سجل العمليات', `<tr><th>الوقت</th><th>المنفّذ</th><th>الدور</th><th>العملية</th><th>التفاصيل</th></tr>${St.logs().map(l => `<tr><td><bdi>${esc(l.t)}</bdi></td><td>${esc(l.who)}</td><td>${esc(St.ROLES[l.role])}</td><td>${esc(l.a)}</td><td>${esc(l.d)}</td></tr>`).join('')}`)}`;
   V.settings = () => { const t = St.team(), ed = St.can('settings'); return `<h1>إعدادات الفريق</h1><div class="card"><form id="tf">${fld('اسم الفريق', 'name', t.name, 'text', ed ? '' : 'disabled')}${fld('المدينة', 'city', t.city, 'text', ed ? '' : 'disabled')}${fld('اللون الرئيسي', 'color', t.color, 'color', ed ? '' : 'disabled')}${ed ? '<button>حفظ</button>' : '<small>عرض فقط</small>'}</form></div>`; };
   // إدارة الموقع العام: ما تفعّله هنا يظهر للزوار في الموقع؛ وما تُطفئه يختفي. لا هواتف ولا بريد ولا مدن في الموقع أبدًا (الخادم يرجع قائمة بيضاء فقط).
@@ -182,6 +214,8 @@
     v.innerHTML = (Object.prototype.hasOwnProperty.call(V, page) ? V[page] : V.dash)(id);  // لا نقرأ مفاتيح النموذج الأولي (constructor…)
     if (page === 'players' && St.can('viewPlayers')) drawPlayers();
     if (page === 'site') loadSite();
+    if (page === 'roles' && isFounder()) loadRoles();
+    if (page === 'users' && isFounder()) loadUsers();
   }
   const fail = async p => { const er = await p; if (er) { toast(er); render(); } return !!er; };
   St.on(render); window.addEventListener('hashchange', render);
@@ -197,6 +231,8 @@
     if (t.id === 'ses') { sesId = t.value; render(); }
     if (d.st) { const ids = [...v.querySelectorAll('[data-st]:checked')].map(x => x.dataset.st); if (ids.length > 11) { t.checked = false; return toast('الحد الأقصى 11 لاعبًا'); } fail(St.setStarters(ids)); }
     if (d.at) fail(St.setAtt(sesId, d.at, t.checked));
+    if (d.rp) { const [rl, pm] = d.rp.split('|'); fail(TD.setPerm(rl, pm, t.checked)); }
+    if (d.ur && confirm('تغيير دور هذا المستخدم؟')) fail(TD.setMemberRole(d.ur, t.value)); else if (d.ur) render();
     if (d.th || d.pl) { const id = d.th || d.pl, c = v.querySelector(`[data-m="${CSS.escape(id)}"]`); fail(St.setResult(id, +c.querySelector('[data-th]').value || 0, c.querySelector('[data-pl]').checked)); }
   });
   v.addEventListener('click', e => {
@@ -211,10 +247,12 @@
     if (d.dsp && confirm('حذف عضو الطاقم؟')) { fail(St.delStaff(d.dsp)).then(bad => { if (!bad) location.hash = '#/staff'; }); }
     if (id === 'addm') matchForm();
     if (d.em) matchForm(S.matches.find(x => x.id === d.em));
+    if (d.ua && confirm(d.to === '1' ? 'تفعيل هذا المستخدم؟' : 'إيقاف هذا المستخدم؟ لن يستطيع الدخول للوحة.')) fail(TD.setMemberActive(d.ua, d.to === '1'));
   });
   v.addEventListener('submit', e => {
     if (e.target.classList.contains('evf')) { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); fail(St.addEvent(e.target.dataset.mid, { pid: f.pid, type: f.type, min: +f.min || 1 })); }
     if (e.target.id === 'sf') { e.preventDefault(); const fd = new FormData(e.target), sec = {}; SEC.forEach(([k]) => { sec[k] = fd.has('sec_' + k); }); fail(TD.saveSite({ about: fd.get('about'), announcement: fd.get('announcement'), sections: sec })).then(bad => { if (!bad) toast(SAVED); }); }
+    if (e.target.id === 'uf') { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); fail(TD.addMemberByEmail(f.email.trim(), f.name.trim(), f.role)).then(bad => { if (!bad) toast(SAVED); }); }
     if (e.target.id === 'tf') { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); St.saveTeam({ name: f.name, city: f.city, color: f.color }).then(er => toast(er || SAVED)); }
   });
   render();

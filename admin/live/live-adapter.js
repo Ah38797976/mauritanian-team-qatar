@@ -38,6 +38,7 @@
   function assertUrl(u) { if (!/^https:\/\/[a-z0-9-]+\.supabase\.co\/?$/i.test(u || '')) throw new Error('عنوان المشروع غير صالح'); }  // [v2] https + supabase.co only
 
   let sb = null, chain = Promise.resolve();
+  let photoGen = 0;
   const cache = { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], lineup: [], sessions: [], att: {}, stats: [], logs: [], photos: [] };
   const subs = [], emit = () => subs.forEach(f => f());
   const reset = () => { Object.assign(cache, { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], lineup: [], sessions: [], att: {}, stats: [], logs: [], photos: [] }); };
@@ -94,6 +95,7 @@
       cache.att = {}; (at.data || []).forEach(a => { (cache.att[a.session_id] = cache.att[a.session_id] || {})[a.player_id] = a.present; });
       cache.logs = (lg.data || []).map(l => ({ t: l.created_at, who: l.actor_name, role: l.actor_role, a: l.action, d: l.detail }));
       cache.photos = ph.data || [];
+      AD._resolvePhotos();   // signed URLs are fetched after the first paint; avatars update on the next emit
       emit();
     },
     cache: () => cache,
@@ -117,6 +119,20 @@
     setPerm: (role, mod, v) => write('rpc_set_permission', { p_role: role, p_perm: mod, p_value: v }),
     saveTeam: t => write('rpc_save_team', { tm: t }),
     // ---- public-site settings (added for admin/live) ----
+    // ---- roles & users (founder only; reads rely on RLS, writes on SECURITY DEFINER RPCs) ----
+    async getRoles() {
+      const [c, r] = await Promise.all([sb.from('permission_catalog').select('code,label_ar').order('code'), sb.from('role_permissions').select('role,permission')]);
+      if (c.error || r.error) return null;
+      const matrix = {}; (r.data || []).forEach(x => { (matrix[x.role] = matrix[x.role] || []).push(x.permission); });
+      return { catalog: c.data || [], matrix };
+    },
+    async getMembers() {
+      const { data, error } = await sb.from('team_members').select('user_id,display_name,role,active').order('created_at');
+      return error ? null : (data || []);
+    },
+    setMemberRole: (uid, role) => write('rpc_set_member_role', { p_user: uid, p_role: role }),       // يتطلب 0008 (مراجعة)
+    setMemberActive: (uid, active) => write('rpc_set_member_active', { p_user: uid, p_active: active === true }),
+    addMemberByEmail: (email, name, role) => write('rpc_add_member_by_email', { p_email: email, p_name: name, p_role: role }),
     getSite: () => rpc('rpc_get_site'),
     saveSite: s => write('rpc_save_site', { s }),
     // ---- photos ----
@@ -136,7 +152,18 @@
       if (r === '') await sb.storage.from('player-photos').remove([ph.storage_path]);
       return r;
     },
-    async photoUrl(path) { const { data } = await sb.storage.from('player-photos').createSignedUrl(path, 300); return data ? data.signedUrl : ''; }
+    async photoUrl(path) { const { data } = await sb.storage.from('player-photos').createSignedUrl(path, 3600); return data ? data.signedUrl : ''; },
+    // primary photo row per player (server rows only); [] when the role may not read photos
+    primaryPhoto(playerId) { const l = cache.photos.filter(x => x.player_id === playerId); return l.find(x => x.is_primary) || l[0] || null; },
+    _resolvePhotos() {
+      const gen = ++photoGen, ids = [...new Set(cache.photos.map(x => x.player_id))];
+      Promise.all(ids.map(async id => { const r = AD.primaryPhoto(id); return [id, r ? await AD.photoUrl(r.storage_path) : '']; })).then(arr => {
+        if (gen !== photoGen) return;                                  // a newer refresh superseded this one
+        const u = new Map(arr.filter(x => x[1]));
+        [cache.players, cache.roster].forEach(l => l.forEach(p => { if (u.has(p.id)) p.photo = u.get(p.id); }));
+        emit();
+      }).catch(() => {});
+    }
   };
   window.TeamData = Object.freeze(AD);
 })();
