@@ -90,6 +90,13 @@
     },
     scorers: s => { const max = Math.max(1, ...s.rows.map(r => num(r.goals))); return s.rows.length ? `<div class="card lb">${s.rows.map((r, i) => `<div class="lb-r"><span class="rk">${i + 1}</span><div class="lbw"><span class="lav">${photo(r, r.name) || ini(r.name)}</span><div class="lbm"><div class="nm">${esc(r.name)}</div><div class="bar"><i style="width:${Math.round(num(r.goals) / max * 100)}%"></i></div></div></div><div class="goals">${num(r.goals)}<small>هدف · ${num(r.apps)} مشاركة</small></div></div>`).join('')}</div>` : '<p class="empty">لا أهداف بعد.</p>'; }
   };
+  // العدّ التنازلي بالأيام (التاريخ فقط بلا ساعة)، بحسب تاريخ اليوم في قطر
+  const untilLabel = d => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d)); if (!m) return 'قريبًا';
+    const t = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Qatar' }).split('-').map(Number);
+    const n = Math.round((Date.UTC(+m[1], +m[2] - 1, +m[3]) - Date.UTC(t[0], t[1] - 1, t[2])) / 864e5);
+    return n < 0 ? 'بانتظار تسجيل النتيجة' : n === 0 ? 'اليوم' : n === 1 ? 'غدًا' : n === 2 ? 'بعد يومين' : n <= 10 ? 'بعد ' + n + ' أيام' : 'بعد ' + n + ' يومًا';
+  };
   function hero(d, secs) {
     const get = k => secs.find(s => s.key === k), ms = get('matches'), sq = get('squad'), sc = get('scorers'), st = [];
     if (sq) st.push([sq.players.length, 'لاعبًا']);
@@ -97,7 +104,7 @@
     if (sc && sc.rows[0]) st.push([num(sc.rows[0].goals), 'أهداف الهداف']);
     $('#stats').innerHTML = st.map(([n, l]) => `<div class="stat"><b>${num(n)}</b><span>${esc(l)}</span></div>`).join('');
     const next = ms && ms.matches.filter(m => !m.played).sort((a, b) => String(a.date).localeCompare(String(b.date)))[0], h = $('#heroNext');
-    if (next) { const [A, B] = sides(next); h.innerHTML = `<div class="lbl"><span>المباراة القادمة</span><span class="pill">قريبًا</span></div><div class="vs"><span class="tm">${A}</span><span class="mid">×</span><span class="tm">${B}</span></div><div class="meta"><span>${longDate(next.date)}</span><span>${where(next)}</span></div>`; h.hidden = false; }
+    if (next) { const [A, B] = sides(next); h.innerHTML = `<div class="lbl"><span>المباراة القادمة</span><span class="pill">${esc(untilLabel(next.date))}</span></div><div class="vs"><span class="tm">${A}</span><span class="mid">×</span><span class="tm">${B}</span></div><div class="meta"><span>${longDate(next.date)}</span><span>${where(next)}</span></div>`; h.hidden = false; }
     else { h.innerHTML = ''; h.hidden = true; }
   }
   function draw(raw) {
