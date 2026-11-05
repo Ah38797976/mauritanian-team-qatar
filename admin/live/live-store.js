@@ -73,6 +73,8 @@
     addEvent: (mid, ev) => TD.addEvent(mid, ev),
     setResult: (mid, them, played) => TD.setResult(mid, them, played),
     setStarters: ids => TD.setStarters(ids),
+    saveSession: x => TD.saveSession(x),
+    delSession: id => TD.delSession(id),
     setAtt: (sid, pid, v) => TD.setAtt(sid, pid, v),
     saveTeam: t => TD.saveTeam(t)
   };

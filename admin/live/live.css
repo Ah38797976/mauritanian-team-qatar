@@ -54,3 +54,6 @@ small.hint{display:block;margin-top:-6px;margin-bottom:12px;color:var(--mut,#a9c
   .tools button{flex:1 1 100%;padding:12px 16px}
   main{padding-inline:14px}
 }
+
+#view h2,.card h2{color:var(--ink,#e8f2ec)}
+@media(max-width:600px){.tools.ses select{flex:1 1 100%}.tools.ses button{flex:1 1 calc(50% - 5px)}}

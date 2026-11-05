@@ -131,7 +131,9 @@
   };
   const staffForm = s => { const c = St.can('contactStaff'); s = s || { name: '', role: '', kind: 'فني', phone: '' }; modal(s.id ? 'تعديل عضو' : 'إضافة عضو', fld('الاسم', 'name', s.name) + fld('الدور', 'role', s.role) + sel('النوع', 'kind', St.KIND, s.kind) + (c ? fld('الهاتف', 'phone', s.phone) : ''), f => St.saveStaff({ id: s.id, name: f.name, role: f.role, kind: f.kind, ...(c ? { phone: f.phone } : {}) })); };
 
-  let sesId = 'x1';
+  let sesId = '';   // الحصة المختارة؛ تُحسم من الحصص الفعلية (أحدثها افتراضيًا) في curSes()
+  const curSes = () => { const l = S.sessions; if (l.some(x => x.id === sesId)) return sesId; const last = [...l].sort((a, b) => String(b.date).localeCompare(String(a.date)))[0]; return last ? last.id : ''; };
+  const sesForm = () => modal('إضافة حصة تدريب', fld('العنوان', 'title', 'تدريب') + fld('التاريخ', 'date', new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Qatar' }), 'date'), async f => { sesId = ''; return St.saveSession({ title: f.title, date: f.date }); });   // بعد الحفظ تُختار أحدث حصة
   // الملعب: التشكيلة الأساسية على أرض الملعب (الحارس في الأسفل والمهاجمون في الأعلى)، وكل لاعب بصورته ورقمه؛ الضغط عليه يفتح بطاقته
   const pitchHtml = () => {
     const st = S.lineup.starters.map(St.player).filter(Boolean), pl = p => `<a class="pp ${p.status === 'نشط' ? '' : 'off'}" href="#/player/${esc(p.id)}" aria-label="بطاقة ${esc(p.name)}">${avatar(p)}<b class="no">${num(p.num)}</b><span class="nm">${esc(p.name)}</span></a>`;
@@ -146,12 +148,12 @@
   V.coach = () => {
     if (!St.can('lineup') && !St.can('viewPlayers')) return denied('لوحة المدرب');
     const ed = St.can('lineup'), st = S.lineup.starters, g = pos => st.map(St.player).filter(p => p && p.pos === pos);
-    const ses = S.att[sesId] || {}, ros = St.roster(), activeN = S.players.filter(p => p.status === 'نشط').length;
+    const cs = curSes(), ses = S.att[cs] || {}, ros = St.roster(), activeN = S.players.filter(p => p.status === 'نشط').length;
     const incomplete = st.length < 11 ? `<div class="note" id="lnote">التشكيلة غير مكتملة (${st.length}/11)${activeN < 11 ? ` — عدد اللاعبين النشطين المتاحين ${activeN} فقط، لذلك لا يمكن إكمال 11 دون إضافة لاعب نشط أو تغيير حالة لاعب.` : ' — اختر لاعبين إضافيين.'}</div>` : '';
     return `<h1>لوحة المدرب</h1>${ed ? '' : '<div class="note">عرض فقط — لا تملك صلاحية التعديل.</div>'}
     <div class="card"><h2>التشكيلة الأساسية — <span id="sc">${st.length}</span>/11</h2>${incomplete}${pitchHtml()}
     ${ed ? `<h2 style="margin-top:12px">اختيار اللاعبين</h2><div class="row">${ros.map(p => `<label><input type="checkbox" data-st="${esc(p.id)}" ${st.includes(p.id) ? 'checked' : ''} ${p.status !== 'نشط' ? 'disabled' : ''}> ${esc(p.name)} (${esc(p.pos)})</label>`).join('')}</div>` : ''}</div>
-    <div class="card"><h2>الحضور</h2><select id="ses" aria-label="الحصة">${S.sessions.map(s => `<option value="${esc(s.id)}" ${s.id === sesId ? 'selected' : ''}>${esc(s.title)} — ${esc(s.date)}</option>`).join('')}</select>${tw('جدول الحضور', `<tr><th>اللاعب</th><th>حاضر</th></tr>${ros.map(p => `<tr><td>${esc(p.name)}</td><td><input type="checkbox" data-at="${esc(p.id)}" ${ses[p.id] ? 'checked' : ''} ${ed ? '' : 'disabled'} aria-label="حضور ${esc(p.name)}"></td></tr>`).join('')}`, 'att').replace('class="card tw"', 'class="tw"')}</div>`;
+    <div class="card"><h2>الحضور</h2>${S.sessions.length ? `<div class="tools ses"><select id="ses" aria-label="الحصة">${[...S.sessions].sort((x, y) => String(y.date).localeCompare(String(x.date))).map(x => `<option value="${esc(x.id)}" ${x.id === cs ? 'selected' : ''}>${esc(x.title)} — ${esc(x.date)}</option>`).join('')}</select>${ed ? '<button id="addses">+ حصة</button><button class="dng" id="delses">حذف الحصة</button>' : ''}</div>` : `<p class="empty">لا توجد حصص تدريب بعد.${ed ? ' أضف حصة لتسجيل الحضور.' : ''}</p>${ed ? '<div class="tools"><button id="addses">+ حصة تدريب</button></div>' : ''}`}${S.sessions.length ? tw('جدول الحضور', `<tr><th>اللاعب</th><th>حاضر</th></tr>${ros.map(p => `<tr><td>${esc(p.name)}</td><td><input type="checkbox" data-at="${esc(p.id)}" ${ses[p.id] ? 'checked' : ''} ${ed ? '' : 'disabled'} aria-label="حضور ${esc(p.name)}"></td></tr>`).join('')}`, 'att').replace('class="card tw"', 'class="tw"') : ''}</div>`;
   };
 
   V.finance = () => {
@@ -259,7 +261,7 @@
     if (t.id === 'fp' || t.id === 'fs') drawPlayers();
     if (t.id === 'ses') { sesId = t.value; render(); }
     if (d.st) { const ids = [...v.querySelectorAll('[data-st]:checked')].map(x => x.dataset.st); if (ids.length > 11) { t.checked = false; return toast('الحد الأقصى 11 لاعبًا'); } fail(St.setStarters(ids)); }
-    if (d.at) fail(St.setAtt(sesId, d.at, t.checked));
+    if (d.at) { const c = curSes(); if (!c) { t.checked = false; return toast('أضف حصة تدريب أولًا'); } fail(St.setAtt(c, d.at, t.checked)); }
     if (d.rp) { const [rl, pm] = d.rp.split('|'); fail(TD.setPerm(rl, pm, t.checked)); }
     if (d.ur && confirm('تغيير دور هذا المستخدم؟')) fail(TD.setMemberRole(d.ur, t.value)); else if (d.ur) render();
     if (d.th || d.pl) { const id = d.th || d.pl, c = v.querySelector(`[data-m="${CSS.escape(id)}"]`); fail(St.setResult(id, +c.querySelector('[data-th]').value || 0, c.querySelector('[data-pl]').checked)); }
@@ -270,6 +272,8 @@
     if (id === 'edp') playerForm(St.player(route().id));
     if (id === 'delp' && confirm('حذف هذا اللاعب؟')) { fail(St.delPlayer(route().id)).then(bad => { if (!bad) location.hash = '#/players'; }); }
     if (id === 'unregp' && confirm('إلغاء تسجيل هذا اللاعب؟ يبقى سجله التاريخي محفوظًا.')) { fail(St.unregisterPlayer(route().id)); }
+    if (id === 'addses') sesForm();
+    if (id === 'delses' && curSes() && confirm('حذف هذه الحصة وكل سجلات حضورها؟')) { fail(St.delSession(curSes())).then(bad => { if (!bad) { sesId = ''; toast('تم الحذف'); } }); }
     if (id === 'adds') staffForm();
     if (d.es) staffForm(St.staffList().find(x => x.id === d.es));
     if (d.ds && confirm('حذف عضو الطاقم؟')) fail(St.delStaff(d.ds));

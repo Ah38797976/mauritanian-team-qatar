@@ -116,6 +116,8 @@
     addEvent: (mid, ev) => write('rpc_add_event', { p_match: mid, ev }),
     setResult: (mid, them, played) => write('rpc_set_result', { p_match: mid, p_them: them, p_played: played }),
     setStarters: ids => write('rpc_set_starters', { p_ids: ids }),
+    saveSession: x => write('rpc_save_session', { s: x }),
+    delSession: id => write('rpc_delete_session', { p_id: id }),
     setAtt: (sid, pid, v) => write('rpc_set_attendance', { p_session: sid, p_player: pid, p_present: v === true }),
     setPerm: (role, mod, v) => write('rpc_set_permission', { p_role: role, p_perm: mod, p_value: v }),
     saveTeam: t => write('rpc_save_team', { tm: t }),
