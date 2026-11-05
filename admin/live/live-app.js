@@ -150,15 +150,16 @@
   const curSes = () => { const l = S.sessions; if (l.some(x => x.id === sesId)) return sesId; const last = [...l].sort((a, b) => String(b.date).localeCompare(String(a.date)))[0]; return last ? last.id : ''; };
   const sesForm = () => modal('إضافة حصة تدريب', fld('العنوان', 'title', 'تدريب') + fld('التاريخ', 'date', new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Qatar' }), 'date'), async f => { sesId = ''; return St.saveSession({ title: f.title, date: f.date }); });   // بعد الحفظ تُختار أحدث حصة
   // الملعب: التشكيلة الأساسية على أرض الملعب (الحارس في الأسفل والمهاجمون في الأعلى)، وكل لاعب بصورته ورقمه؛ الضغط عليه يفتح بطاقته
-  const pitchHtml = () => {
-    const st = S.lineup.starters.map(St.player).filter(Boolean), pl = p => `<a class="pp ${p.status === 'نشط' ? '' : 'off'}" href="#/player/${esc(p.id)}" aria-label="بطاقة ${esc(p.name)}">${avatar(p)}<b class="no">${num(p.num)}</b><span class="nm">${esc(p.name)}</span></a>`;
-    const lines = ['مهاجم', 'وسط', 'مدافع', 'حارس'].map(pos => `<div class="line">${st.filter(p => p.pos === pos).map(pl).join('')}</div>`).join('');
-    return `<div class="field" id="pitch"><i class="m-c"></i><i class="m-h"></i><i class="m-b t"></i><i class="m-b b"></i>${st.length ? lines : '<p class="empty">لم تُحدَّد تشكيلة أساسية بعد.</p>'}</div>`;
+  const pitchHtml = (ed) => {
+    const st = S.lineup.starters.map(St.player).filter(Boolean), pl = p => `<div class="ppw"><a class="pp ${p.status === 'نشط' ? '' : 'off'}" href="#/player/${esc(p.id)}" aria-label="بطاقة ${esc(p.name)}">${avatar(p)}<b class="no">${num(p.num)}</b><span class="nm">${esc(p.name)}</span></a>${ed ? `<button class="ppb rm" data-rs="${esc(p.id)}" aria-label="إخراج ${esc(p.name)} من التشكيلة">×</button>` : ''}</div>`;
+    const lines = [['مهاجم', 'خط الهجوم'], ['وسط', 'خط الوسط'], ['مدافع', 'خط الدفاع'], ['حارس', 'حارس المرمى']].map(([pos, lab]) => { const l = st.filter(p => p.pos === pos); return `<div class="line" data-line="${esc(pos)}"><span class="ln">${lab}</span>${l.length ? l.map(pl).join('') : '<span class="slot" aria-hidden="true">—</span>'}</div>`; }).join('');
+    return `<div class="field" id="pitch"><i class="m-c"></i><i class="m-h"></i><i class="m-b t"></i><i class="m-b b"></i>${lines}${st.length ? '' : '<p class="empty fe">لم تُحدَّد تشكيلة أساسية بعد.</p>'}</div>`;
   };
-  const benchHtml = () => { const ids = new Set(S.lineup.starters), b = St.roster().filter(p => !ids.has(p.id)); return b.length ? `<h2 style="margin-top:14px">الاحتياط</h2><div class="bench">${b.map(p => `<a class="pp sm ${p.status === 'نشط' ? '' : 'off'}" href="#/player/${esc(p.id)}" aria-label="بطاقة ${esc(p.name)}">${avatar(p)}<b class="no">${num(p.num)}</b><span class="nm">${esc(p.name)}</span></a>`).join('')}</div>` : ''; };
+  const benchHtml = (ed) => { const ids = new Set(S.lineup.starters), b = St.roster().filter(p => !ids.has(p.id)), full = ids.size >= 11; return b.length ? `<h2 style="margin-top:14px">الاحتياط <span class="tag">${b.length}</span></h2><div class="bench">${b.map(p => `<div class="ppw"><a class="pp sm ${p.status === 'نشط' ? '' : 'off'}" href="#/player/${esc(p.id)}" aria-label="بطاقة ${esc(p.name)}">${avatar(p)}<b class="no">${num(p.num)}</b><span class="nm">${esc(p.name)}</span></a>${ed && p.status === 'نشط' && !full ? `<button class="ppb add" data-as="${esc(p.id)}" aria-label="إضافة ${esc(p.name)} للتشكيلة">+</button>` : ''}</div>`).join('')}</div>` : ''; };
   V.pitch = () => {
     if (!St.canSeeRoster()) return denied('الملعب');
-    return `<h1>الملعب</h1><div class="note">اضغط على أي لاعب لفتح بطاقته الكاملة. التشكيلة تُعدَّل من «التشكيلة والحضور».</div><div class="card">${pitchHtml()}${benchHtml()}</div>`;
+    const ed = St.can('lineup');
+    return `<h1>الملعب</h1><div class="note">${ed ? `اضغط «+» على لاعب الاحتياط لإضافته إلى الملعب في مركزه، و«×» لإخراجه. (${S.lineup.starters.length}/11)` : 'اضغط على أي لاعب لفتح بطاقته الكاملة.'}</div><div class="card">${pitchHtml(ed)}${benchHtml(ed)}</div>`;
   };
   V.coach = () => {
     if (!St.can('lineup') && !St.can('viewPlayers')) return denied('لوحة المدرب');
@@ -308,6 +309,8 @@
   });
   v.addEventListener('click', e => {
     const t = e.target, d = t.dataset, id = t.id;
+    if (d.as) { const ids = S.lineup.starters; if (ids.length >= 11) return toast('الحد الأقصى 11 لاعبًا'); fail(St.setStarters([...ids, d.as])); }
+    if (d.rs) fail(St.setStarters(S.lineup.starters.filter(x => x !== d.rs)));
     if (id === 'addp') playerForm();
     if (id === 'edp') playerForm(St.player(route().id));
     if (id === 'delp' && confirm('حذف هذا اللاعب؟')) { fail(St.delPlayer(route().id)).then(bad => { if (!bad) location.hash = '#/players'; }); }

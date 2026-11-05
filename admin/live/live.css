@@ -95,3 +95,15 @@ dialog#modal .mact{position:sticky;bottom:0;display:flex;gap:10px;padding:12px 0
 dialog#modal .mact button{flex:1;min-height:46px}
 dialog#modal .hint{color:var(--mut,#a9c4b5)}
 .pp .av{display:grid;place-items:center;font-weight:800}
+
+/* ---- الملعب: خطوط مرتبة حسب المركز + إضافة/إخراج مباشر ---- */
+.field{grid-template-rows:repeat(4,1fr);align-content:stretch;gap:0;min-height:560px;padding:14px 8px}
+.field .line{align-items:center;flex-wrap:wrap;row-gap:6px}
+.field .line .ln{position:absolute;inset-inline-start:8px;top:2px;font-size:.68rem;color:rgba(255,255,255,.65);font-weight:700;pointer-events:none}
+.field .slot{color:rgba(255,255,255,.35);font-size:1.4rem}
+.field .fe{position:absolute;inset:0;margin:auto;height:fit-content;width:max-content;max-width:86%;z-index:2;background:rgba(6,18,12,.78);color:#fff;padding:10px 16px;border-radius:12px;text-align:center}
+.ppw{position:relative;display:flex}
+.ppb{position:absolute;top:-6px;inset-inline-end:-6px;width:28px;height:28px;min-height:0;padding:0;border-radius:50%;font-size:1.15rem;line-height:1;display:grid;place-items:center;z-index:3;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.ppb.add{background:var(--gold,#d4af4f);border-color:var(--gold,#d4af4f);color:#2b2000}
+.ppb.rm{background:#b83a2e;border-color:#b83a2e;color:#fff}
+.bench .ppw{padding:4px}
