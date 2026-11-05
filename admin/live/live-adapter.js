@@ -39,9 +39,10 @@
 
   let sb = null, chain = Promise.resolve();
   let photoGen = 0;
+  const urlCache = new Map();   // storage_path -> { url, exp } ; الروابط موقّعة لساعة، نعيد استعمالها حتى قبل انتهائها بخمس دقائق
   const cache = { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], lineup: [], sessions: [], att: {}, stats: [], logs: [], photos: [] };
   const subs = [], emit = () => subs.forEach(f => f());
-  const reset = () => { Object.assign(cache, { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], lineup: [], sessions: [], att: {}, stats: [], logs: [], photos: [] }); };
+  const reset = () => { urlCache.clear(); Object.assign(cache, { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], lineup: [], sessions: [], att: {}, stats: [], logs: [], photos: [] }); };
 
   const rpc = async (name, args) => {
     try { const { data, error } = await sb.rpc(name, args || {}); if (error) return error.code === '42501' ? DENY : NET; return data; }
@@ -155,13 +156,19 @@
     async photoUrl(path) { const { data } = await sb.storage.from('player-photos').createSignedUrl(path, 3600); return data ? data.signedUrl : ''; },
     // primary photo row per player (server rows only); [] when the role may not read photos
     primaryPhoto(playerId) { const l = cache.photos.filter(x => x.player_id === playerId); return l.find(x => x.is_primary) || l[0] || null; },
+    _applyPhotos() {
+      const now = Date.now(), byPlayer = new Map();
+      cache.photos.forEach(x => { const c = urlCache.get(x.storage_path); if (!c || c.exp < now) return; const cur = byPlayer.get(x.player_id); if (!cur || x.is_primary) byPlayer.set(x.player_id, c.url); });
+      [cache.players, cache.roster].forEach(l => l.forEach(p => { if (byPlayer.has(p.id)) p.photo = byPlayer.get(p.id); }));
+    },
     _resolvePhotos() {
-      const gen = ++photoGen, ids = [...new Set(cache.photos.map(x => x.player_id))];
-      Promise.all(ids.map(async id => { const r = AD.primaryPhoto(id); return [id, r ? await AD.photoUrl(r.storage_path) : '']; })).then(arr => {
-        if (gen !== photoGen) return;                                  // a newer refresh superseded this one
-        const u = new Map(arr.filter(x => x[1]));
-        [cache.players, cache.roster].forEach(l => l.forEach(p => { if (u.has(p.id)) p.photo = u.get(p.id); }));
-        emit();
+      AD._applyPhotos();                                                  // فورًا من الذاكرة: لا وميض
+      const gen = ++photoGen, now = Date.now(), ids = [...new Set(cache.photos.map(x => x.player_id))];
+      const need = ids.map(id => AD.primaryPhoto(id)).filter(r => r && !(urlCache.get(r.storage_path) && urlCache.get(r.storage_path).exp - 300000 > now));
+      if (!need.length) return;
+      Promise.all(need.map(async r => { const u = await AD.photoUrl(r.storage_path); if (u) urlCache.set(r.storage_path, { url: u, exp: Date.now() + 3600000 }); })).then(() => {
+        if (gen !== photoGen) return;                                      // تحديث أحدث حلّ محلّه
+        AD._applyPhotos(); emit();
       }).catch(() => {});
     }
   };

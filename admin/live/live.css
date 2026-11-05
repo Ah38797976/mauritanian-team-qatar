@@ -36,3 +36,21 @@ th{background:var(--card,#0b1d14);color:var(--mut,#a9c4b5)}
 .lg[hidden],.lg-day[hidden]{display:none}
 
 #view h1{color:var(--ink,#e8f2ec);opacity:1}
+
+/* ---- تحسينات اللوحة (جوال + داكن) ---- */
+.ic-pitch{--i:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22black%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Crect x=%223%22 y=%225%22 width=%2218%22 height=%2214%22 rx=%221.5%22/%3E%3Cpath d=%22M12 5v14M3 9.5h3v5H3M21 9.5h-3v5h3%22/%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%222.5%22/%3E%3C/svg%3E")}
+.note{background:color-mix(in srgb,var(--gold,#c9a24a) 14%,transparent);border-color:color-mix(in srgb,var(--gold,#c9a24a) 40%,transparent);color:var(--ink,#e8f2ec);line-height:1.7}
+small.hint{display:block;margin-top:-6px;margin-bottom:12px;color:var(--mut,#a9c4b5);font-size:.8rem}
+.tools input[type=search]{flex:2 1 220px;min-width:0}
+.tools select{flex:1 1 140px;min-width:0}
+.tools button{flex:0 0 auto}
+@media(max-width:960px){
+  .side{height:100dvh}
+  #nav{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+}
+@media(max-width:600px){
+  .tools input[type=search]{flex:1 1 100%}
+  .tools select{flex:1 1 calc(50% - 5px)}
+  .tools button{flex:1 1 100%;padding:12px 16px}
+  main{padding-inline:14px}
+}

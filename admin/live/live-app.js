@@ -219,7 +219,7 @@
     document.querySelectorAll('.lg').forEach(li => { const ok = (!a || li.dataset.a === a) && (!q || li.dataset.q.includes(q)); li.hidden = !ok; if (ok) n++; });
     document.querySelectorAll('.lg-day').forEach(d => { d.hidden = !d.querySelector('.lg:not([hidden])'); });
     $('#lgn').textContent = n + ' عملية'; $('#lg0').hidden = n > 0; });
-  V.settings = () => { const t = St.team(), ed = St.can('settings'); return `<h1>إعدادات الفريق</h1><div class="card"><form id="tf">${fld('اسم الفريق', 'name', t.name, 'text', ed ? '' : 'disabled')}${fld('المدينة', 'city', t.city, 'text', ed ? '' : 'disabled')}${fld('اللون الرئيسي', 'color', t.color, 'color', ed ? '' : 'disabled')}${ed ? '<button>حفظ</button>' : '<small>عرض فقط</small>'}</form></div>`; };
+  V.settings = () => { const t = St.team(), ed = St.can('settings'); return `<h1>إعدادات الفريق</h1><div class="card"><form id="tf">${fld('اسم الفريق', 'name', t.name, 'text', ed ? '' : 'disabled')}${fld('المدينة', 'city', t.city, 'text', ed ? '' : 'disabled')}${fld('اللون الرئيسي', 'color', t.color, 'color', ed ? '' : 'disabled')}<small class="hint">يظهر هذا اللون في الموقع العام فقط، ولا يغيّر ألوان لوحة الإدارة.</small>${ed ? '<button>حفظ</button>' : '<small>عرض فقط</small>'}</form></div>`; };
   // إدارة الموقع العام: ما تفعّله هنا يظهر للزوار في الموقع؛ وما تُطفئه يختفي. لا هواتف ولا بريد ولا مدن في الموقع أبدًا (الخادم يرجع قائمة بيضاء فقط).
   const SEC = [['players', 'اللاعبون', 'الاسم والرقم والمركز فقط'], ['staff', 'الطاقم', 'الاسم والدور فقط'], ['matches', 'المباريات والنتائج', 'الخصم والتاريخ والنتيجة'], ['stats', 'الهدافون', 'الاسم والأهداف والمشاركات'], ['photos', 'صور اللاعبين', 'تظهر صورة كل لاعب في الملعب وبطاقته؛ الصور المرفوعة تصبح قابلة للفتح برابطها العام']];
   V.site = () => { if (!isPanelUser() || !St.can('settings')) return denied('إدارة الموقع العام'); return `<h1>إدارة الموقع العام</h1><div class="note">يظهر في الموقع ما تفعّله هنا فقط. كل الأقسام مطفأة افتراضيًا. لا يُنشر في الموقع أي هاتف أو بريد أو مدينة لأي لاعب أو عضو.</div><div class="card" id="sitebox"><p>جارٍ التحميل…</p></div>`; };
@@ -236,7 +236,7 @@
     let { page, id } = route(); const v = $('#view');
     // أدوار التطبيق لا ترى «لوحة التحكم» إطلاقًا: الصفحة الرئيسية ومسار غير معروف يحوّلان إلى شاشتها في التطبيق
     if (!isPanelUser() && (page === 'dash' || !Object.prototype.hasOwnProperty.call(V, page))) { page = St.user().role === 'coach' ? 'coach' : 'matches'; history.replaceState(null, '', '#/' + page); id = undefined; }
-    document.documentElement.style.setProperty('--p', safeColor(St.team().color));
+    // لون أزرار اللوحة ثابت (هوية الفريق)؛ «لون الفريق» من الإعدادات يخصّ الموقع العام فقط
     $('#teamName').textContent = St.team().name;
     $('#nav').innerHTML = navFor(page); $('#crumb').textContent = TITLES[Object.prototype.hasOwnProperty.call(V, page) ? page : 'dash'] || ''; document.body.classList.remove('menu-open'); $('#menuBtn').setAttribute('aria-expanded', 'false');
     $('#whoName').textContent = (St.user().name || '') + ' — ' + (St.ROLES[St.user().role] || '');
