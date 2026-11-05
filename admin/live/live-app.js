@@ -59,7 +59,7 @@
   V.dash = () => {
     // الرؤية الكاملة لمن يملك صلاحية اللاعبين/التشكيلة؛ غيره (مثل مسؤول المباراة) يرى نطاق تكليفه فقط
     if (!St.canSeeRoster() && St.can('finance') && !St.canViewMatches()) {
-      return `<h1>لوحة التحكم</h1><div class="note">لا توجد وحدة مالية في هذا النموذج بعد. صلاحيات هذا الدور جاهزة ومحدودة لتُربط لاحقًا بعد الموافقة.</div><div class="card"><h2>المالية</h2><a href="#/finance">فتح صفحة المالية (الأسماء فقط)</a></div>`;
+      return `<h1>لوحة التحكم</h1><div class="card"><h2>المالية</h2><p>سجل المصروفات والإيرادات ورصيد الفريق.</p><a class="btnlink" href="#/finance">فتح صفحة المالية</a></div>`;
     }
     if (!St.canSeeRoster()) {
       const ms = St.visibleMatches(), next = ms.filter(m => !m.played).sort((a, b) => a.date.localeCompare(b.date))[0];
@@ -156,10 +156,32 @@
     <div class="card"><h2>الحضور</h2>${S.sessions.length ? `<div class="tools ses"><select id="ses" aria-label="الحصة">${[...S.sessions].sort((x, y) => String(y.date).localeCompare(String(x.date))).map(x => `<option value="${esc(x.id)}" ${x.id === cs ? 'selected' : ''}>${esc(x.title)} — ${esc(x.date)}</option>`).join('')}</select>${ed ? '<button id="addses">+ حصة</button><button class="dng" id="delses">حذف الحصة</button>' : ''}</div>` : `<p class="empty">لا توجد حصص تدريب بعد.${ed ? ' أضف حصة لتسجيل الحضور.' : ''}</p>${ed ? '<div class="tools"><button id="addses">+ حصة تدريب</button></div>' : ''}`}${S.sessions.length ? tw('جدول الحضور', `<tr><th>اللاعب</th><th>حاضر</th></tr>${ros.map(p => `<tr><td>${esc(p.name)}</td><td><input type="checkbox" data-at="${esc(p.id)}" ${ses[p.id] ? 'checked' : ''} ${ed ? '' : 'disabled'} aria-label="حضور ${esc(p.name)}"></td></tr>`).join('')}`, 'att').replace('class="card tw"', 'class="tw"') : ''}</div>`;
   };
 
+  // ---- المالية: سجل مصروفات وإيرادات (الأمين المالي والمؤسس فقط؛ الخادم يفرض الصلاحية). لا أسماء لاعبين هنا.
+  let FIN = null, finM = '', finT = '', finQ = '';
+  const money = n => Number(n || 0).toLocaleString('ar-u-nu-latn', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ر.ق';
+  const monthKey = d => String(d).slice(0, 7);
+  const monthName = k => new Date(k + '-01T00:00:00').toLocaleDateString('ar-u-nu-latn', { month: 'long', year: 'numeric' });
+  const FCATS = ['اشتراكات', 'تبرعات', 'رعاية', 'رسوم ملعب', 'معدات وملابس', 'مواصلات', 'مباريات وبطولات', 'أخرى'];
+  const finHtml = r => {
+    if (!r) return '<p class="empty">تعذّر تحميل البيانات المالية أو لا تملك الصلاحية.</p>';
+    const all = r.entries || [], months = [...new Set(all.map(e => monthKey(e.date)))];
+    const inM = all.filter(e => !finM || monthKey(e.date) === finM);
+    const inc = finM ? inM.filter(e => e.kind === 'income').reduce((a, e) => a + Number(e.amount), 0) : Number(r.income), exp = finM ? inM.filter(e => e.kind === 'expense').reduce((a, e) => a + Number(e.amount), 0) : Number(r.expense), bal = inc - exp;
+    const q = finQ.trim().toLowerCase(), list = inM.filter(e => (!finT || e.kind === finT) && (!q || (e.category + ' ' + e.note).toLowerCase().includes(q)));
+    return `<div class="fin-sum"><div class="card fs inc"><span>الإيرادات</span><b>${esc(money(inc))}</b></div><div class="card fs exp"><span>المصروفات</span><b>${esc(money(exp))}</b></div><div class="card fs bal ${bal < 0 ? 'neg' : ''}"><span>الرصيد</span><b dir="ltr">${esc(money(bal))}</b></div></div>
+      <div class="tools"><button id="addinc">+ إيراد</button><button class="sec" id="addexp">+ مصروف</button></div>
+      <div class="card lg-bar"><select id="finm" aria-label="الفترة"><option value="">كل الفترة</option>${months.map(k => `<option value="${esc(k)}" ${k === finM ? 'selected' : ''}>${esc(monthName(k))}</option>`).join('')}</select><select id="fint" aria-label="النوع"><option value="">الكل</option><option value="income" ${finT === 'income' ? 'selected' : ''}>إيرادات</option><option value="expense" ${finT === 'expense' ? 'selected' : ''}>مصروفات</option></select><input id="finq" type="search" placeholder="بحث في التصنيف والملاحظة" value="${esc(finQ)}" aria-label="بحث"></div>
+      ${list.length ? `<ul class="card lg-list">${list.map(e => `<li class="lg fe ${e.kind}"><div class="lg-top"><b class="lg-a">${esc(e.category || (e.kind === 'income' ? 'إيراد' : 'مصروف'))}</b><span class="fe-amt"><bdi>${e.kind === 'income' ? '+' : '−'} ${esc(money(e.amount))}</bdi></span></div>${e.note ? `<div class="lg-d">${esc(e.note)}</div>` : ''}<div class="lg-by"><time datetime="${esc(e.date)}">${esc(new Date(e.date + 'T00:00:00').toLocaleDateString('ar-u-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' }))}</time><span class="lg-r">${e.kind === 'income' ? 'إيراد' : 'مصروف'}</span><span class="fe-acts"><button class="sec sm" data-fe="${esc(e.id)}">تعديل</button><button class="dng sm" data-fd="${esc(e.id)}">حذف</button></span></div></li>`).join('')}</ul>` : `<div class="card"><p class="empty">${all.length ? 'لا نتائج مطابقة.' : 'لا توجد معاملات بعد. أضف أول إيراد أو مصروف.'}</p></div>`}`;
+  };
+  const drawFin = () => { const b = $('#finbox'); if (b && route().page === 'finance') b.innerHTML = finHtml(FIN); };
+  const loadFin = () => TD.getFinance().then(r => { FIN = r && typeof r === 'object' ? r : null; drawFin(); });
+  const normAmt = v => String(v || '').replace(/[٠-٩]/g, c => '٠١٢٣٤٥٦٧٨٩'.indexOf(c)).replace(/[٫,،]/g, '.').replace(/\s/g, '');
+  const finForm = (kind, e) => { e = e || { kind, amount: '', date: new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Qatar' }), category: '', note: '' };
+    modal(e.id ? 'تعديل معاملة' : (e.kind === 'income' ? 'إضافة إيراد' : 'إضافة مصروف'), sel('النوع', 'kind', [['income', 'إيراد'], ['expense', 'مصروف']], e.kind) + fld('المبلغ (ر.ق)', 'amount', e.amount, 'text', 'inputmode="decimal" required placeholder="0.00"') + fld('التاريخ', 'date', e.date, 'date', 'required') + fld('التصنيف', 'category', e.category, 'text', 'maxlength="40" list="fcats"') + `<datalist id="fcats">${FCATS.map(c => `<option value="${esc(c)}">`).join('')}</datalist>` + fld('ملاحظة (اختيارية)', 'note', e.note, 'text', 'maxlength="200"'),
+      f => St.saveFinance({ ...(e.id ? { id: e.id } : {}), kind: f.kind, amount: normAmt(f.amount), date: f.date, category: f.category, note: f.note })); };
   V.finance = () => {
     if (!St.can('finance')) return denied('المالية');
-    const ps = St.roster();
-    return `<h1>المالية</h1><div class="note" id="fnote">لا توجد وحدة مالية في هذا النموذج بعد (لا اشتراكات ولا مبالغ). يعرض هذا الدور أسماء اللاعبين فقط، بلا هاتف أو بريد أو إحصاءات أو مباريات.</div><div class="card"><h2>اللاعبون (الأسماء فقط) — ${ps.length}</h2><ul id="fnames">${ps.map(p => `<li>${esc(p.name)}</li>`).join('')}</ul></div>`;
+    return `<h1>المالية</h1><div id="finbox">${FIN ? finHtml(FIN) : '<p class="empty">جارٍ التحميل…</p>'}</div>`;
   };
   V.matches = () => { if (!St.canViewMatches()) return denied('المباريات'); const ms = St.visibleMatches(), scoped = !St.canSeeRoster() && !St.can('matches');
     return `<h1>المباريات والنتائج</h1>${scoped ? '<div class="note">تظهر هنا المباريات المكلّف بها فقط.</div>' : ''}<div class="tools">${St.can('matches') && mg() ? '<button id="addm">+ مباراة</button>' : ''}</div>${[...ms].sort((a, b) => b.date.localeCompare(a.date)).map(m => {
@@ -245,6 +267,7 @@
     v.innerHTML = (Object.prototype.hasOwnProperty.call(V, page) ? V[page] : V.dash)(id);  // لا نقرأ مفاتيح النموذج الأولي (constructor…)
     if (page === 'players' && St.can('viewPlayers')) drawPlayers();
     if (page === 'site') loadSite();
+    if (page === 'finance' && St.can('finance')) loadFin();
     if (page === 'roles' && isFounder()) loadRoles();
     if (page === 'users' && isFounder()) loadUsers();
   }
@@ -255,11 +278,13 @@
   $('#scrim').onclick = () => setMenu(false);
   document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
   const v = $('#view');
-  v.addEventListener('input', e => { if (['q'].includes(e.target.id)) drawPlayers(); });
+  v.addEventListener('input', e => { if (['q'].includes(e.target.id)) drawPlayers(); if (e.target.id === 'finq') { finQ = e.target.value; const pos = e.target.selectionStart; drawFin(); const n = $('#finq'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (_) {} } } });
   v.addEventListener('change', e => {
     const t = e.target, d = t.dataset;
     if (t.id === 'fp' || t.id === 'fs') drawPlayers();
     if (t.id === 'ses') { sesId = t.value; render(); }
+    if (t.id === 'finm') { finM = t.value; drawFin(); }
+    if (t.id === 'fint') { finT = t.value; drawFin(); }
     if (d.st) { const ids = [...v.querySelectorAll('[data-st]:checked')].map(x => x.dataset.st); if (ids.length > 11) { t.checked = false; return toast('الحد الأقصى 11 لاعبًا'); } fail(St.setStarters(ids)); }
     if (d.at) { const c = curSes(); if (!c) { t.checked = false; return toast('أضف حصة تدريب أولًا'); } fail(St.setAtt(c, d.at, t.checked)); }
     if (d.rp) { const [rl, pm] = d.rp.split('|'); fail(TD.setPerm(rl, pm, t.checked)); }
@@ -272,6 +297,10 @@
     if (id === 'edp') playerForm(St.player(route().id));
     if (id === 'delp' && confirm('حذف هذا اللاعب؟')) { fail(St.delPlayer(route().id)).then(bad => { if (!bad) location.hash = '#/players'; }); }
     if (id === 'unregp' && confirm('إلغاء تسجيل هذا اللاعب؟ يبقى سجله التاريخي محفوظًا.')) { fail(St.unregisterPlayer(route().id)); }
+    if (id === 'addinc') finForm('income');
+    if (id === 'addexp') finForm('expense');
+    if (d.fe && FIN) finForm(null, (FIN.entries || []).find(x => x.id === d.fe));
+    if (d.fd && confirm('حذف هذه المعاملة؟')) fail(St.delFinance(d.fd)).then(bad => { if (!bad) toast('تم الحذف'); });
     if (id === 'addses') sesForm();
     if (id === 'delses' && curSes() && confirm('حذف هذه الحصة وكل سجلات حضورها؟')) { fail(St.delSession(curSes())).then(bad => { if (!bad) { sesId = ''; toast('تم الحذف'); } }); }
     if (id === 'adds') staffForm();

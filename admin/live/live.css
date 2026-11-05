@@ -57,3 +57,14 @@ small.hint{display:block;margin-top:-6px;margin-bottom:12px;color:var(--mut,#a9c
 
 #view h2,.card h2{color:var(--ink,#e8f2ec)}
 @media(max-width:600px){.tools.ses select{flex:1 1 100%}.tools.ses button{flex:1 1 calc(50% - 5px)}}
+
+/* ---- المالية ---- */
+.fin-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+.fs{padding:12px 14px;display:grid;gap:4px;margin:0}
+.fs span{font-size:.82rem;color:var(--mut,#a9c4b5)}
+.fs b{font-size:1.05rem;overflow-wrap:anywhere}
+.fs.inc b{color:#5fd08c}.fs.exp b{color:#f0a08a}.fs.bal b{color:var(--gold,#e6c15a)}.fs.bal.neg b{color:#f08a8a}
+.fe-amt{font-weight:800;white-space:nowrap}.fe.income .fe-amt{color:#5fd08c}.fe.expense .fe-amt{color:#f0a08a}
+.fe-acts{margin-inline-start:auto;display:flex;gap:6px}
+button.sm{padding:4px 12px;font-size:.8rem;border-radius:8px}
+@media(max-width:600px){.fin-sum{grid-template-columns:1fr}.fs{grid-template-columns:1fr auto;align-items:center}}

@@ -137,6 +137,9 @@
     setMemberActive: (uid, active) => write('rpc_set_member_active', { p_user: uid, p_active: active === true }),
     addMemberByEmail: (email, name, role) => write('rpc_add_member_by_email', { p_email: email, p_name: name, p_role: role }),
     getSite: () => rpc('rpc_get_site'),
+    getFinance: () => rpc('rpc_get_finance'),
+    saveFinance: e => write('rpc_save_finance', { e }),
+    delFinance: id => write('rpc_delete_finance', { p_id: id }),
     saveSite: s => write('rpc_save_site', { s }),
     // ---- photos ----
     async uploadPhoto(playerId, file, primary) {
