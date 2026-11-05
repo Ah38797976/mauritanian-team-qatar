@@ -198,7 +198,27 @@
       return `<tr><td>${esc(m.display_name)}</td><td>${f ? esc(St.ROLES.founder) : `<select data-ur="${esc(m.user_id)}" aria-label="دور ${esc(m.display_name)}">${ROLE_KEYS.map(k => `<option value="${k}" ${k === m.role ? 'selected' : ''}>${esc(St.ROLES[k])}</option>`).join('')}</select>`}</td><td><span class="tag ${m.active ? '' : 'bad'}">${m.active ? 'فعّال' : 'موقوف'}</span></td><td>${f ? '' : `<button type="button" class="sec" data-ua="${esc(m.user_id)}" data-to="${m.active ? '0' : '1'}">${m.active ? 'إيقاف' : 'تفعيل'}</button>`}</td></tr>`; }).join('');
     b.innerHTML = tw('المستخدمون', `<thead><tr><th>الاسم</th><th>الدور</th><th>الحالة</th><th></th></tr></thead><tbody>${rows}</tbody>`);
   });
-  V.audit = () => !St.can('audit') ? denied('سجل العمليات') : `<h1>سجل العمليات</h1>${tw('سجل العمليات', `<tr><th>الوقت</th><th>المنفّذ</th><th>الدور</th><th>العملية</th><th>التفاصيل</th></tr>${St.logs().map(l => `<tr><td><bdi>${esc(l.t)}</bdi></td><td>${esc(l.who)}</td><td>${esc(St.ROLES[l.role])}</td><td>${esc(l.a)}</td><td>${esc(l.d)}</td></tr>`).join('')}`)}`;
+  // سجل العمليات: بطاقات مجمّعة حسب اليوم (بتوقيت قطر) مع بحث وتصفية بنوع العملية
+  const QD = { timeZone: 'Asia/Qatar' };
+  const dayKey = d => d.toLocaleDateString('en-CA', QD);
+  const dayLabel = d => { const k = dayKey(d), t = dayKey(new Date()), y = dayKey(new Date(Date.now() - 864e5)); return k === t ? 'اليوم' : k === y ? 'أمس' : d.toLocaleDateString('ar-u-nu-latn', { ...QD, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); };
+  const timeLabel = d => d.toLocaleTimeString('ar-u-nu-latn', { ...QD, hour: 'numeric', minute: '2-digit' });
+  const logItem = (l, d) => { const role = St.ROLES[l.role] || '', det = String(l.d || '').trim();
+    return `<li class="lg" data-a="${esc(l.a)}" data-q="${esc([l.a, l.d, l.who, role].join(' ').toLowerCase())}"><div class="lg-top"><b class="lg-a">${esc(l.a)}</b><time class="lg-t" datetime="${esc(d.toISOString())}">${esc(timeLabel(d))}</time></div>${det ? `<div class="lg-d">${esc(det)}</div>` : ''}<div class="lg-by"><span>${esc(l.who || '—')}</span>${role ? `<span class="lg-r">${esc(role)}</span>` : ''}</div></li>`; };
+  V.audit = () => {
+    if (!St.can('audit')) return denied('سجل العمليات');
+    const rows = St.logs().map(l => ({ l, d: new Date(l.t) })).filter(x => !isNaN(x.d)).sort((a, b) => b.d - a.d);
+    if (!rows.length) return '<h1>سجل العمليات</h1><div class="card"><p class="empty">لا توجد عمليات مسجّلة بعد.</p></div>';
+    const acts = [...new Set(rows.map(x => x.l.a))].sort((a, b) => a.localeCompare(b, 'ar'));
+    const groups = []; rows.forEach(x => { const k = dayKey(x.d), g = groups[groups.length - 1]; if (g && g.k === k) g.items.push(x); else groups.push({ k, label: dayLabel(x.d), items: [x] }); });
+    return `<h1>سجل العمليات</h1><div class="card lg-bar"><input id="lgq" type="search" placeholder="ابحث: اسم، عملية، تفاصيل…" aria-label="بحث في السجل"><select id="lga" aria-label="نوع العملية"><option value="">كل العمليات</option>${acts.map(a => `<option value="${esc(a)}">${esc(a)}</option>`).join('')}</select><small id="lgn">${rows.length} عملية</small></div>` +
+      groups.map(g => `<section class="lg-day" aria-label="${esc(g.label)}"><h2 class="lg-h">${esc(g.label)}</h2><ul class="card lg-list">${g.items.map(x => logItem(x.l, x.d)).join('')}</ul></section>`).join('') + '<p class="empty" id="lg0" hidden>لا نتائج مطابقة.</p>';
+  };
+  document.addEventListener('input', e => { const t = e.target; if (!t || (t.id !== 'lgq' && t.id !== 'lga')) return;
+    const q = ($('#lgq').value || '').trim().toLowerCase(), a = $('#lga').value; let n = 0;
+    document.querySelectorAll('.lg').forEach(li => { const ok = (!a || li.dataset.a === a) && (!q || li.dataset.q.includes(q)); li.hidden = !ok; if (ok) n++; });
+    document.querySelectorAll('.lg-day').forEach(d => { d.hidden = !d.querySelector('.lg:not([hidden])'); });
+    $('#lgn').textContent = n + ' عملية'; $('#lg0').hidden = n > 0; });
   V.settings = () => { const t = St.team(), ed = St.can('settings'); return `<h1>إعدادات الفريق</h1><div class="card"><form id="tf">${fld('اسم الفريق', 'name', t.name, 'text', ed ? '' : 'disabled')}${fld('المدينة', 'city', t.city, 'text', ed ? '' : 'disabled')}${fld('اللون الرئيسي', 'color', t.color, 'color', ed ? '' : 'disabled')}${ed ? '<button>حفظ</button>' : '<small>عرض فقط</small>'}</form></div>`; };
   // إدارة الموقع العام: ما تفعّله هنا يظهر للزوار في الموقع؛ وما تُطفئه يختفي. لا هواتف ولا بريد ولا مدن في الموقع أبدًا (الخادم يرجع قائمة بيضاء فقط).
   const SEC = [['players', 'اللاعبون', 'الاسم والرقم والمركز فقط'], ['staff', 'الطاقم', 'الاسم والدور فقط'], ['matches', 'المباريات والنتائج', 'الخصم والتاريخ والنتيجة'], ['stats', 'الهدافون', 'الاسم والأهداف والمشاركات'], ['photos', 'صور اللاعبين', 'تظهر صورة كل لاعب في الملعب وبطاقته؛ الصور المرفوعة تصبح قابلة للفتح برابطها العام']];
