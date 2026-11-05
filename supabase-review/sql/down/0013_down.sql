@@ -1,0 +1,1 @@
+-- REVIEW ONLY. Re-apply rpc_public_site from 0012_staff_photos.sql to remove the 'st' key.

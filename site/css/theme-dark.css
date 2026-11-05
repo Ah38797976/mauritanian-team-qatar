@@ -198,3 +198,22 @@ html,body{max-width:100%;overflow-x:clip;-webkit-text-size-adjust:100%;touch-act
 button,a,.pp,.stf-card,.pm-nav button,.pm-x{touch-action:manipulation;-webkit-user-select:none;user-select:none}
 html.pm-lock,html.pm-lock body{overflow:hidden;overscroll-behavior:none}
 .pmodal{touch-action:manipulation;overscroll-behavior:contain}
+
+/* ---- رسم الملعب (نسب مئوية، يتمدّد مع الشاشة) ---- */
+.field .pk{position:absolute;pointer-events:none;box-sizing:border-box;border:2px solid rgba(255,255,255,.8);margin:0;transform:none;background:none}
+.field .pk-h{left:0;right:0;top:50%;height:0;border-width:2px 0 0;margin-top:-1px}
+.field .pk-c{width:28%;aspect-ratio:1;border-radius:50%;left:36%;top:50%;transform:translateY(-50%)}
+.field .pk-cs{width:8px;height:8px;border-radius:50%;background:#fff;border:0;left:calc(50% - 4px);top:calc(50% - 4px)}
+.field .pk-pa{width:58%;height:17%;left:21%;border-top-width:0}
+.field .pk-pa.t{top:0}.field .pk-pa.b{bottom:0;border-top-width:2px;border-bottom-width:0}
+.field .pk-ga{width:28%;height:7%;left:36%}
+.field .pk-ga.t{top:0;border-top-width:0}.field .pk-ga.b{bottom:0;border-bottom-width:0}
+.field .pk-sp{width:6px;height:6px;border-radius:50%;background:#fff;border:0;left:calc(50% - 3px)}
+.field .pk-sp.t{top:12%}.field .pk-sp.b{bottom:12%}
+.field .pk-ar{width:22%;height:5%;left:39%;border-radius:0 0 999px 999px;border-top-width:0}
+.field .pk-ar.t{top:17%}
+.field .pk-ar.b{bottom:17%;border-radius:999px 999px 0 0;border-top-width:2px;border-bottom-width:0}
+.field{display:grid;grid-template-rows:repeat(4,1fr);gap:0;padding:26px 6px 18px;align-content:stretch}
+.field .line{align-items:center}
+.field .slot{color:rgba(255,255,255,.35);font-size:1.4rem;align-self:center}
+.field .fe{position:absolute;inset:0;margin:auto;height:fit-content;width:max-content;max-width:86%;z-index:4;background:rgba(6,18,12,.78);color:#fff;padding:10px 16px;border-radius:12px;text-align:center}

@@ -27,6 +27,7 @@
   };
   // ---------- اللاعبون: ملعب التشكيلة + الاحتياط + بطاقة اللاعب ----------
   let SQ = [], SF = [], LST = SQ, MODE = 'p'; // لاعبو القسم الحالي وأعضاء الطاقم (تُقرأ منها البطاقة عند الضغط)
+  const MARKS = ['pk-h', 'pk-c', 'pk-cs', 'pk-pa t', 'pk-pa b', 'pk-ga t', 'pk-ga b', 'pk-ar t', 'pk-ar b', 'pk-sp t', 'pk-sp b'].map(c => `<i class="pk ${c}" aria-hidden="true"></i>`).join('');
   const LINES = ['مهاجم', 'وسط', 'مدافع', 'حارس']; // المهاجمون في الأعلى والحارس في الأسفل
   const SIL = '<svg class="sil" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="25" r="11"/><path d="M8 64c2-17 13-25 24-25s22 8 24 25z"/></svg>';
   // أي صورة تفشل في التحميل (رابط محذوف أو شبكة) تُستبدل بالرمز البديل بدل ظهور نص مبتور
@@ -37,11 +38,11 @@
     SQ = s.players; LST = SQ; if (!SQ.length) return '<p class="empty">لا لاعبين بعد.</p>';
     const all = SQ.map((p, i) => [p, i]), flagged = all.filter(([p]) => p.st === 1);
     // إن لم تُحدَّد تشكيلة أساسية في لوحة الإدارة: كل اللاعبين على الملعب موزّعين حسب المركز. ومن مركزه غير معروف يذهب إلى الاحتياط
-    const st = (flagged.length ? flagged : all).filter(([p]) => LINES.includes(p.pos));
-    const bench = flagged.length ? all.filter(([p]) => p.st !== 1 || !LINES.includes(p.pos)) : all.filter(([p]) => !LINES.includes(p.pos));
-    const lines = LINES.map(pos => st.filter(([p]) => p.pos === pos)).filter(l => l.length).map(l => `<div class="line">${l.map(([p, i]) => dot(p, i)).join('')}</div>`).join('');
+    const st = flagged.filter(([p]) => LINES.includes(p.pos)), onPitch = new Set(st.map(([, i]) => i));
+    const bench = all.filter(([, i]) => !onPitch.has(i));
+    const lines = LINES.map(pos => { const l = st.filter(([p]) => p.pos === pos); return `<div class="line">${l.length ? l.map(([p, i]) => dot(p, i)).join('') : '<span class="slot" aria-hidden="true">—</span>'}</div>`; }).join('');
     const fm = typeof s.formation === 'string' && /^\d(-\d){1,3}$/.test(s.formation) ? `<span class="fm">التشكيلة <bdi dir="ltr">${esc(s.formation)}</bdi></span>` : '';
-    return `<div class="card lineup"><p class="hint">اضغط على أي لاعب لفتح بطاقته الكاملة.</p><div class="field">${fm}<i class="m-c"></i><i class="m-h"></i><i class="m-b t"></i><i class="m-b b"></i>${lines}</div>${bench.length ? `<h3 class="sub-h bench-h">الاحتياط</h3><div class="bench">${bench.map(([p, i]) => dot(p, i, true)).join('')}</div>` : ''}</div>`;
+    return `<div class="card lineup"><p class="hint">اضغط على أي لاعب لفتح بطاقته الكاملة.</p><div class="field">${fm}${MARKS}${lines}${st.length ? '' : '<p class="empty fe">لم تُعلن التشكيلة الأساسية بعد.</p>'}</div>${bench.length ? `<h3 class="sub-h bench-h">الاحتياط</h3><div class="bench">${bench.map(([p, i]) => dot(p, i, true)).join('')}</div>` : ''}</div>`;
   }
   // بطاقة اللاعب (نافذة): صورة كبيرة، الاسم والرقم والمركز، وإحصاءات المباريات. لا بيانات اتصال تُنشر في الموقع العام.
   let dlg = null, last = null, cur = -1;
@@ -138,7 +139,7 @@
     if (!j || !j.team) throw 0;
     const S = j.sections || {}, secs = [];
     if (j.about) secs.push({ key: 'about', label: 'عن الفريق', text: j.about });
-    if (S.players) secs.push({ key: 'squad', label: 'اللاعبون', players: (j.players || []).map(p => ({ name: p.name, num: p.num, pos: p.pos, photo: p.photo })) });
+    if (S.players) secs.push({ key: 'squad', label: 'اللاعبون', players: (j.players || []).map(p => ({ name: p.name, num: p.num, pos: p.pos, photo: p.photo, st: p.st === true ? 1 : 0 })) });
     if (S.staff) secs.push({ key: 'staff', label: 'الطاقم', staff: (j.staff || []).map(x => ({ name: x.name, role: x.role, kind: x.kind, photo: x.photo })) });
     if (S.matches) secs.push({ key: 'matches', label: 'المباريات والنتائج', matches: (j.matches || []).map(m => ({ opp: m.opp, date: m.date, home: m.home, played: m.played, us: m.us, them: m.them })) });
     if (S.stats) secs.push({ key: 'scorers', label: 'الهدافون', rows: (j.scorers || []).map(r => ({ name: r.name, goals: r.goals, apps: r.apps })) });
