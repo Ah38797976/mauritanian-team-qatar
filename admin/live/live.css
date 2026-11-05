@@ -107,3 +107,19 @@ dialog#modal .hint{color:var(--mut,#a9c4b5)}
 .ppb.add{background:var(--gold,#d4af4f);border-color:var(--gold,#d4af4f);color:#2b2000}
 .ppb.rm{background:#b83a2e;border-color:#b83a2e;color:#fff}
 .bench .ppw{padding:4px}
+
+/* ---- رسم الملعب (نسب مئوية، يتمدّد مع الشاشة) ---- */
+.field{max-width:520px;margin-inline:auto;border:3px solid #fff;box-shadow:none;border-radius:14px}
+.field .pk{position:absolute;pointer-events:none;box-sizing:border-box;border:2px solid rgba(255,255,255,.8);margin:0;transform:none;background:none}
+.field .pk-h{left:0;right:0;top:50%;height:0;border-width:2px 0 0;margin-top:-1px}
+.field .pk-c{width:28%;aspect-ratio:1;border-radius:50%;left:36%;top:50%;transform:translateY(-50%)}
+.field .pk-cs{width:8px;height:8px;border-radius:50%;background:#fff;border:0;left:calc(50% - 4px);top:calc(50% - 4px)}
+.field .pk-pa{width:58%;height:17%;left:21%;border-top-width:0}
+.field .pk-pa.t{top:0}.field .pk-pa.b{bottom:0;border-top-width:2px;border-bottom-width:0}
+.field .pk-ga{width:28%;height:7%;left:36%}
+.field .pk-ga.t{top:0;border-top-width:0}.field .pk-ga.b{bottom:0;border-bottom-width:0}
+.field .pk-sp{width:6px;height:6px;border-radius:50%;background:#fff;border:0;left:calc(50% - 3px)}
+.field .pk-sp.t{top:12%}.field .pk-sp.b{bottom:12%}
+.field .pk-ar{width:22%;height:5%;left:39%;border-radius:0 0 999px 999px;border-top-width:0}
+.field .pk-ar.t{top:17%}
+.field .pk-ar.b{bottom:17%;border-radius:999px 999px 0 0;border-top-width:2px;border-bottom-width:0}
