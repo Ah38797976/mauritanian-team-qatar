@@ -97,7 +97,7 @@
     const b = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.86)); if (!b) throw new Error('blob');
     return new File([b], 'photo.jpg', { type: 'image/jpeg' });
   };
-  const photoFld = p => { const cur = TD.primaryPhoto ? TD.primaryPhoto(p.id) : null; return `<div class="f photof"><span>الصورة (اختيارية)</span><div class="row"><div class="av big" id="pprev">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : '؟'}</div><div><label class="btnlink filebtn">اختيار صورة<input type="file" name="photoFile" accept="image/*" hidden></label>${cur ? ' <label class="rm"><input type="checkbox" name="rmphoto"> حذف الصورة الحالية</label>' : ''}<div class="hint">أي صورة من الجوال أو الكمبيوتر — تُقصّ مربعة وتُصغَّر تلقائيًا قبل الرفع.</div></div></div></div>`; };
+  const photoFld = (p, cur) => { if (cur === undefined) cur = TD.primaryPhoto ? TD.primaryPhoto(p.id) : null; return `<div class="f photof"><span>الصورة (اختيارية)</span><div class="row"><div class="av big" id="pprev">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : '؟'}</div><div><label class="btnlink filebtn">اختيار صورة<input type="file" name="photoFile" accept="image/*" hidden></label>${cur ? ' <label class="rm"><input type="checkbox" name="rmphoto"> حذف الصورة الحالية</label>' : ''}<div class="hint">أي صورة من الجوال أو الكمبيوتر — تُقصّ مربعة وتُصغَّر تلقائيًا قبل الرفع.</div></div></div></div>`; };
   document.addEventListener('change', e => { const t = e.target; if (!t || t.name !== 'photoFile') return; const f = t.files && t.files[0], pv = $('#pprev'); if (!f || !pv) return; if (f.size > 25 * 1048576 || !/^image\//.test(f.type)) { t.value = ''; const er = $('#err'); if (er) er.textContent = 'ملف الصورة غير مقبول أو كبير جدًا'; return; } shrink(f).then(readUrl).then(u => { const im = document.createElement('img'); im.alt = ''; im.src = u; pv.textContent = ''; pv.appendChild(im); const er = $('#err'); if (er) er.textContent = ''; }).catch(() => { t.value = ''; const er = $('#err'); if (er) er.textContent = 'تعذّر قراءة الصورة، جرّب صورة JPEG أو PNG'; }); });
   const playerForm = p => { const c = St.can('contactPlayers'); p = p || { name: '', num: '', pos: 'وسط', city: '', status: 'نشط', phone: '', email: '' };
     modal(p.id ? 'تعديل لاعب' : 'إضافة لاعب', fld('الاسم', 'name', p.name) + fld('رقم القميص', 'num', p.num, 'number', 'min=1 max=99') + sel('المركز', 'pos', POS, p.pos) + sel('الحالة', 'status', STAT, p.status) + fld('المدينة', 'city', p.city) + (p.id ? photoFld(p) : '<p class="hint">يمكن إضافة الصورة بعد الحفظ، من «تعديل» اللاعب.</p>') + (c ? fld('الهاتف', 'phone', p.phone) + fld('البريد', 'email', p.email, 'email') : ''),
@@ -122,14 +122,29 @@
     <p>في التشكيلة الأساسية: <b>${S.lineup.starters.includes(id) ? 'نعم' : 'لا'}</b> · حصص التدريب المسجّلة: <b>${num(l.att)}</b></p>${acts}`;
   };
 
-  V.staff = () => { if (!(St.can('staff') || St.can('viewStaff'))) return denied('الطاقم'); const ph = St.can('contactStaff') || St.can('contactStaffTeam'); return `<h1>الطاقم الإداري والفني</h1>${ph ? '' : '<div class="note" id="snote">أرقام هواتف الطاقم غير متاحة لدورك.</div>'}<div class="tools">${St.can('staff') ? '<button id="adds">+ إضافة عضو</button>' : ''}</div>${tw('جدول الطاقم', `<tr><th>الاسم</th><th>الدور</th><th>النوع</th>${ph ? '<th>الهاتف</th>' : ''}<th></th></tr>${St.staffList().map(s => `<tr><td><a class="pn" href="#/member/${esc(s.id)}">${esc(s.name)}</a></td><td>${esc(s.role)}</td><td>${esc(s.kind)}</td>${ph ? `<td>${s.phone === undefined ? '—' : `<bdi>${esc(s.phone)}</bdi>`}</td>` : ''}<td>${St.can('staff') ? `<button class="sec" data-es="${esc(s.id)}">تعديل</button> <button class="dng" data-ds="${esc(s.id)}">حذف</button>` : ''}</td></tr>`).join('')}`)}`; };
+  V.staff = () => {
+    if (!(St.can('staff') || St.can('viewStaff'))) return denied('الطاقم');
+    const ph = St.can('contactStaff') || St.can('contactStaffTeam'), ed = St.can('staff'), all = St.staffList();
+    const card = s => `<article class="stc"><a class="stc-main" href="#/member/${esc(s.id)}">${avatar(s, true)}<div class="stc-t"><b>${esc(s.name)}</b><span>${esc(s.role || '—')}</span></div></a>${ph && s.phone ? `<a class="stc-ph" href="tel:${esc(String(s.phone).replace(/[^\d+]/g, ''))}"><bdi>${esc(s.phone)}</bdi></a>` : ''}${ed ? `<div class="stc-a"><button class="sec sm" data-es="${esc(s.id)}">تعديل</button><button class="dng sm" data-ds="${esc(s.id)}">حذف</button></div>` : ''}</article>`;
+    const grp = (t, k) => { const l = all.filter(x => x.kind === k); return l.length ? `<h2 class="stc-h">${t} <span class="tag">${l.length}</span></h2><div class="stc-grid">${l.map(card).join('')}</div>` : ''; };
+    return `<h1>الطاقم الإداري والفني</h1>${ph ? '' : '<div class="note" id="snote">أرقام هواتف الطاقم غير متاحة لدورك.</div>'}<div class="tools">${ed ? '<button id="adds">+ إضافة عضو</button>' : ''}</div>${all.length ? grp('الطاقم الفني', 'فني') + grp('الطاقم الإداري', 'إداري') : '<div class="card"><p class="empty">لا أعضاء بعد.</p></div>'}`;
+  };
   V.member = id => {
     if (!(St.can('staff') || St.can('viewStaff'))) return denied('الطاقم');
     const s = St.staffList().find(x => x.id === id); if (!s) return '<h1>العضو غير موجود</h1><a href="#/staff">رجوع</a>';
     const ph = s.phone !== undefined, ed = St.can('staff');
     return `<a href="#/staff">→ رجوع للطاقم</a><div class="card row" style="margin-top:8px">${avatar(s, true)}<div><h1 id="mn" style="margin:0">${esc(s.name)}</h1><span class="tag">${esc(s.role)}</span> <span class="tag">${esc(s.kind)}</span><p>${ph ? `هاتف: <bdi>${esc(s.phone)}</bdi>` : '<small id="cnote">الهاتف غير متاح لدورك.</small>'}</p></div></div>${ed ? `<div class="row"><button data-es="${esc(s.id)}">تعديل</button><button class="dng" data-dsp="${esc(s.id)}">حذف</button></div>` : ''}`;
   };
-  const staffForm = s => { const c = St.can('contactStaff'); s = s || { name: '', role: '', kind: 'فني', phone: '' }; modal(s.id ? 'تعديل عضو' : 'إضافة عضو', fld('الاسم', 'name', s.name) + fld('الدور', 'role', s.role) + sel('النوع', 'kind', St.KIND, s.kind) + (c ? fld('الهاتف', 'phone', s.phone) : ''), f => St.saveStaff({ id: s.id, name: f.name, role: f.role, kind: f.kind, ...(c ? { phone: f.phone } : {}) })); };
+  const staffForm = s => { const c = St.can('contactStaff'); s = s || { name: '', role: '', kind: 'فني', phone: '' };
+    modal(s.id ? 'تعديل عضو' : 'إضافة عضو', fld('الاسم', 'name', s.name) + fld('الدور', 'role', s.role) + sel('النوع', 'kind', St.KIND, s.kind) + (s.id ? photoFld(s, TD.staffPhoto(s.id)) : '<p class="hint">يمكن إضافة الصورة بعد الحفظ، من «تعديل» العضو.</p>') + (c ? fld('الهاتف', 'phone', s.phone) : ''),
+      async f => {
+        const er = await St.saveStaff({ id: s.id, name: f.name, role: f.role, kind: f.kind, ...(c ? { phone: f.phone } : {}) }); if (er) return er;
+        if (!s.id) return '';
+        const file = f.photoFile;
+        if (file && file.size) { let up; try { up = await shrink(file); } catch (_) { return 'حُفظ العضو لكن تعذّر قراءة الصورة'; } const r = await TD.setStaffPhoto(s.id, up); if (r) return 'حُفظ العضو لكن تعذّر رفع الصورة: ' + r; }
+        else if (f.rmphoto === 'on' && TD.staffPhoto(s.id)) { const r = await TD.delStaffPhoto(s.id); if (r) return 'حُفظ العضو لكن تعذّر حذف الصورة: ' + r; }
+        return '';
+      }); };
 
   let sesId = '';   // الحصة المختارة؛ تُحسم من الحصص الفعلية (أحدثها افتراضيًا) في curSes()
   const curSes = () => { const l = S.sessions; if (l.some(x => x.id === sesId)) return sesId; const last = [...l].sort((a, b) => String(b.date).localeCompare(String(a.date)))[0]; return last ? last.id : ''; };

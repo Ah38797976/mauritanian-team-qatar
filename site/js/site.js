@@ -139,7 +139,7 @@
     const S = j.sections || {}, secs = [];
     if (j.about) secs.push({ key: 'about', label: 'عن الفريق', text: j.about });
     if (S.players) secs.push({ key: 'squad', label: 'اللاعبون', players: (j.players || []).map(p => ({ name: p.name, num: p.num, pos: p.pos, photo: p.photo })) });
-    if (S.staff) secs.push({ key: 'staff', label: 'الطاقم', staff: (j.staff || []).map(x => ({ name: x.name, role: x.role, kind: x.kind })) });
+    if (S.staff) secs.push({ key: 'staff', label: 'الطاقم', staff: (j.staff || []).map(x => ({ name: x.name, role: x.role, kind: x.kind, photo: x.photo })) });
     if (S.matches) secs.push({ key: 'matches', label: 'المباريات والنتائج', matches: (j.matches || []).map(m => ({ opp: m.opp, date: m.date, home: m.home, played: m.played, us: m.us, them: m.them })) });
     if (S.stats) secs.push({ key: 'scorers', label: 'الهدافون', rows: (j.scorers || []).map(r => ({ name: r.name, goals: r.goals, apps: r.apps })) });
     return { v: 1, t: new Date().toISOString(), data: { team: j.team, announcement: j.announcement || '', sections: secs } };

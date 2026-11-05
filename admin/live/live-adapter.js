@@ -40,9 +40,9 @@
   let sb = null, chain = Promise.resolve();
   let photoGen = 0;
   const urlCache = new Map();   // storage_path -> { url, exp } ; الروابط موقّعة لساعة، نعيد استعمالها حتى قبل انتهائها بخمس دقائق
-  const cache = { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], lineup: [], sessions: [], att: {}, stats: [], logs: [], photos: [] };
+  const cache = { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], lineup: [], sessions: [], att: {}, stats: [], logs: [], photos: [], staffPhotos: [] };
   const subs = [], emit = () => subs.forEach(f => f());
-  const reset = () => { urlCache.clear(); Object.assign(cache, { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], lineup: [], sessions: [], att: {}, stats: [], logs: [], photos: [] }); };
+  const reset = () => { urlCache.clear(); Object.assign(cache, { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], lineup: [], sessions: [], att: {}, stats: [], logs: [], photos: [], staffPhotos: [] }); };
 
   const rpc = async (name, args) => {
     try { const { data, error } = await sb.rpc(name, args || {}); if (error) return error.code === '42501' ? DENY : NET; return data; }
@@ -67,7 +67,7 @@
       if (!me || typeof me === 'string') { reset(); emit(); return; }
       const tid = me.team && me.team.id;
       const q = t => sb.from(t);
-      const [pl, ct, st, mb, mt, ls, ss, at, lg, ph] = await Promise.all([
+      const [pl, ct, st, mb, mt, ls, ss, at, lg, ph, sph] = await Promise.all([
         q('players').select('id,name,shirt_number,position,city,status'),
         q('player_contacts').select('player_id,phone,email'),
         q('staff_members').select('id,name,title,kind,staff_contacts(phone)'),
@@ -77,7 +77,8 @@
         q('training_sessions').select('id,title,session_date').order('session_date'),
         q('attendance').select('session_id,player_id,present'),
         q('audit_log').select('created_at,actor_name,actor_role,action,detail').order('created_at', { ascending: false }).limit(500),
-        q('player_photos').select('id,player_id,storage_path,is_primary')
+        q('player_photos').select('id,player_id,storage_path,is_primary'),
+        q('staff_photos').select('id,staff_id,storage_path')
       ]);
       cache.me = me;
       cache.roster = Array.isArray(roster) ? roster.map(p => ({ ...p, ...(p.pos ? { pos: POS[p.pos] } : {}), ...(p.status ? { status: STATUS[p.status] } : {}) })) : [];   // [v2 F5] names-only rows keep no pos/status
@@ -96,6 +97,7 @@
       cache.att = {}; (at.data || []).forEach(a => { (cache.att[a.session_id] = cache.att[a.session_id] || {})[a.player_id] = a.present; });
       cache.logs = (lg.data || []).map(l => ({ t: l.created_at, who: l.actor_name, role: l.actor_role, a: l.action, d: l.detail }));
       cache.photos = ph.data || [];
+      cache.staffPhotos = sph.data || [];
       AD._resolvePhotos();   // signed URLs are fetched after the first paint; avatars update on the next emit
       emit();
     },
@@ -111,7 +113,7 @@
     delPlayer: id => write('rpc_delete_player', { p_id: id }),
     unregisterPlayer: id => write('rpc_unregister_player', { p_id: id }),
     saveStaff: s => { const x = { ...s, kind: KIND_R[s.kind] }; if (!has(s, 'phone')) delete x.phone; return write('rpc_save_staff', { s: x }); },
-    delStaff: id => write('rpc_delete_staff', { p_id: id }),
+    async delStaff(id) { const old = AD.staffPhoto(id), r = await write('rpc_delete_staff', { p_id: id }); if (r === '' && old) sb.storage.from('player-photos').remove([old.storage_path]).catch(() => {}); return r; },
     saveMatch: m => write('rpc_save_match', { m }),
     addEvent: (mid, ev) => write('rpc_add_event', { p_match: mid, ev }),
     setResult: (mid, them, played) => write('rpc_set_result', { p_match: mid, p_them: them, p_played: played }),
@@ -158,6 +160,24 @@
       if (r === '') await sb.storage.from('player-photos').remove([ph.storage_path]);
       return r;
     },
+    staffPhoto(staffId) { return cache.staffPhotos.find(x => x.staff_id === staffId) || null; },
+    async setStaffPhoto(staffId, file) {
+      const teamId = cache.me && cache.me.team && cache.me.team.id; if (!teamId) return DENY;
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 2097152) return 'نوع الصورة أو حجمها غير مقبول';
+      const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[file.type], path = `${teamId}/${staffId}/${crypto.randomUUID()}.${ext}`, old = AD.staffPhoto(staffId);
+      const up = await sb.storage.from('player-photos').upload(path, file, { upsert: false, contentType: file.type });
+      if (up.error) return String(up.error.statusCode) === '403' ? DENY : NET;
+      const r = await write('rpc_set_staff_photo', { p_staff: staffId, p_path: path, p_type: file.type, p_size: file.size });
+      if (r !== '') await sb.storage.from('player-photos').remove([path]);
+      else if (old) await sb.storage.from('player-photos').remove([old.storage_path]);
+      return r;
+    },
+    async delStaffPhoto(staffId) {
+      const old = AD.staffPhoto(staffId); if (!old) return '';
+      const r = await write('rpc_delete_staff_photo', { p_staff: staffId });
+      if (r === '') await sb.storage.from('player-photos').remove([old.storage_path]);
+      return r;
+    },
     async photoUrl(path) { const { data } = await sb.storage.from('player-photos').createSignedUrl(path, 3600); return data ? data.signedUrl : ''; },
     // primary photo row per player (server rows only); [] when the role may not read photos
     primaryPhoto(playerId) { const l = cache.photos.filter(x => x.player_id === playerId); return l.find(x => x.is_primary) || l[0] || null; },
@@ -165,11 +185,12 @@
       const now = Date.now(), byPlayer = new Map();
       cache.photos.forEach(x => { const c = urlCache.get(x.storage_path); if (!c || c.exp < now) return; const cur = byPlayer.get(x.player_id); if (!cur || x.is_primary) byPlayer.set(x.player_id, c.url); });
       [cache.players, cache.roster].forEach(l => l.forEach(p => { if (byPlayer.has(p.id)) p.photo = byPlayer.get(p.id); }));
+      cache.staffPhotos.forEach(x => { const c = urlCache.get(x.storage_path), m = cache.staff.find(y => y.id === x.staff_id); if (c && c.exp >= now && m) m.photo = c.url; });
     },
     _resolvePhotos() {
       AD._applyPhotos();                                                  // فورًا من الذاكرة: لا وميض
       const gen = ++photoGen, now = Date.now(), ids = [...new Set(cache.photos.map(x => x.player_id))];
-      const need = ids.map(id => AD.primaryPhoto(id)).filter(r => r && !(urlCache.get(r.storage_path) && urlCache.get(r.storage_path).exp - 300000 > now));
+      const need = ids.map(id => AD.primaryPhoto(id)).concat(cache.staffPhotos).filter(r => r && !(urlCache.get(r.storage_path) && urlCache.get(r.storage_path).exp - 300000 > now));
       if (!need.length) return;
       Promise.all(need.map(async r => { const u = await AD.photoUrl(r.storage_path); if (u) urlCache.set(r.storage_path, { url: u, exp: Date.now() + 3600000 }); })).then(() => {
         if (gen !== photoGen) return;                                      // تحديث أحدث حلّ محلّه
