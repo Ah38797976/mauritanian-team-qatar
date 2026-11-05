@@ -45,12 +45,12 @@
 
   function modal(title, body, onSubmit) {
     const d = $('#modal');
-    d.innerHTML = `<form method="dialog"><h2>${esc(title)}</h2>${body}<div class="err" id="err"></div><div class="row"><button type="submit" value="ok">حفظ</button><button type="button" class="sec" id="cx">إلغاء</button></div></form>`;
+    d.innerHTML = `<form method="dialog" autocomplete="off"><h2>${esc(title)}</h2>${body}<div class="err" id="err" role="alert"></div><div class="mact"><button type="submit" value="ok">حفظ</button><button type="button" class="sec" id="cx">إلغاء</button></div></form>`;
     $('#cx', d).onclick = () => d.close();
-    $('form', d).onsubmit = e => { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); Promise.resolve(onSubmit(f)).then(er => { if (er) $('#err', d).textContent = er; else { d.close(); toast(SAVED); } }); };
+    $('form', d).onsubmit = e => { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); Promise.resolve(onSubmit(f)).then(er => { if (er) { const E = $('#err', d); E.textContent = er; E.scrollIntoView({ block: 'nearest' }); } else { d.close(); toast(SAVED); } }); };
     d.showModal();
   }
-  const fld = (l, n, v = '', t = 'text', extra = '') => `<label class="f"><span>${esc(l)}</span><input name="${esc(n)}" type="${esc(t)}" value="${esc(v)}" ${extra}></label>`;
+  const fld = (l, n, v = '', t = 'text', extra = '') => `<label class="f"><span>${esc(l)}</span><input name="${esc(n)}" type="${esc(t)}" value="${esc(v)}" autocomplete="off" ${extra}></label>`;
   const sel = (l, n, opts, v) => `<label class="f"><span>${esc(l)}</span><select name="${esc(n)}">${opts.map(o => { const [k, t] = Array.isArray(o) ? o : [o, o]; return `<option value="${esc(k)}" ${k === v ? 'selected' : ''}>${esc(t)}</option>`; }).join('')}</select></label>`;
   const tag = (p) => `<span class="tag">#${num(p.num)}</span> <span class="tag">${esc(p.pos)}</span> <span class="tag ${p.status === 'نشط' ? '' : 'bad'}">${esc(p.status)}</span>`;
 
