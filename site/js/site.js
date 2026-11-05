@@ -10,7 +10,7 @@
   // الصورة: مسار تخزين من الخادم (UUID/UUID/UUID.jpg|png|webp) يُحوَّل إلى رابط عام لحاوية player-photos فقط، أو JPEG data URL؛ أي قيمة أخرى تُتجاهل
   const PH_RE = /^[0-9a-f-]{36}\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(jpg|png|webp)$/, SB_RE = /^https:\/\/[a-z0-9]{10,30}\.supabase\.co$/;
   const photoUrl = path => { const u = (window.PUBLIC_CONFIG || {}).SUPABASE_URL; return typeof path === 'string' && PH_RE.test(path) && SB_RE.test(u || '') ? u + '/storage/v1/object/public/player-photos/' + path : null; };
-  const photo = (p, alt) => { const u = photoUrl(p.photo); if (u) return `<img src="${esc(u)}" alt="${esc(alt)}" loading="lazy" decoding="async">`; return typeof p.photo === 'string' && p.photo.length < 150000 && /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(p.photo) ? `<img src="${p.photo}" alt="${esc(alt)}" loading="lazy">` : null; };
+  const photo = (p, alt) => { const u = photoUrl(p.photo); if (u) return `<img src="${esc(u)}" alt="${esc(alt)}" decoding="async">`; return typeof p.photo === 'string' && p.photo.length < 150000 && /^data:image\/jpeg;base64,[A-Za-z0-9+\/=]+$/.test(p.photo) ? `<img src="${p.photo}" alt="${esc(alt)}">` : null; };
   const POSCLS = { 'حارس': 'gk', 'مدافع': 'df', 'مهاجم': 'fw' };
   const fmt = (d, o) => { const t = new Date(String(d) + 'T00:00:00'); return isNaN(t) ? esc(d) : esc(t.toLocaleDateString('ar-u-nu-latn', o)); };
   const longDate = d => fmt(d, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -29,6 +29,8 @@
   let SQ = [], SF = [], LST = SQ, MODE = 'p'; // لاعبو القسم الحالي وأعضاء الطاقم (تُقرأ منها البطاقة عند الضغط)
   const LINES = ['مهاجم', 'وسط', 'مدافع', 'حارس']; // المهاجمون في الأعلى والحارس في الأسفل
   const SIL = '<svg class="sil" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="25" r="11"/><path d="M8 64c2-17 13-25 24-25s22 8 24 25z"/></svg>';
+  // أي صورة تفشل في التحميل (رابط محذوف أو شبكة) تُستبدل بالرمز البديل بدل ظهور نص مبتور
+  document.addEventListener('error', e => { const i = e.target; if (i && i.tagName === 'IMG' && i.closest('.av, .pcard-av, .stf-av')) i.replaceWith(Object.assign(document.createElement('span'), { innerHTML: SIL }).firstChild); }, true);
   const av = p => photo(p, p.name) || SIL;
   const dot = (p, i, sm) => `<button type="button" class="pp${sm ? ' sm' : ''}" data-i="${i}" aria-haspopup="dialog" aria-label="بطاقة ${esc(p.name)}"><span class="av">${av(p)}</span><b class="no">${num(p.num)}</b><span class="nm">${esc(p.name)}</span></button>`;
   function squadHtml(s) {
