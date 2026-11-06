@@ -28,6 +28,13 @@
   // ---------- اللاعبون: ملعب التشكيلة + الاحتياط + بطاقة اللاعب ----------
   let SQ = [], SF = [], LST = SQ, MODE = 'p'; // لاعبو القسم الحالي وأعضاء الطاقم (تُقرأ منها البطاقة عند الضغط)
   const MARKS = ['pk-h', 'pk-c', 'pk-cs', 'pk-pa t', 'pk-pa b', 'pk-ga t', 'pk-ga b', 'pk-ar t', 'pk-ar b', 'pk-sp t', 'pk-sp b'].map(c => `<i class="pk ${c}" aria-hidden="true"></i>`).join('');
+  // مرآة إحداثيات admin/live/live-coach.js (يتحقق اختبار tools/test_lineup_ui.py من تطابقهما)
+  const XYS = {
+    '4-4-2':   [[50, 90], [12, 72], [37, 72], [63, 72], [88, 72], [12, 48], [37, 48], [63, 48], [88, 48], [33, 22], [67, 22]],
+    '4-3-3':   [[50, 90], [12, 72], [37, 72], [63, 72], [88, 72], [22, 48], [50, 48], [78, 48], [18, 20], [50, 18], [82, 20]],
+    '3-5-2':   [[50, 90], [22, 72], [50, 72], [78, 72], [10, 47], [30, 47], [50, 47], [70, 47], [90, 47], [35, 21], [65, 21]],
+    '4-2-3-1': [[50, 91], [12, 74], [37, 74], [63, 74], [88, 74], [35, 57], [65, 57], [18, 38], [50, 38], [82, 38], [50, 17]]
+  };
   const LINES = ['مهاجم', 'وسط', 'مدافع', 'حارس']; // المهاجمون في الأعلى والحارس في الأسفل
   const SIL = '<svg class="sil" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="25" r="11"/><path d="M8 64c2-17 13-25 24-25s22 8 24 25z"/></svg>';
   // أي صورة تفشل في التحميل (رابط محذوف أو شبكة) تُستبدل بالرمز البديل بدل ظهور نص مبتور
@@ -40,6 +47,13 @@
     // إن لم تُحدَّد تشكيلة أساسية في لوحة الإدارة: كل اللاعبين على الملعب موزّعين حسب المركز. ومن مركزه غير معروف يذهب إلى الاحتياط
     const st = flagged.filter(([p]) => LINES.includes(p.pos)), onPitch = new Set(st.map(([, i]) => i));
     const bench = all.filter(([, i]) => !onPitch.has(i));
+    // 0014: إن أرسل الخادم الخطة وخانة كل أساسي (وكانت كل الخانات صالحة وغير مكررة) نرسم اللاعبين على خانات الخطة مع شارة القائد؛ وإلا نبقى على الرسم القديم بالخطوط
+    const XY = XYS[s.formation];
+    if (XY && st.length && st.every(([p]) => Number.isInteger(p.slot) && p.slot >= 1 && p.slot <= 11) && new Set(st.map(([p]) => p.slot)).size === st.length) {
+      const fm2 = `<span class="fm">التشكيلة <bdi dir="ltr">${esc(s.formation)}</bdi></span>`;
+      const sl = st.map(([p, i]) => `<div class="sl" style="left:${XY[p.slot - 1][0]}%;top:${XY[p.slot - 1][1]}%">${dot(p, i)}${p.cap ? '<i class="cb" aria-hidden="true" title="القائد">C</i>' : ''}</div>`).join('');
+      return `<div class="card lineup"><p class="hint">اضغط على أي لاعب لفتح بطاقته الكاملة.</p><div class="field fx">${fm2}${MARKS}${sl}</div>${bench.length ? `<h3 class="sub-h bench-h">الاحتياط</h3><div class="bench">${bench.map(([p, i]) => dot(p, i, true)).join('')}</div>` : ''}</div>`;
+    }
     const lines = LINES.map(pos => { const l = st.filter(([p]) => p.pos === pos); return `<div class="line">${l.length ? l.map(([p, i]) => dot(p, i)).join('') : '<span class="slot" aria-hidden="true">—</span>'}</div>`; }).join('');
     const fm = typeof s.formation === 'string' && /^\d(-\d){1,3}$/.test(s.formation) ? `<span class="fm">التشكيلة <bdi dir="ltr">${esc(s.formation)}</bdi></span>` : '';
     return `<div class="card lineup"><p class="hint">اضغط على أي لاعب لفتح بطاقته الكاملة.</p><div class="field">${fm}${MARKS}${lines}${st.length ? '' : '<p class="empty fe">لم تُعلن التشكيلة الأساسية بعد.</p>'}</div>${bench.length ? `<h3 class="sub-h bench-h">الاحتياط</h3><div class="bench">${bench.map(([p, i]) => dot(p, i, true)).join('')}</div>` : ''}</div>`;
@@ -139,7 +153,7 @@
     if (!j || !j.team) throw 0;
     const S = j.sections || {}, secs = [];
     if (j.about) secs.push({ key: 'about', label: 'عن الفريق', text: j.about });
-    if (S.players) secs.push({ key: 'squad', label: 'اللاعبون', players: (j.players || []).map(p => ({ name: p.name, num: p.num, pos: p.pos, photo: p.photo, st: p.st === true ? 1 : 0 })) });
+    if (S.players) secs.push({ key: 'squad', label: 'اللاعبون', players: (j.players || []).map(p => ({ name: p.name, num: p.num, pos: p.pos, photo: p.photo, st: p.st === true ? 1 : 0, cap: p.cap === true, slot: Number.isInteger(p.slot) ? p.slot : null })), formation: typeof j.formation === 'string' ? j.formation : '' });
     if (S.staff) secs.push({ key: 'staff', label: 'الطاقم', staff: (j.staff || []).map(x => ({ name: x.name, role: x.role, kind: x.kind, photo: x.photo })) });
     if (S.matches) secs.push({ key: 'matches', label: 'المباريات والنتائج', matches: (j.matches || []).map(m => ({ opp: m.opp, date: m.date, home: m.home, played: m.played, us: m.us, them: m.them })) });
     if (S.stats) secs.push({ key: 'scorers', label: 'الهدافون', rows: (j.scorers || []).map(r => ({ name: r.name, goals: r.goals, apps: r.apps })) });
