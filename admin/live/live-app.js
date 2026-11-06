@@ -157,20 +157,25 @@
     return `<div class="field" id="pitch">${PITCH_MARKS}${lines}${st.length ? '' : '<p class="empty fe">لم تُحدَّد تشكيلة أساسية بعد.</p>'}</div>`;
   };
   const benchHtml = (ed) => { const ids = new Set(S.lineup.starters), b = St.roster().filter(p => !ids.has(p.id)), full = ids.size >= 11; return b.length ? `<h2 style="margin-top:14px">الاحتياط <span class="tag">${b.length}</span></h2><div class="bench">${b.map(p => `<div class="ppw"><a class="pp sm ${p.status === 'نشط' ? '' : 'off'}" href="#/player/${esc(p.id)}" aria-label="بطاقة ${esc(p.name)}">${avatar(p)}<b class="no">${num(p.num)}</b><span class="nm">${esc(p.name)}</span></a>${ed && p.status === 'نشط' && !full ? `<button class="ppb add" data-as="${esc(p.id)}" aria-label="إضافة ${esc(p.name)} للتشكيلة">+</button>` : ''}</div>`).join('')}</div>` : ''; };
+  // الملعب التفاعلي (0014): لو كانت التشكيلة بالأعمدة الجديدة نعرض مركز المدرب؛ وإلا (0014 غير مُطبَّق) نبقى على الملعب القديم دون أي تغيير
+  const coachPitch = ed => (window.CoachUI && CoachUI.html(ed)) || null;
   V.pitch = () => {
     if (!St.canSeeRoster()) return denied('الملعب');
-    const ed = St.can('lineup');
+    const ed = St.can('lineup'), c = coachPitch(ed);
+    if (c) return `<h1>الملعب</h1><div class="card">${c}</div>`;
     return `<h1>الملعب</h1><div class="note">${ed ? `اضغط «+» على لاعب الاحتياط لإضافته إلى الملعب في مركزه، و«×» لإخراجه. (${S.lineup.starters.length}/11)` : 'اضغط على أي لاعب لفتح بطاقته الكاملة.'}</div><div class="card">${pitchHtml(ed)}${benchHtml(ed)}</div>`;
   };
   V.coach = () => {
     if (!St.can('lineup') && !St.can('viewPlayers')) return denied('لوحة المدرب');
-    const ed = St.can('lineup'), st = S.lineup.starters, g = pos => st.map(St.player).filter(p => p && p.pos === pos);
+    const ed = St.can('lineup'), edA = St.canAttendance(), st = S.lineup.starters, g = pos => st.map(St.player).filter(p => p && p.pos === pos);
     const cs = curSes(), ses = S.att[cs] || {}, ros = St.roster(), activeN = S.players.filter(p => p.status === 'نشط').length;
     const incomplete = st.length < 11 ? `<div class="note" id="lnote">التشكيلة غير مكتملة (${st.length}/11)${activeN < 11 ? ` — عدد اللاعبين النشطين المتاحين ${activeN} فقط، لذلك لا يمكن إكمال 11 دون إضافة لاعب نشط أو تغيير حالة لاعب.` : ' — اختر لاعبين إضافيين.'}</div>` : '';
+    const cp = coachPitch(ed);
+    const lineupCard = cp ? `<div class="card">${cp}</div>` : `<div class="card"><h2>التشكيلة الأساسية — <span id="sc">${st.length}</span>/11</h2>${incomplete}${pitchHtml()}
+    ${ed ? `<h2 style="margin-top:12px">اختيار اللاعبين</h2><div class="row">${ros.map(p => `<label><input type="checkbox" data-st="${esc(p.id)}" ${st.includes(p.id) ? 'checked' : ''} ${p.status !== 'نشط' ? 'disabled' : ''}> ${esc(p.name)} (${esc(p.pos)})</label>`).join('')}</div>` : ''}</div>`;
     return `<h1>لوحة المدرب</h1>${ed ? '' : '<div class="note">عرض فقط — لا تملك صلاحية التعديل.</div>'}
-    <div class="card"><h2>التشكيلة الأساسية — <span id="sc">${st.length}</span>/11</h2>${incomplete}${pitchHtml()}
-    ${ed ? `<h2 style="margin-top:12px">اختيار اللاعبين</h2><div class="row">${ros.map(p => `<label><input type="checkbox" data-st="${esc(p.id)}" ${st.includes(p.id) ? 'checked' : ''} ${p.status !== 'نشط' ? 'disabled' : ''}> ${esc(p.name)} (${esc(p.pos)})</label>`).join('')}</div>` : ''}</div>
-    <div class="card"><h2>الحضور</h2>${S.sessions.length ? `<div class="tools ses"><select id="ses" aria-label="الحصة">${[...S.sessions].sort((x, y) => String(y.date).localeCompare(String(x.date))).map(x => `<option value="${esc(x.id)}" ${x.id === cs ? 'selected' : ''}>${esc(x.title)} — ${esc(x.date)}</option>`).join('')}</select>${ed ? '<button id="addses">+ حصة</button><button class="dng" id="delses">حذف الحصة</button>' : ''}</div>` : `<p class="empty">لا توجد حصص تدريب بعد.${ed ? ' أضف حصة لتسجيل الحضور.' : ''}</p>${ed ? '<div class="tools"><button id="addses">+ حصة تدريب</button></div>' : ''}`}${S.sessions.length ? tw('جدول الحضور', `<tr><th>اللاعب</th><th>حاضر</th></tr>${ros.map(p => `<tr><td>${esc(p.name)}</td><td><input type="checkbox" data-at="${esc(p.id)}" ${ses[p.id] ? 'checked' : ''} ${ed ? '' : 'disabled'} aria-label="حضور ${esc(p.name)}"></td></tr>`).join('')}`, 'att').replace('class="card tw"', 'class="tw"') : ''}</div>`;
+    ${lineupCard}
+    <div class="card"><h2>الحضور</h2>${edA || !S.sessions.length ? '' : '<div class="note">عرض فقط — لا تملك صلاحية تسجيل الحضور.</div>'}${S.sessions.length ? `<div class="tools ses"><select id="ses" aria-label="الحصة">${[...S.sessions].sort((x, y) => String(y.date).localeCompare(String(x.date))).map(x => `<option value="${esc(x.id)}" ${x.id === cs ? 'selected' : ''}>${esc(x.title)} — ${esc(x.date)}</option>`).join('')}</select>${edA ? '<button id="addses">+ حصة</button><button class="dng" id="delses">حذف الحصة</button>' : ''}</div>` : `<p class="empty">لا توجد حصص تدريب بعد.${edA ? ' أضف حصة لتسجيل الحضور.' : ''}</p>${edA ? '<div class="tools"><button id="addses">+ حصة تدريب</button></div>' : ''}`}${S.sessions.length ? tw('جدول الحضور', `<tr><th>اللاعب</th><th>حاضر</th></tr>${ros.map(p => `<tr><td>${esc(p.name)}</td><td><input type="checkbox" data-at="${esc(p.id)}" ${ses[p.id] ? 'checked' : ''} ${edA ? '' : 'disabled'} aria-label="حضور ${esc(p.name)}"></td></tr>`).join('')}`, 'att').replace('class="card tw"', 'class="tw"') : ''}</div>`;
   };
 
   // ---- المالية: سجل مصروفات وإيرادات (الأمين المالي والمؤسس فقط؛ الخادم يفرض الصلاحية). لا أسماء لاعبين هنا.
@@ -273,7 +278,7 @@
   function render() {
     const logged = !!St.user().role;
     $('#loginView').hidden = logged; $('#shell').hidden = !logged;
-    if (!logged) { const m = $('#modal'); if (m.open) m.close(); m.innerHTML = ''; $('#view').innerHTML = ''; return; }  // لا تبقى بيانات الجلسة السابقة في الصفحة
+    if (!logged) { if (window.CoachUI) CoachUI.reset(); const m = $('#modal'); if (m.open) m.close(); m.innerHTML = ''; $('#view').innerHTML = ''; return; }  // لا تبقى بيانات الجلسة السابقة في الصفحة
     let { page, id } = route(); const v = $('#view');
     // أدوار التطبيق لا ترى «لوحة التحكم» إطلاقًا: الصفحة الرئيسية ومسار غير معروف يحوّلان إلى شاشتها في التطبيق
     if (!isPanelUser() && (page === 'dash' || !Object.prototype.hasOwnProperty.call(V, page))) { page = St.user().role === 'coach' ? 'coach' : 'matches'; history.replaceState(null, '', '#/' + page); id = undefined; }
@@ -282,12 +287,14 @@
     $('#nav').innerHTML = navFor(page); $('#crumb').textContent = TITLES[Object.prototype.hasOwnProperty.call(V, page) ? page : 'dash'] || ''; document.body.classList.remove('menu-open'); $('#menuBtn').setAttribute('aria-expanded', 'false');
     $('#whoName').textContent = (St.user().name || '') + ' — ' + (St.ROLES[St.user().role] || '');
     v.innerHTML = (Object.prototype.hasOwnProperty.call(V, page) ? V[page] : V.dash)(id);  // لا نقرأ مفاتيح النموذج الأولي (constructor…)
+    if ((page === 'pitch' || page === 'coach') && window.CoachUI) CoachUI.bind(v, St.can('lineup'));
     if (page === 'players' && St.can('viewPlayers')) drawPlayers();
     if (page === 'site') loadSite();
     if (page === 'finance' && St.can('finance')) loadFin();
     if (page === 'roles' && isFounder()) loadRoles();
     if (page === 'users' && isFounder()) loadUsers();
   }
+  if (window.CoachUI) CoachUI.init({ St, S, esc, num, avatar, toast, render: () => render(), TD });
   const fail = async p => { const er = await p; if (er) { toast(er); render(); } return !!er; };
   St.on(render); window.addEventListener('hashchange', render);
   const setMenu = o => { document.body.classList.toggle('menu-open', o); $('#menuBtn').setAttribute('aria-expanded', String(o)); };

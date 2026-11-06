@@ -123,3 +123,42 @@ dialog#modal .hint{color:var(--mut,#a9c4b5)}
 .field .pk-ar{width:22%;height:5%;left:39%;border-radius:0 0 999px 999px;border-top-width:0}
 .field .pk-ar.t{top:17%}
 .field .pk-ar.b{bottom:17%;border-radius:999px 999px 0 0;border-top-width:2px;border-bottom-width:0}
+
+/* ---- مركز المدرب (0014): ملعب تفاعلي بخانات مطلقة حسب الخطة ---- */
+.coachbox .chead{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.coachbox .chead h2{margin:0}
+.cstat{font-size:.8rem;color:var(--gold,#d4af4f);min-height:1.2em}
+.coachbox.busy{opacity:.78;pointer-events:none}
+.fmbar{display:flex;gap:8px;margin:10px 0;flex-wrap:wrap}
+.fmbar button{flex:1 1 70px;white-space:nowrap;min-height:44px;font-weight:800;background:transparent;color:var(--ink,#e8f2ec);border:1px solid var(--line2,#1d4430);border-radius:12px}
+.fmbar button.on{background:var(--gold,#d4af4f);border-color:var(--gold,#d4af4f);color:#2b2000}
+.fmbar button:disabled{opacity:.55}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.note.bad{border-color:#b83a2e;color:#ffb4a8}
+.field.fx{display:block;position:relative;min-height:0;aspect-ratio:100/145;padding:0;overflow:hidden;touch-action:pan-y}
+.field.fx .sl{position:absolute;transform:translate(-50%,-50%);z-index:2;display:flex;justify-content:center;border-radius:14px;min-width:56px;min-height:56px;align-items:center}
+.field.fx .sl.tgt{box-shadow:0 0 0 3px rgba(212,175,79,.9),0 0 18px rgba(212,175,79,.55)}
+.field.fx .sl.hot{box-shadow:0 0 0 4px #7CFC9A,0 0 22px rgba(124,252,154,.7)}
+.field.fx .sl.badh{box-shadow:0 0 0 3px #e0574a}
+.field.fx .ph{width:52px;height:52px;min-height:0;padding:0;border-radius:50%;border:2px dashed rgba(255,255,255,.7);background:rgba(0,0,0,.22);color:#fff;font-size:.68rem;font-weight:800;display:grid;place-items:center}
+.tk{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:56px;min-height:56px;padding:2px;background:none;border:0;color:#fff;font:inherit;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.tk .av{width:46px;height:46px;box-shadow:0 0 0 3px #fff,0 4px 10px rgba(0,0,0,.35);pointer-events:none}
+.tk .no{position:absolute;top:-4px;inset-inline-start:2px;background:#fff;color:#06120c;border-radius:99px;min-width:22px;text-align:center;font-size:.72rem;padding:1px 5px;pointer-events:none}
+.tk .nm{font-size:.68rem;font-weight:700;background:rgba(0,0,0,.55);padding:1px 7px;border-radius:99px;max-width:74px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
+.tk .cb{position:absolute;top:-6px;inset-inline-end:-2px;width:22px;height:22px;border-radius:50%;background:var(--gold,#d4af4f);color:#2b2000;font-style:normal;font-weight:900;font-size:.78rem;display:grid;place-items:center;box-shadow:0 0 0 2px #fff;pointer-events:none}
+.tk.off .av{filter:grayscale(1);opacity:.7}
+.tk.sel .av{box-shadow:0 0 0 4px var(--gold,#d4af4f),0 0 16px rgba(212,175,79,.7)}
+.tk.dragging{opacity:.35}
+.tk.ghost{position:fixed;z-index:1000;pointer-events:none;transform:translate(-50%,-60%);opacity:.95}
+.tk[data-ro]{cursor:pointer}
+.bench .tk{color:inherit}
+.bench .tk .nm{color:#fff}
+.coachbox .bench{touch-action:pan-y}
+.coachbox.dragging .bench{outline:2px dashed var(--gold,#d4af4f);outline-offset:2px}
+.bench.hot{outline:3px solid #7CFC9A}
+.selbar{margin:12px 0;padding:10px;border:1px solid var(--line2,#1d4430);border-radius:12px;background:rgba(0,0,0,.18)}
+.selbar .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.selbar .acts>*{min-height:44px}
+.coachbox .hint{margin:8px 0 0;color:var(--mut,#a9c4b5)}
+.coachbox .bh{margin-top:14px}
+@media(max-width:420px){.tk .av{width:42px;height:42px}.tk .nm{max-width:60px;font-size:.62rem}.field.fx .sl{min-width:50px}}

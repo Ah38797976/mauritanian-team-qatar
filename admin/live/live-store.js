@@ -7,6 +7,7 @@
   const STAFF_MODS = ['staff', 'viewStaff', 'contactStaff', 'contactStaffTeam'];
   const POS = ['حارس', 'مدافع', 'وسط', 'مهاجم'], ARCH = 'غير مسجّل', STAT = ['نشط', 'مصاب', 'موقوف', ARCH], KIND = ['فني', 'إداري'];
   const EV = { goal: 'هدف', yellow: 'بطاقة صفراء', red: 'بطاقة حمراء' };
+  const DENY = 'غير مصرح بهذه العملية لدورك الحالي';
   const subs = [];
   const c = () => TD.cache();
   const me = () => c().me || { role: '', perms: [], team: {}, display_name: '' };
@@ -18,7 +19,8 @@
     get matches() { return c().matches || []; },
     get sessions() { return c().sessions || []; },
     get att() { return c().att || {}; },
-    get lineup() { return { starters: c().lineup || [], formation: '' }; },
+    // starters تبقى مصفوفة معرّفات كما كانت (بقية الشاشات تعتمد عليها)؛ الباقي من 0014: v2=true/false/null(غير معروف: خطأ في القراءة)
+    get lineup() { const i = c().lineupInfo || {}; return { starters: c().lineup || [], formation: i.formation || '', slots: i.slots || {}, captain: i.captain || '', gk: i.gk || '', v2: i.v2 === undefined ? null : i.v2, err: i.err || '' }; },
     get users() { return (c().members || []).map(m => ({ id: m.user_id || m.id, name: m.display_name || m.name || '', role: m.role })); },
     get logs() { return c().logs || []; },
     get staff() { return c().staff || []; },
@@ -73,12 +75,19 @@
     addEvent: (mid, ev) => TD.addEvent(mid, ev),
     setResult: (mid, them, played) => TD.setResult(mid, them, played),
     setStarters: ids => TD.setStarters(ids),
+    // مركز المدرب: الواجهة لا تتجاوز الصلاحية (الخادم هو الحاسم)، لكن لا نُرسل أصلًا ما لا يحق للمستخدم
+    setFormation: f => St.can('lineup') ? TD.setFormation(f) : Promise.resolve(DENY),
+    setLineup: p => St.can('lineup') ? TD.setLineup(p) : Promise.resolve(DENY),
+    setCaptain: id => St.can('lineup') ? TD.setCaptain(id) : Promise.resolve(DENY),
+    setGoalkeeper: id => St.can('lineup') ? TD.setGoalkeeper(id) : Promise.resolve(DENY),
     getFinance: () => TD.getFinance(),
     saveFinance: e => TD.saveFinance(e),
     delFinance: id => TD.delFinance(id),
     saveSession: x => TD.saveSession(x),
     delSession: id => TD.delSession(id),
     setAtt: (sid, pid, v) => TD.setAtt(sid, pid, v),
+    // الحضور: قبل 0014 كان يتبع صلاحية lineup؛ بعده صلاحية attendance مستقلة. الواجهة القديمة (v2 غير مفعّل) تبقى على lineup حتى لا تنكسر.
+    canAttendance() { const v = (c().lineupInfo || {}).v2; return v === true ? St.can('attendance') : St.can('lineup'); },
     saveTeam: t => TD.saveTeam(t)
   };
   TD.on(() => St.emit());

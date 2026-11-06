@@ -40,14 +40,37 @@
   let sb = null, chain = Promise.resolve();
   let photoGen = 0;
   const urlCache = new Map();   // storage_path -> { url, exp } ; الروابط موقّعة لساعة، نعيد استعمالها حتى قبل انتهائها بخمس دقائق
-  const cache = { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], lineup: [], sessions: [], att: {}, stats: [], logs: [], photos: [], staffPhotos: [] };
+  const cache = { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], lineup: [], lineupInfo: { v2: null, formation: '', slots: {}, captain: '', gk: '', err: '' }, sessions: [], att: {}, stats: [], logs: [], photos: [], staffPhotos: [] };
   const subs = [], emit = () => subs.forEach(f => f());
-  const reset = () => { urlCache.clear(); Object.assign(cache, { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], lineup: [], sessions: [], att: {}, stats: [], logs: [], photos: [], staffPhotos: [] }); };
+  const reset = () => { urlCache.clear(); Object.assign(cache, { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], lineup: [], lineupInfo: { v2: null, formation: '', slots: {}, captain: '', gk: '', err: '' }, sessions: [], att: {}, stats: [], logs: [], photos: [], staffPhotos: [] }); };
 
+  // PGRST202 / 42883 = الدالة غير موجودة على الخادم (0014 غير مُطبَّق): رسالة واضحة بدل «تعذّر الاتصال»
+  const FEATURE_OFF = 'هذه الميزة غير مفعّلة على الخادم بعد';
   const rpc = async (name, args) => {
-    try { const { data, error } = await sb.rpc(name, args || {}); if (error) return error.code === '42501' ? DENY : NET; return data; }
+    try { const { data, error } = await sb.rpc(name, args || {}); if (error) return error.code === '42501' ? DENY : (error.code === 'PGRST202' || error.code === '42883') ? FEATURE_OFF : NET; return data; }
     catch (_) { return NET; }
   };
+  // قراءة التشكيلة وتمييز ثلاث حالات: (1) الأعمدة الجديدة موجودة = 0014 مُطبَّق، (2) رمز 42703 يذكر أحد الأعمدة الجديدة = 0014 غير مُطبَّق (نرجع للقراءة القديمة)،
+  // (3) أي خطأ آخر (صلاحية 42501، JWT، شبكة…) لا يعني شيئًا عن 0014: نُبقي آخر حالة صحيحة معروفة ونسجّل الخطأ ولا نغيّر الوضع.
+  const NEW_COLS = /\b(slot|is_captain|is_goalkeeper)\b/;
+  async function readLineup() {
+    const prev = cache.lineupInfo, q = t => sb.from(t);
+    let r;
+    try { r = await q('lineup_starters').select('player_id,slot,is_captain,is_goalkeeper'); } catch (_) { return { ...prev, err: 'net', ids: cache.lineup }; }
+    if (!r.error) {
+      const rows = r.data || [], slots = {}; let captain = '', gk = '';
+      rows.forEach(x => { if (x.slot != null) slots[x.player_id] = x.slot; if (x.is_captain) captain = x.player_id; if (x.is_goalkeeper) gk = x.player_id; });
+      let formation = '';
+      try { const f = await q('lineups').select('formation'); if (!f.error && f.data && f.data[0]) formation = String(f.data[0].formation || ''); } catch (_) {}
+      return { v2: true, formation, slots, captain, gk, err: '', ids: rows.map(x => x.player_id) };
+    }
+    if (r.error.code === '42703' && NEW_COLS.test(String(r.error.message || ''))) {
+      let l; try { l = await q('lineup_starters').select('player_id'); } catch (_) { return { ...prev, err: 'net', ids: cache.lineup }; }
+      if (l.error) return { ...prev, err: String(l.error.code || 'net'), ids: cache.lineup };
+      return { v2: false, formation: '', slots: {}, captain: '', gk: '', err: '', ids: (l.data || []).map(x => x.player_id) };
+    }
+    return { ...prev, err: String(r.error.code || 'net'), ids: cache.lineup };
+  }
   const serial = fn => { const p = chain.then(fn, fn); chain = p.catch(() => {}); return p; };
   const write = (name, args) => serial(async () => { const r = await rpc(name, args); if (typeof r !== 'string') return NET; if (r === '') await AD._refresh(); return r; });
 
@@ -73,7 +96,7 @@
         q('staff_members').select('id,name,title,kind,staff_contacts(phone)'),
         q('team_members').select('user_id,display_name,role,active'),                                                    // [v2 F4]
         q('matches').select('id,opponent,match_date,is_home,played,opp_goals,officer_id,match_players(player_id),match_events(player_id,event_type,minute)').order('match_date'),
-        q('lineup_starters').select('player_id'),
+        readLineup(),
         q('training_sessions').select('id,title,session_date').order('session_date'),
         q('attendance').select('session_id,player_id,present'),
         q('audit_log').select('created_at,actor_name,actor_role,action,detail').order('created_at', { ascending: false }).limit(500),
@@ -92,7 +115,7 @@
       cache.staff = (st.data || []).map(s => { const o = { id: s.id, teamId: tid, name: s.name, role: s.title, kind: KIND[s.kind] }; if (s.staff_contacts && s.staff_contacts[0]) o.phone = s.staff_contacts[0].phone; return o; });
       cache.members = (mb.data || []).filter(m => m.active).map(m => ({ id: m.user_id, name: m.display_name, role: m.role }));
       cache.matches = (mt.data || []).map(m => ({ id: m.id, opp: m.opponent, date: m.match_date, home: m.is_home, played: m.played, them: m.opp_goals, officer: m.officer_id, players: m.match_players.map(x => x.player_id), events: m.match_events.map(e => ({ pid: e.player_id, type: e.event_type, min: e.minute })) }));
-      cache.lineup = (ls.data || []).map(x => x.player_id);
+      { const { ids, ...info } = ls; cache.lineup = ids; cache.lineupInfo = info; }
       cache.sessions = (ss.data || []).map(s => ({ id: s.id, title: s.title, date: s.session_date }));                    // [v2 F2]
       cache.att = {}; (at.data || []).forEach(a => { (cache.att[a.session_id] = cache.att[a.session_id] || {})[a.player_id] = a.present; });
       cache.logs = (lg.data || []).map(l => ({ t: l.created_at, who: l.actor_name, role: l.actor_role, a: l.action, d: l.detail }));
@@ -118,6 +141,11 @@
     addEvent: (mid, ev) => write('rpc_add_event', { p_match: mid, ev }),
     setResult: (mid, them, played) => write('rpc_set_result', { p_match: mid, p_them: them, p_played: played }),
     setStarters: ids => write('rpc_set_starters', { p_ids: ids }),
+    // ---- مركز المدرب (0014): أسماء الدوال ومعاملاتها كما في ملف SQL حرفيًا؛ يتحقق منها tools/test_lineup_contract.js ----
+    setFormation: f => write('rpc_set_formation', { p_formation: f }),
+    setLineup: p => write('rpc_set_lineup', { p }),
+    setCaptain: id => write('rpc_set_captain', { p_player: id }),
+    setGoalkeeper: id => write('rpc_set_goalkeeper', { p_player: id }),
     saveSession: x => write('rpc_save_session', { s: x }),
     delSession: id => write('rpc_delete_session', { p_id: id }),
     setAtt: (sid, pid, v) => write('rpc_set_attendance', { p_session: sid, p_player: pid, p_present: v === true }),

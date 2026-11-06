@@ -217,3 +217,10 @@ html.pm-lock,html.pm-lock body{overflow:hidden;overscroll-behavior:none}
 .field .line{align-items:center}
 .field .slot{color:rgba(255,255,255,.35);font-size:1.4rem;align-self:center}
 .field .fe{position:absolute;inset:0;margin:auto;height:fit-content;width:max-content;max-width:86%;z-index:4;background:rgba(6,18,12,.78);color:#fff;padding:10px 16px;border-radius:12px;text-align:center}
+
+/* ---- 0014: الملعب العام على خانات الخطة (الأساسيون فقط) ---- */
+.field.fx{display:block;min-height:0;padding:0;aspect-ratio:100/145}
+.field.fx .sl{position:absolute;transform:translate(-50%,-50%);z-index:2;display:flex;justify-content:center}
+.field.fx .sl .pp{min-width:50px}
+.field.fx .sl .cb{position:absolute;top:-4px;inset-inline-end:-4px;width:22px;height:22px;border-radius:50%;background:var(--gold);color:#2b2000;font-style:normal;font-weight:900;font-size:.78rem;display:grid;place-items:center;box-shadow:0 0 0 2px #fff;z-index:3;pointer-events:none}
+@media(max-width:420px){.field.fx .sl .pp .av{width:44px;height:44px}.field.fx .sl .pp .nm{max-width:64px;font-size:.62rem}}
