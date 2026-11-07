@@ -20,6 +20,9 @@
       msg('');
     } catch (_) { msg('تعذّر الاتصال. حاول لاحقًا.'); } finally { busy(false); }
   });
+  // وضع التطبيق (من الشاشة الرئيسية): لا شريط متصفح ولا سحب للتحديث، فنُظهر زر تحديث
+  const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  if (standalone) { const rl = $('reloadBtn'); rl.hidden = false; rl.addEventListener('click', () => location.reload()); }
   const pw = $('password'), tg = $('pwToggle');
   tg.addEventListener('click', () => { const show = pw.type === 'password'; pw.type = show ? 'text' : 'password'; tg.textContent = show ? 'إخفاء' : 'إظهار'; tg.setAttribute('aria-pressed', show ? 'true' : 'false'); tg.setAttribute('aria-label', show ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'); pw.focus(); });
   const caps = e => { $('capsHint').hidden = !(e.getModifierState && e.getModifierState('CapsLock')); };

@@ -15,7 +15,7 @@
   --rail:96px;
   --font:"Cairo","Tajawal","Segoe UI","Noto Naskh Arabic","Geeza Pro",Tahoma,Arial,sans-serif;
 }
-html{scroll-padding-top:16px;color-scheme:dark}
+html{scroll-padding-top:16px;color-scheme:dark;background:#06120c}
 body{font-family:var(--font);background:radial-gradient(900px 520px at 85% -8%,#0f3a26 0,transparent 62%),var(--bg);color:var(--ink)}
 .skip{position:absolute;inset-inline-start:8px;top:-60px;z-index:100;background:var(--gold);color:#2b2000;padding:10px 16px;border-radius:10px;font-weight:800}
 .skip:focus{top:8px}
