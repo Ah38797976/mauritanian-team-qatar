@@ -195,3 +195,10 @@ a.coach-card:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(201,162,74,.5)
 /* زر القائمة: لا يبقى أبيض بخطوط غير مرئية بعد اللمس (hover عالق على iOS) */
 .menu:hover{background:rgba(255,255,255,.08)}
 @media(hover:none){.menu:hover{background:none}}
+/* استعادة الجلسة بعد تحديث الصفحة: لا تُعرض شاشة الدخول إن كانت الجلسة محفوظة */
+body.restoring #loginView{display:none!important}
+body.restoring #restoreView{display:block!important}
+#restoreView{display:none}
+#restoreView p{color:#eaf3ee;margin:6px 0 14px}
+#restoreBtns{display:flex;gap:10px;flex-wrap:wrap}
+#restoreBtns button{flex:1 1 140px;min-height:48px;border-radius:12px}

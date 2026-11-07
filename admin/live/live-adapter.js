@@ -83,11 +83,14 @@
     },
     on(f) { subs.push(f); },
     async signIn(email, password) { const { error } = await sb.auth.signInWithPassword({ email, password }); return error ? 'بيانات الدخول غير صحيحة' : ''; },
+    async hasSession() { try { const { data } = await sb.auth.getSession(); return !!(data && data.session); } catch (_) { return false; } },   // جلسة محفوظة في المتصفح؟
     async signOut() { await sb.auth.signOut(); reset(); emit(); },
     refresh() { return serial(() => AD._refresh()); },
     async _refresh() {
       const [me, roster, stats] = await Promise.all([rpc('rpc_get_me'), rpc('rpc_get_roster'), rpc('rpc_get_stat_rows')]);
-      if (!me || typeof me === 'string') { reset(); emit(); return; }
+      // خطأ عابر (شبكة/مهلة/رمز قيد التجديد) لا يعني انتهاء الجلسة: لا نمسح الحالة ولا نُظهر شاشة الدخول؛ المستدعي يعيد المحاولة.
+      if (typeof me === 'string') return 'err';
+      if (!me) { reset(); emit(); return 'none'; }   // الخادم أجاب فعلًا: لا عضوية فعّالة لهذا الحساب
       const tid = me.team && me.team.id;
       const q = t => sb.from(t);
       const [pl, ct, st, mb, mt, ls, ss, at, lg, ph, sph] = await Promise.all([
@@ -123,6 +126,7 @@
       cache.staffPhotos = sph.data || [];
       AD._resolvePhotos();   // signed URLs are fetched after the first paint; avatars update on the next emit
       emit();
+      return 'ok';
     },
     cache: () => cache,
     roster: () => cache.roster,                                         // [v2 F5] server-scoped list, used as is
