@@ -185,3 +185,13 @@ body:has(#loginView:not([hidden])){min-height:100vh;background:#06120c radial-gr
 #loginBtn:disabled{opacity:.7;cursor:progress}
 #loginView .note{margin:0 0 14px;padding:10px 12px;border-radius:10px;background:rgba(241,153,153,.1);border:1px solid rgba(241,153,153,.35);font-size:.92rem;line-height:1.6}
 #loginView .note.info{color:#bfe3cf;background:rgba(80,160,120,.12);border-color:rgba(80,160,120,.35)}
+
+/* بطاقة اختصار لوحة المدرب في «لوحة التحكم» */
+a.coach-card{display:block;text-decoration:none;color:inherit;border-color:var(--gold,#c9a24a)}
+a.coach-card h2{margin-bottom:4px}
+a.coach-card p{margin:0 0 10px;color:var(--mut,#a9c4b5)}
+a.coach-card .btnlink{display:inline-block;min-height:44px;line-height:44px;padding:0 18px;border-radius:12px;background:var(--p,#0b6b3a);color:#fff;font-weight:700}
+a.coach-card:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(201,162,74,.5)}
+/* زر القائمة: لا يبقى أبيض بخطوط غير مرئية بعد اللمس (hover عالق على iOS) */
+.menu:hover{background:rgba(255,255,255,.08)}
+@media(hover:none){.menu:hover{background:none}}

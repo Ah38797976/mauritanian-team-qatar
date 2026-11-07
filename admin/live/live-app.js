@@ -22,11 +22,11 @@
   // [المفتاح، العنوان، شرط الظهور]
   const GROUPS = () => [
     ['', [['dash', 'نظرة عامة', isPanelUser()]]],
-    ['الفريق', [['players', 'اللاعبون', St.can('viewPlayers')], ['matches', 'المباريات', St.canViewMatches()], ['stats', 'الإحصائيات', St.canViewMatches()], ['pitch', 'الملعب', St.canSeeRoster()], ['coach', 'التشكيلة والحضور', St.can('lineup') || St.can('viewPlayers')], ['staff', 'الطاقم', St.can('staff') || St.can('viewStaff')]]],
+    ['الفريق', [['players', 'اللاعبون', St.can('viewPlayers')], ['matches', 'المباريات', St.canViewMatches()], ['stats', 'الإحصائيات', St.canViewMatches()], ['pitch', 'الملعب', St.canSeeRoster()], ['coach', 'لوحة المدرب', St.can('lineup') || St.can('viewPlayers')], ['staff', 'الطاقم', St.can('staff') || St.can('viewStaff')]]],
     ['الإدارة', [['finance', 'المالية', St.can('finance')], ['users', 'المستخدمون', St.user().role === 'founder'], ['roles', 'الصلاحيات', St.user().role === 'founder'], ['audit', 'سجل العمليات', St.can('audit')]]],
     ['الإعدادات', [['site', 'إدارة الموقع العام', isPanelUser() && St.can('settings')], ['settings', 'إعدادات الفريق', isPanelUser()]]]
   ];
-  const TITLES = { dash: 'لوحة التحكم', players: 'اللاعبون', player: 'بطاقة لاعب', pitch: 'الملعب', member: 'ملف عضو الطاقم', matches: 'المباريات والنتائج', stats: 'الإحصائيات', coach: 'التشكيلة والحضور', staff: 'الطاقم', users: 'المستخدمون', roles: 'الصلاحيات', finance: 'المالية', audit: 'سجل العمليات', site: 'إدارة الموقع العام', settings: 'إعدادات الفريق' };
+  const TITLES = { dash: 'لوحة التحكم', players: 'اللاعبون', player: 'بطاقة لاعب', pitch: 'الملعب', member: 'ملف عضو الطاقم', matches: 'المباريات والنتائج', stats: 'الإحصائيات', coach: 'لوحة المدرب', staff: 'الطاقم', users: 'المستخدمون', roles: 'الصلاحيات', finance: 'المالية', audit: 'سجل العمليات', site: 'إدارة الموقع العام', settings: 'إعدادات الفريق' };
   function navFor(page) {
     return GROUPS().map(([g, items]) => { const its = items.filter(i => i[2]); return its.length ? (g ? `<div class="grp">${esc(g)}</div>` : '') + its.map(([k, l]) => `<a href="#/${k}" class="${page === k || (page === 'player' && k === 'players') || (page === 'member' && k === 'staff') ? 'on' : ''}" ${page === k ? 'aria-current="page"' : ''}>${ico(k)}<span>${esc(l)}</span></a>`).join('') : ''; }).join('');
   }
@@ -72,6 +72,7 @@
     const topMain = !ts.players.length ? '-' : ts.players.length === 1 ? esc(ts.players[0].name) : `تعادل (${ts.players.length})`;
     const topSub = !ts.players.length ? 'الهداف (لا أهداف بعد)' : ts.players.length === 1 ? `الهداف (${ts.goals})` : `الهدافون بـ ${ts.goals} لكل منهم: ${ts.players.map(p => esc(p.name)).join('، ')}`;
     return `<h1>لوحة التحكم</h1><div class="grid"><div class="card kpi"><b>${total}</b>لاعبون (${act} نشطون)</div><div class="card kpi"><b>${pl.length}</b>مباريات لُعبت (${w} فوز)</div><div class="card kpi"><b>${rate}%</b>نسبة الحضور</div><div class="card kpi" id="topk"><b>${topMain}</b>${topSub}</div></div>
+    ${St.can('lineup') || St.can('viewPlayers') ? `<a class="card coach-card" href="#/coach"><h2>لوحة المدرب</h2><p>التشكيلة الأساسية (${num(S.lineup.starters.length)}/11)، الملعب، والحضور.</p><span class="btnlink">فتح لوحة المدرب</span></a>` : ''}
     <div class="card"><h2>المباراة القادمة</h2>${next ? `${esc(next.opp)} — ${esc(next.date)} — ${next.home ? 'على أرضنا' : 'خارج الأرض'}` : 'لا توجد مباراة قادمة'}</div>
     ${(() => { const top = St.statRows().filter(r => r.s.goals > 0).slice(0, 3); return top.length ? `<div class="card"><h2>أبرز الهدافين</h2><div class="row">${top.map(r => `<a class="pc" href="#/player/${esc(r.p.id)}" style="text-decoration:none;color:inherit">${avatar(r.p)}<div><b>${esc(r.p.name)}</b><br><small>${num(r.s.goals)} هدف</small></div></a>`).join('')}</div></div>` : ''; })()}
     ${St.can('audit') ? `<div class="card"><h2>آخر العمليات</h2>${St.logs().slice(0, 4).map(l => `<div>• ${esc(l.a)}: ${esc(l.d)} <small>(${esc(l.who)})</small></div>`).join('')}</div>` : ''}`;
