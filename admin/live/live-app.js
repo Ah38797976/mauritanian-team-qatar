@@ -241,8 +241,8 @@
     const b = $('#userbox'); if (!b || route().page !== 'users') return;
     if (!ms) { b.innerHTML = '<p>تعذّر تحميل المستخدمين.</p>'; return; }
     const rows = ms.map(m => { const f = m.role === 'founder';
-      return `<tr><td>${esc(m.display_name)}</td><td>${f ? esc(St.ROLES.founder) : `<select data-ur="${esc(m.user_id)}" aria-label="دور ${esc(m.display_name)}">${ROLE_KEYS.map(k => `<option value="${k}" ${k === m.role ? 'selected' : ''}>${esc(St.ROLES[k])}</option>`).join('')}</select>`}</td><td><span class="tag ${m.active ? '' : 'bad'}">${m.active ? 'فعّال' : 'موقوف'}</span></td><td>${f ? '' : `<button type="button" class="sec" data-ua="${esc(m.user_id)}" data-to="${m.active ? '0' : '1'}">${m.active ? 'إيقاف' : 'تفعيل'}</button>`}</td></tr>`; }).join('');
-    b.innerHTML = tw('المستخدمون', `<thead><tr><th>الاسم</th><th>الدور</th><th>الحالة</th><th></th></tr></thead><tbody>${rows}</tbody>`);
+      return `<tr><td class="u-n">${esc(m.display_name)}</td><td class="u-r">${f ? esc(St.ROLES.founder) : `<select data-ur="${esc(m.user_id)}" aria-label="دور ${esc(m.display_name)}">${ROLE_KEYS.map(k => `<option value="${k}" ${k === m.role ? 'selected' : ''}>${esc(St.ROLES[k])}</option>`).join('')}</select>`}</td><td class="u-s"><span class="tag ${m.active ? '' : 'bad'}">${m.active ? 'فعّال' : 'موقوف'}</span></td><td class="u-a">${f ? '' : `<button type="button" class="sec" data-ua="${esc(m.user_id)}" data-to="${m.active ? '0' : '1'}">${m.active ? 'إيقاف' : 'تفعيل'}</button>`}</td></tr>`; }).join('');
+    b.innerHTML = tw('المستخدمون', `<thead><tr><th>الاسم</th><th>الدور</th><th>الحالة</th><th></th></tr></thead><tbody>${rows}</tbody>`, 'utbl');
   });
   // سجل العمليات: بطاقات مجمّعة حسب اليوم (بتوقيت قطر) مع بحث وتصفية بنوع العملية
   const QD = { timeZone: 'Asia/Qatar' };

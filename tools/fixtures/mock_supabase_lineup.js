@@ -15,6 +15,7 @@
   const rows = t => {
     if (t === 'players') return DB.players;
     if (t === 'lineups') return [{ formation: DB.formation }];
+    if (t === 'team_members') return [{ user_id: 'u1', display_name: 'مدير إداري (تجريبي)', role: 'admin', active: true }, { user_id: 'u2', display_name: 'مدرب (تجريبي)', role: 'coach', active: true }, { user_id: 'u3', display_name: 'مسؤول مباراة 1 (تجريبي)', role: 'officer', active: false }, { user_id: 'u4', display_name: 'المؤسس', role: 'founder', active: true }];
     return [];
   };
   function writeRpc(name, a) {

@@ -185,3 +185,22 @@ body:has(#loginView:not([hidden])){min-height:100vh;background:#06120c radial-gr
 #loginBtn:disabled{opacity:.7;cursor:progress}
 #loginView .note{margin:0 0 14px;padding:10px 12px;border-radius:10px;background:rgba(241,153,153,.1);border:1px solid rgba(241,153,153,.35);font-size:.92rem;line-height:1.6}
 #loginView .note.info{color:#bfe3cf;background:rgba(80,160,120,.12);border-color:rgba(80,160,120,.35)}
+
+/* جدول المستخدمين: على الجوال بطاقة لكل مستخدم بدل جدول يتجاوز الشاشة */
+.utbl .tag,.utbl button{white-space:nowrap}
+@media(max-width:560px){
+  .utbl{min-width:0}
+  .utbl thead{display:none}
+  .utbl tbody,.utbl tr{display:block}
+  .utbl tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 12px;align-items:center;padding:14px;border-bottom:1px solid var(--line,#17382a)}
+  .utbl tr:last-child{border-bottom:0}
+  .utbl td{display:block;border:0;padding:0;min-width:0}
+  .utbl .u-n{grid-column:1;grid-row:1;font-weight:700;overflow-wrap:anywhere}
+  .utbl .u-s{grid-column:2;grid-row:1;justify-self:end}
+  .utbl .u-r{grid-column:1/-1;grid-row:2}
+  .utbl .u-r select{width:100%;min-height:44px}
+  .utbl .u-a{grid-column:1/-1;grid-row:3}
+  .utbl .u-a button{width:100%;min-height:44px}
+  .utbl .u-a:empty{display:none}
+}
+#uf label.f span{color:#b7cfc2}
