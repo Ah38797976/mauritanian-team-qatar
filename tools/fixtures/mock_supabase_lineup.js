@@ -52,6 +52,7 @@
   }
   const rpcImpl = async (name, a) => {
     if (M.delay) await sleep(M.delay);
+    if (name === 'rpc_get_me') { M.meCalls = (M.meCalls || 0) + 1; if (M.meFail === 'always' || M.meCalls <= (+M.meFail || 0)) return { data: null, error: { code: '', message: 'network' } }; if (M.noMember) return { data: null, error: null }; }
     if (name === 'rpc_get_me') return { data: { role: M.role, perms: M.perms, display_name: 'مستخدم تجريبي', team: { id: 't1', name: 'فريق تجريبي', city: 'الدوحة', color: '#0b6b3a' } }, error: null };
     if (name === 'rpc_get_roster') return { data: DB.players.map(p => ({ id: p.id, name: p.name, num: p.shirt_number, pos: p.position, status: p.status })), error: null };
     if (name === 'rpc_get_stat_rows') return { data: [], error: null };
@@ -73,5 +74,5 @@
         return { data: rows(t), error: null };
       })().then(res, rej);
     } });
-  window.supabase = { createClient: () => ({ auth: { signInWithPassword: async () => ({ error: null }), signOut: async () => ({}), onAuthStateChange: () => {} }, from: builder, rpc: rpcImpl, storage: { from: () => ({ createSignedUrl: async () => ({ data: null }) }) } }) };
+  window.supabase = { createClient: () => ({ auth: { signInWithPassword: async () => ({ error: null }), signOut: async () => { window.__signedOut = true; return {}; }, getSession: async () => ({ data: { session: M.noSession || window.__signedOut ? null : { user: { id: 'u1' } } } }), onAuthStateChange: () => {} }, from: builder, rpc: rpcImpl, storage: { from: () => ({ createSignedUrl: async () => ({ data: null }) }) } }) };
 })();

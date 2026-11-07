@@ -25,5 +25,23 @@
   const caps = e => { $('capsHint').hidden = !(e.getModifierState && e.getModifierState('CapsLock')); };
   pw.addEventListener('keydown', caps); pw.addEventListener('keyup', caps); pw.addEventListener('blur', () => { $('capsHint').hidden = true; });
   $('signOutBtn').addEventListener('click', () => { TD.signOut(); });
-  TD.refresh().catch(() => {});   // جلسة محفوظة إن وُجدت؛ بدونها تبقى شاشة الدخول
+  // تحديث الصفحة لا يُخرج المستخدم: إن وُجدت جلسة محفوظة نعيد تحميل بياناته بإعادة محاولة عند الأخطاء العابرة، ولا يُغلق الحساب إلا بزر «خروج».
+  const sleep = ms => new Promise(r => setTimeout(r, ms)), body = document.body, rm = $('restoreMsg'), rb = $('restoreBtns');
+  async function restore() {
+    let has = false; try { has = await TD.hasSession(); } catch (_) {}
+    if (!has) return;                                  // لا جلسة: تبقى شاشة الدخول
+    body.classList.add('restoring'); rb.hidden = true; rm.textContent = 'جارٍ استعادة جلستك…';
+    let r = 'err';
+    for (const wait of [0, 1500, 3000, 6000]) {
+      if (wait) await sleep(wait);
+      try { r = await withTimeout(TD.refresh()); } catch (_) { r = 'err'; }
+      if (r === 'ok' || r === 'none') break;
+    }
+    if (r === 'ok') { body.classList.remove('restoring'); return; }
+    if (r === 'none') { await TD.signOut(); body.classList.remove('restoring'); msg('لا توجد عضوية فعّالة لهذا الحساب. أُغلقت الجلسة.'); return; }
+    rm.textContent = 'تعذّر الاتصال بالخادم. جلستك محفوظة؛ أعد المحاولة.'; rb.hidden = false;   // لا نُخرج المستخدم عند انقطاع الشبكة
+  }
+  $('restoreRetry').addEventListener('click', () => { restore(); });
+  $('restoreOut').addEventListener('click', async () => { await TD.signOut(); body.classList.remove('restoring'); });
+  restore();
 })();

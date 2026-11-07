@@ -185,3 +185,11 @@ body:has(#loginView:not([hidden])){min-height:100vh;background:#06120c radial-gr
 #loginBtn:disabled{opacity:.7;cursor:progress}
 #loginView .note{margin:0 0 14px;padding:10px 12px;border-radius:10px;background:rgba(241,153,153,.1);border:1px solid rgba(241,153,153,.35);font-size:.92rem;line-height:1.6}
 #loginView .note.info{color:#bfe3cf;background:rgba(80,160,120,.12);border-color:rgba(80,160,120,.35)}
+
+/* استعادة الجلسة بعد تحديث الصفحة: لا تُعرض شاشة الدخول إن كانت الجلسة محفوظة */
+body.restoring #loginView{display:none!important}
+body.restoring #restoreView{display:block!important}
+#restoreView{display:none}
+#restoreView p{color:#eaf3ee;margin:6px 0 14px}
+#restoreBtns{display:flex;gap:10px;flex-wrap:wrap}
+#restoreBtns button{flex:1 1 140px;min-height:48px;border-radius:12px}
