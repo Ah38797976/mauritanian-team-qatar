@@ -175,6 +175,26 @@
     saveFinance: e => write('rpc_save_finance', { e }),
     delFinance: id => write('rpc_delete_finance', { p_id: id }),
     saveSite: s => write('rpc_save_site', { s }),
+    // ---- بطاقة المطوّر (0017). قبل تطبيق 0017 يُرجِع getDeveloper نصًّا (FEATURE_OFF) فتعرض اللوحة رسالة بدل الأخطاء ----
+    getDeveloper: () => rpc('rpc_get_developer'),
+    saveDeveloper: s => write('rpc_save_developer', { s }),
+    devPhotoUrl(path) { try { return path ? sb.storage.from('player-photos').getPublicUrl(path).data.publicUrl : ''; } catch (_) { return ''; } },
+    async setDeveloperPhoto(file, oldPath) {
+      const teamId = cache.me && cache.me.team && cache.me.team.id; if (!teamId) return DENY;
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 2097152) return 'نوع الصورة أو حجمها غير مقبول';
+      const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[file.type], path = `${teamId}/${teamId}/${crypto.randomUUID()}.${ext}`;
+      const up = await sb.storage.from('player-photos').upload(path, file, { upsert: false, contentType: file.type });
+      if (up.error) return String(up.error.statusCode) === '403' ? DENY : NET;
+      const r = await write('rpc_set_developer_photo', { p_path: path, p_type: file.type, p_size: file.size });
+      if (r !== '') await sb.storage.from('player-photos').remove([path]);
+      else if (oldPath) await sb.storage.from('player-photos').remove([oldPath]);
+      return r;
+    },
+    async delDeveloperPhoto(oldPath) {
+      const r = await write('rpc_delete_developer_photo', {});
+      if (r === '' && oldPath) await sb.storage.from('player-photos').remove([oldPath]);
+      return r;
+    },
     // ---- photos ----
     async uploadPhoto(playerId, file, primary) {
       const teamId = cache.me && cache.me.team && cache.me.team.id; if (!teamId) return DENY;                // [v2] team from the server context only

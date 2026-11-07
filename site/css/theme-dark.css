@@ -224,3 +224,7 @@ html.pm-lock,html.pm-lock body{overflow:hidden;overscroll-behavior:none}
 .field.fx .sl .pp{min-width:50px}
 .field.fx .sl .cb{position:absolute;top:-4px;inset-inline-end:-4px;width:22px;height:22px;border-radius:50%;background:var(--gold);color:#2b2000;font-style:normal;font-weight:900;font-size:.78rem;display:grid;place-items:center;box-shadow:0 0 0 2px #fff;z-index:3;pointer-events:none}
 @media(max-width:420px){.field.fx .sl .pp .av{width:44px;height:44px}.field.fx .sl .pp .nm{max-width:64px;font-size:.62rem}}
+
+/* عن مطوّر التطبيق — الوضع الداكن */
+.dev-pic{background:#14503a;color:#d8efe2}
+.dev-n{color:#fff}.dev-t{color:#e2c26b}.dev-txt p{color:#b9cdc1}

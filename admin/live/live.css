@@ -230,3 +230,11 @@ body.restoring #restoreView{display:block!important}
 /* شريط التحديث التلقائي */
 .upd-bar{position:fixed;inset-inline:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:9999;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-radius:12px;background:#0f3a24;color:#e8fff1;border:1px solid #2f7d52;box-shadow:0 8px 24px rgba(0,0,0,.45);font-size:15px}
 .upd-bar button{min-height:40px;padding:0 16px;border-radius:10px;border:0;background:#2ecc71;color:#04210f;font-weight:700;cursor:pointer}
+
+/* بطاقة المطوّر */
+#devbox{margin-top:16px}
+.devrow{display:flex;gap:14px;align-items:center;margin-bottom:8px}
+.devpic{flex:0 0 96px;width:96px;height:120px;border-radius:14px;overflow:hidden;background:#0d2a1a;border:1px solid #2f7d52;display:flex;align-items:center;justify-content:center;color:#9fc4af;font-size:13px;text-align:center}
+.devpic img{width:100%;height:100%;object-fit:cover}
+.devpick{flex:1;min-width:0}
+.ck{background:#0d2a1a;border-color:#2f7d52;color:#e8fff1}.ck small{color:#9fc4af}.ck:hover{background:#12361f;border-color:#3d9a66}

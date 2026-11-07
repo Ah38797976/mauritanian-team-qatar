@@ -117,3 +117,12 @@ section.sec:first-child{margin-top:8px}
 .av,.ic,.lav{overflow:hidden}.av img,.ic img,.lav img{width:100%;height:100%;object-fit:cover;display:block}
 .lbw{display:flex;align-items:center;gap:10px;min-width:0}.lbm{flex:1;min-width:0}
 .lav{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--p-100);color:var(--p-900);font-weight:800;font-size:.8rem}
+
+/* عن مطوّر التطبيق */
+.devcard{display:flex;gap:20px;align-items:center;padding:22px 26px;border-inline-start:5px solid var(--p)}
+.dev-pic{flex:0 0 112px;width:112px;height:140px;border-radius:16px;overflow:hidden;background:var(--p-100);display:flex;align-items:center;justify-content:center;color:var(--p-700);font-weight:800;font-size:1.6rem}
+.dev-pic img{width:100%;height:100%;object-fit:cover;display:block}
+.dev-txt{min-width:0}.dev-n{display:block;font-size:1.3rem;color:var(--ink)}
+.dev-t{display:block;margin-top:2px;color:var(--p-700);font-weight:700}
+.dev-txt p{margin:10px 0 0;line-height:1.9;color:var(--mut)}
+@media(max-width:560px){.devcard{flex-direction:column;text-align:center;padding:18px}.dev-pic{flex-basis:auto;width:128px;height:160px}}
