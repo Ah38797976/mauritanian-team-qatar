@@ -11,6 +11,7 @@
   const DB = M.db = { formation: init.formation || '4-4-2', players: P.map(([id, name, n, pos, st]) => ({ id, name, shirt_number: n, position: pos, city: 'الدوحة', status: st || 'active' })),
     starters: init.starters || [['gk1', 1], ['d1', 2], ['d2', 3], ['d3', 4], ['d4', 5], ['m1', 6], ['m2', 7], ['m3', 8], ['m4', 9], ['f1', 10], ['m5', 11]].map(([player_id, slot]) => ({ player_id, slot, is_captain: player_id === 'd1', is_goalkeeper: player_id === 'gk1' })) };
   const DEV = M.dev = Object.assign({ name: '', title: '', bio: '', photo: null, visible: false }, init.dev || {});
+  const GAL = M.gal = { visible: false, n: 0, photos: [], ...(init.gal || {}) };
   const pl = id => DB.players.find(p => p.id === id);
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const rows = t => {
@@ -57,6 +58,9 @@
     if (name === 'rpc_save_developer') { if (!a.s.name.trim() && a.s.visible) return 'اكتب الاسم قبل إظهار القسم في الموقع'; Object.assign(DEV, { name: a.s.name, title: a.s.title, bio: a.s.bio, visible: a.s.visible }); return ''; }
     if (name === 'rpc_set_developer_photo') { DEV.photo = a.p_path; return ''; }
     if (name === 'rpc_delete_developer_photo') { DEV.photo = null; return ''; }
+    if (name === 'rpc_set_gallery_visible') { GAL.visible = a.p_visible; return ''; }
+    if (name === 'rpc_add_gallery_photo') { if (GAL.photos.length >= 40) return 'وصلت إلى الحد الأقصى (40 صورة). احذف صورة قبل إضافة أخرى'; GAL.photos.unshift({ id: 'g' + (++GAL.n), path: a.p_path, caption: a.p_caption }); return ''; }
+    if (name === 'rpc_delete_gallery_photo') { GAL.photos = GAL.photos.filter(x => x.id !== a.p_id); return ''; }
     return '';
   }
   const rpcImpl = async (name, a) => {
@@ -66,6 +70,7 @@
     if (name === 'rpc_get_roster') return { data: DB.players.map(p => ({ id: p.id, name: p.name, num: p.shirt_number, pos: p.position, status: p.status })), error: null };
     if (name === 'rpc_get_stat_rows') return { data: [], error: null };
     M.calls.push({ name, args: JSON.parse(JSON.stringify(a || {})) });
+    if (name === 'rpc_get_gallery') return M.galMissing ? { data: null, error: { code: 'PGRST202', message: 'missing' } } : { data: JSON.parse(JSON.stringify({ visible: GAL.visible, photos: GAL.photos })), error: null };
     if (name === 'rpc_get_developer') return M.devMissing ? { data: null, error: { code: 'PGRST202', message: 'missing' } } : { data: { ...DEV }, error: null };
     if (M.missingRpc) return { data: null, error: { code: 'PGRST202', message: 'Could not find the function' } };
     if (M.rpcError) return { data: null, error: M.rpcError };

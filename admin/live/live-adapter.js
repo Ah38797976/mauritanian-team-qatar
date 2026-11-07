@@ -190,6 +190,24 @@
       else if (oldPath) await sb.storage.from('player-photos').remove([oldPath]);
       return r;
     },
+    // ---- معرض الصور (0018) ----
+    getGallery: () => rpc('rpc_get_gallery'),
+    setGalleryVisible: v => write('rpc_set_gallery_visible', { p_visible: !!v }),
+    async addGalleryPhoto(file, caption) {
+      const teamId = cache.me && cache.me.team && cache.me.team.id; if (!teamId) return DENY;
+      if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type) || file.size > 2097152) return 'نوع الصورة أو حجمها غير مقبول';
+      const ext = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' }[file.type], path = `${teamId}/${teamId}/${crypto.randomUUID()}.${ext}`;
+      const up = await sb.storage.from('player-photos').upload(path, file, { upsert: false, contentType: file.type });
+      if (up.error) return String(up.error.statusCode) === '403' ? DENY : NET;
+      const r = await write('rpc_add_gallery_photo', { p_path: path, p_type: file.type, p_size: file.size, p_caption: caption || '' });
+      if (r !== '') await sb.storage.from('player-photos').remove([path]);
+      return r;
+    },
+    async deleteGalleryPhoto(id, path) {
+      const r = await write('rpc_delete_gallery_photo', { p_id: id });
+      if (r === '' && path) await sb.storage.from('player-photos').remove([path]);
+      return r;
+    },
     async delDeveloperPhoto(oldPath) {
       const r = await write('rpc_delete_developer_photo', {});
       if (r === '' && oldPath) await sb.storage.from('player-photos').remove([oldPath]);

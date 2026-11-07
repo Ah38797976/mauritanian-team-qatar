@@ -269,10 +269,24 @@
   V.settings = () => { const t = St.team(), ed = St.can('settings'); return `<h1>إعدادات الفريق</h1><div class="card"><form id="tf">${fld('اسم الفريق', 'name', t.name, 'text', ed ? '' : 'disabled')}${fld('المدينة', 'city', t.city, 'text', ed ? '' : 'disabled')}${fld('اللون الرئيسي', 'color', t.color, 'color', ed ? '' : 'disabled')}<small class="hint">يظهر هذا اللون في الموقع العام فقط، ولا يغيّر ألوان لوحة الإدارة.</small>${ed ? '<button>حفظ</button>' : '<small>عرض فقط</small>'}</form></div>`; };
   // إدارة الموقع العام: ما تفعّله هنا يظهر للزوار في الموقع؛ وما تُطفئه يختفي. لا هواتف ولا بريد ولا مدن في الموقع أبدًا (الخادم يرجع قائمة بيضاء فقط).
   const SEC = [['players', 'اللاعبون', 'الاسم والرقم والمركز فقط'], ['staff', 'الطاقم', 'الاسم والدور فقط'], ['matches', 'المباريات والنتائج', 'الخصم والتاريخ والنتيجة'], ['stats', 'الهدافون', 'الاسم والأهداف والمشاركات'], ['photos', 'صور اللاعبين', 'تظهر صورة كل لاعب في الملعب وبطاقته؛ الصور المرفوعة تصبح قابلة للفتح برابطها العام']];
-  V.site = () => { if (!isPanelUser() || !St.can('settings')) return denied('إدارة الموقع العام'); return `<h1>إدارة الموقع العام</h1><div class="note">يظهر في الموقع ما تفعّله هنا فقط. كل الأقسام مطفأة افتراضيًا. لا يُنشر في الموقع أي هاتف أو بريد أو مدينة لأي لاعب أو عضو.</div><div class="card" id="sitebox"><p>جارٍ التحميل…</p></div><div class="card" id="devbox"><p>جارٍ التحميل…</p></div>`; };
+  V.site = () => { if (!isPanelUser() || !St.can('settings')) return denied('إدارة الموقع العام'); return `<h1>إدارة الموقع العام</h1><div class="note">يظهر في الموقع ما تفعّله هنا فقط. كل الأقسام مطفأة افتراضيًا. لا يُنشر في الموقع أي هاتف أو بريد أو مدينة لأي لاعب أو عضو.</div><div class="card" id="sitebox"><p>جارٍ التحميل…</p></div><div class="card" id="devbox"><p>جارٍ التحميل…</p></div><div class="card" id="gallerybox"><p>جارٍ التحميل…</p></div>`; };
   const siteForm = r => { const s = r.sections || {};
     return `<div class="row between"><h2>محتوى الموقع</h2><a class="btnlink" href="../../" target="_blank" rel="noopener">عرض الموقع ↗</a></div><form id="sf"><label class="f"><span>نبذة عن الفريق (اختيارية)</span><textarea name="about" rows="3" maxlength="500">${esc(r.about)}</textarea></label><label class="f"><span>إعلان أعلى الموقع (اختياري)</span><input name="announcement" maxlength="200" value="${esc(r.announcement)}"></label><h2>الأقسام الظاهرة في الموقع</h2><div class="secs">${SEC.map(([k, l, n]) => `<label class="ck"><input type="checkbox" name="sec_${esc(k)}" ${s[k] === true ? 'checked' : ''}><span><b>${esc(l)}</b><small>${esc(n)}</small></span></label>`).join('')}</div><button>حفظ الموقع</button></form>`; };
   const loadSite = () => { const box = $('#sitebox'); if (!box) return; TD.getSite().then(r => { const b = $('#sitebox'); if (!b || route().page !== 'site') return; b.innerHTML = r && typeof r === 'object' ? siteForm(r) : '<p>تعذّر تحميل إعدادات الموقع أو لا تملك الصلاحية.</p>'; }); };
+
+  // معرض الصور: تصغير بلا قصّ (أطول ضلع 1600px) ثم رفع متتابع
+  const shrinkWide = async file => {
+    const im = await loadImg(await readUrl(file)), k = Math.min(1, 1600 / Math.max(im.naturalWidth, im.naturalHeight)), w = Math.max(1, Math.round(im.naturalWidth * k)), h = Math.max(1, Math.round(im.naturalHeight * k));
+    const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.drawImage(im, 0, 0, w, h);
+    let q = 0.84, b = await new Promise(r => c.toBlob(r, 'image/jpeg', q)); while (b && b.size > 1900000 && q > 0.5) { q -= 0.1; b = await new Promise(r => c.toBlob(r, 'image/jpeg', q)); }
+    if (!b) throw new Error('blob'); return new File([b], 'photo.jpg', { type: 'image/jpeg' });
+  };
+  let galData = null;
+  const galForm = g => { galData = g; const ph = g.photos || [];
+    return `<h2>معرض صور الفريق</h2><div class="secs"><label class="ck"><input type="checkbox" id="gvis" ${g.visible === true ? 'checked' : ''}><span><b>إظهار المعرض في الموقع العام</b><small>${ph.length} من 40 صورة — يظهر فقط إذا كان فيه صور</small></span></label></div>
+      ${ph.length ? `<div class="galgrid">${ph.map(x => `<figure class="galtile"><img src="${esc(TD.devPhotoUrl(x.path))}" alt="" loading="lazy"><button type="button" class="galx" data-gd="${esc(x.id)}" aria-label="حذف الصورة">×</button>${x.caption ? `<figcaption>${esc(x.caption)}</figcaption>` : ''}</figure>`).join('')}</div>` : '<p class="muted">لا توجد صور بعد.</p>'}
+      <form id="gf"><label class="f"><span>إضافة صور (يمكن اختيار أكثر من صورة)</span><input type="file" name="gphotos" accept="image/jpeg,image/png,image/webp" multiple></label>${fld('تعليق (اختياري، يُطبَّق على كل الصور المرفوعة الآن)', 'gcap', '', 'text', 'maxlength="80"')}<button>رفع الصور</button></form>`; };
+  const loadGal = () => { const box = $('#gallerybox'); if (!box) return; TD.getGallery().then(g => { const b = $('#gallerybox'); if (!b || route().page !== 'site') return; b.innerHTML = g && typeof g === 'object' ? galForm(g) : '<h2>معرض صور الفريق</h2><p>هذه الميزة غير مفعّلة بعد في قاعدة البيانات، أو لا تملك صلاحية إدارة الموقع.</p>'; }); };
 
   // بطاقة «عن مطوّر التطبيق»: الاسم والصفة والنبذة والصورة، تظهر في الموقع العام عند التفعيل فقط
   let devPhoto = '';
@@ -296,7 +310,7 @@
     v.innerHTML = (Object.prototype.hasOwnProperty.call(V, page) ? V[page] : V.dash)(id);  // لا نقرأ مفاتيح النموذج الأولي (constructor…)
     if ((page === 'pitch' || page === 'coach') && window.CoachUI) CoachUI.bind(v, St.can('lineup'));
     if (page === 'players' && St.can('viewPlayers')) drawPlayers();
-    if (page === 'site') { loadSite(); loadDev(); }
+    if (page === 'site') { loadSite(); loadDev(); loadGal(); }
     if (page === 'finance' && St.can('finance')) loadFin();
     if (page === 'roles' && isFounder()) loadRoles();
     if (page === 'users' && isFounder()) loadUsers();
@@ -313,6 +327,7 @@
   v.addEventListener('change', e => {
     const t = e.target, d = t.dataset;
     if (t.id === 'fp' || t.id === 'fs') drawPlayers();
+    if (t.id === 'gvis') { fail(TD.setGalleryVisible(t.checked)).then(bad => { if (!bad) toast(SAVED); loadGal(); }); }
     if (t.id === 'ses') { sesId = t.value; render(); }
     if (t.id === 'finm') { finM = t.value; drawFin(); }
     if (t.id === 'fint') { finT = t.value; drawFin(); }
@@ -325,6 +340,7 @@
   v.addEventListener('click', e => {
     const t = e.target, d = t.dataset, id = t.id;
     if (d.as) { const ids = S.lineup.starters; if (ids.length >= 11) return toast('الحد الأقصى 11 لاعبًا'); fail(St.setStarters([...ids, d.as])); }
+    if (d.gd && confirm('حذف هذه الصورة من المعرض؟')) { const ph = ((galData && galData.photos) || []).find(x => x.id === d.gd); fail(TD.deleteGalleryPhoto(d.gd, ph && ph.path)).then(bad => { if (!bad) toast('تم الحذف'); loadGal(); }); }
     if (d.rs) fail(St.setStarters(S.lineup.starters.filter(x => x !== d.rs)));
     if (id === 'addp') playerForm();
     if (id === 'edp') playerForm(St.player(route().id));
@@ -354,6 +370,12 @@
         else if (!er && fd.has('rmphoto') && devPhoto) er = await TD.delDeveloperPhoto(devPhoto);
         toast(er || SAVED); loadDev();
       })().finally(() => { btn.disabled = false; });
+    }
+    if (e.target.id === 'gf') { e.preventDefault(); const form = e.target, fd = new FormData(form), files = fd.getAll('gphotos').filter(f => f && f.size), cap = String(fd.get('gcap') || ''), btn = form.querySelector('button');
+      if (!files.length) return toast('اختر صورة واحدة على الأقل'); if (files.length + ((galData && galData.photos) || []).length > 40) return toast('الحد الأقصى 40 صورة في المعرض');
+      btn.disabled = true;
+      (async () => { let ok = 0, er = ''; for (const f of files) { let up; try { up = await shrinkWide(f); } catch (_) { er = 'تعذّر قراءة إحدى الصور'; continue; } er = await TD.addGalleryPhoto(up, cap); if (er) break; ok++; toast(`رُفعت ${ok} من ${files.length}`); }
+        toast(er ? (ok ? `رُفعت ${ok} وتوقف الباقي: ${er}` : er) : SAVED); loadGal(); })().finally(() => { btn.disabled = false; });
     }
     if (e.target.id === 'uf') { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); fail(TD.addMemberByEmail(f.email.trim(), f.name.trim(), f.role)).then(bad => { if (!bad) toast(SAVED); }); }
     if (e.target.id === 'tf') { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); St.saveTeam({ name: f.name, city: f.city, color: f.color }).then(er => toast(er || SAVED)); }
