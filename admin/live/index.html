@@ -5,10 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: https://ddrbrskusreoktqabkvi.supabase.co; font-src 'self'; connect-src https://ddrbrskusreoktqabkvi.supabase.co; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; manifest-src 'self'; img-src 'self' data: https://ddrbrskusreoktqabkvi.supabase.co; font-src 'self'; connect-src https://ddrbrskusreoktqabkvi.supabase.co; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta name="theme-color" content="#06120c">
 <title>لوحة الإدارة (متصلة) — فريق الجالية الموريتانية في قطر</title>
 <link rel="icon" href="../../assets/logo.png">
+<link rel="manifest" href="/admin/live/app.webmanifest">
+<link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="لوحة الفريق">
 <link rel="stylesheet" href="../css/admin.css">
 <link rel="stylesheet" href="../css/theme-dark.css">
 <link rel="stylesheet" href="live.css">
@@ -45,7 +51,7 @@
     <header class="top">
       <button class="menu" id="menuBtn" aria-label="فتح القائمة" aria-expanded="false" aria-controls="side"><span></span><span></span><span></span></button>
       <div class="crumb"><small>إدارة الفريق</small><b id="crumb"></b></div>
-      <div class="who"><span id="whoName"></span> <button type="button" class="sec" id="signOutBtn">خروج</button></div>
+      <div class="who"><span id="whoName"></span> <button type="button" class="sec" id="reloadBtn" hidden aria-label="تحديث الصفحة">تحديث</button> <button type="button" class="sec" id="signOutBtn">خروج</button></div>
     </header>
     <main id="view" tabindex="-1"></main>
   </div>
