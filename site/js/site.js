@@ -96,7 +96,7 @@
   const NAVI = { about: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M12 11v5M12 8h.01', squad: 'M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M10 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M20 20v-1.5a3.5 3.5 0 0 0-2.5-3.3M15.5 4.2a3.5 3.5 0 0 1 0 6.6', staff: 'M3 8h18v12H3zM9 8V5h6v3', matches: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4', scorers: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M12 8l3 2-1 3.5h-4L9 10z' };
   const R = {
     about: s => `<div class="card about"><p>${esc(s.text)}</p></div>`,
-    gallery: s => `<div class="card"><div class="gal">${s.items.map((g, i) => `<button type="button" class="galt" data-gi="${i}" aria-label="${esc(g.caption || 'صورة ' + (i + 1))}"><img src="${esc(g.url)}" alt="${esc(g.caption)}" decoding="async"></button>`).join('')}</div></div>`,
+    gallery: s => `<div class="card gal-card"><div class="hg" role="region" aria-roledescription="carousel" aria-label="معرض الصور"><div class="hg-track" tabindex="0">${s.items.map((g, i) => `<button type="button" class="galt hg-slide" data-gi="${i}" aria-label="${esc(g.caption || 'صورة ' + (i + 1))}"><img src="${esc(g.url)}" alt="${esc(g.caption)}" decoding="async"${i ? ' loading="lazy"' : ''}>${g.caption ? `<span class="hg-cap">${esc(g.caption)}</span>` : ''}</button>`).join('')}</div>${s.items.length > 1 ? `<span class="hg-n" aria-live="polite">1 / ${s.items.length}</span><button type="button" class="hg-a hg-prev" aria-label="السابقة">›</button><button type="button" class="hg-a hg-next" aria-label="التالية">‹</button><div class="hg-dots">${s.items.map((g, i) => `<button type="button" class="hg-dot" data-d="${i}" aria-label="صورة ${i + 1}"${i ? '' : ' aria-current="true"'}></button>`).join('')}</div>` : ''}</div></div>`,
     developer: s => { const d = s.dev, im = photo({ photo: d.photo }, d.name);
       return `<div class="card devcard"><div class="dev-pic">${im || `<span>${ini(d.name)}</span>`}</div><div class="dev-txt"><b class="dev-n">${esc(d.name)}</b>${d.title ? `<span class="dev-t">${esc(d.title)}</span>` : ''}${d.bio ? `<p>${esc(d.bio)}</p>` : ''}</div></div>`; },
     squad: s => squadHtml(s),
@@ -162,6 +162,18 @@
       box.innerHTML = '<button type="button" class="lb-x" aria-label="إغلاق">×</button><button type="button" class="lb-p" aria-label="السابقة">›</button><button type="button" class="lb-nx" aria-label="التالية">‹</button><img alt=""><div class="lb-i"><span class="lb-c"></span><span class="lb-n"></span></div>';
       box.addEventListener('click', e => { const c = e.target.classList; if (c.contains('lb-x') || e.target === box) close(); else if (c.contains('lb-p')) step(-1); else if (c.contains('lb-nx')) step(1); });
       document.body.appendChild(box); document.addEventListener('keydown', key); show(); box.querySelector('.lb-x').focus(); } }; })();
+  // شريط المعرض (هيرو): تمرير أفقي أصلي مع snap + أزرار ونقاط + تشغيل تلقائي يتوقف عند اللمس أو إخفاء الصفحة أو تفضيل تقليل الحركة
+  const hgIdx = t => Math.max(0, Math.min(t.children.length - 1, Math.round(Math.abs(t.scrollLeft) / Math.max(1, t.clientWidth))));
+  const hgGo = (t, i) => { const n = t.children.length; i = (i + n) % n; t.children[i].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' }); };
+  let hgHold = 0;
+  document.addEventListener('scroll', e => { const t = e.target; if (!t || !t.classList || !t.classList.contains('hg-track')) return; const i = hgIdx(t), box = t.parentNode;
+    box.querySelectorAll('.hg-dot').forEach((d, k) => k === i ? d.setAttribute('aria-current', 'true') : d.removeAttribute('aria-current')); const c = box.querySelector('.hg-n'); if (c) c.textContent = (i + 1) + ' / ' + t.children.length; }, true);
+  ['touchstart', 'pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, e => { if (e.target.closest && e.target.closest('.hg')) hgHold = Date.now() + 10000; }, { passive: true }));
+  const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)');
+  setInterval(() => { const t = document.querySelector('.hg-track'); if (!t || t.children.length < 2 || document.hidden || Date.now() < hgHold || (reduce && reduce.matches) || document.querySelector('.lb')) return;
+    const r = t.getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) return; hgGo(t, hgIdx(t) + 1); }, 5000);
+  document.addEventListener('click', e => { const el = e.target.closest && e.target.closest('.hg-a, .hg-dot'); if (!el) return; const t = el.closest('.hg').querySelector('.hg-track'); hgHold = Date.now() + 10000;
+    hgGo(t, el.classList.contains('hg-dot') ? +el.dataset.d : hgIdx(t) + (el.classList.contains('hg-next') ? 1 : -1)); });
   document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('.galt'); if (!b) return; const all = [...document.querySelectorAll('.galt')]; lightbox.open(all.map(x => ({ url: x.querySelector('img').src, caption: x.querySelector('img').alt })), all.indexOf(b)); });
   const toSnap = (j, dev, gal) => {
     if (!j || !j.team) throw 0;
