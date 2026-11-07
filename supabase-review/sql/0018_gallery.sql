@@ -1,5 +1,5 @@
 -- 0018: معرض صور الفريق — تُدار الصور من لوحة التحكم وتظهر في الموقع العام عند التفعيل فقط (مطفأ افتراضيًا).
--- NOT APPLIED. يُطبَّق على staging فقط بعد موافقة صريحة. إضافة فقط: لا يغيّر أي جدول أو دالة موجودة.
+-- APPLIED to staging (ddrbrskusreoktqabkvi) on 2026-11-08 (migration name 0018_gallery). إضافة فقط: لا يغيّر أي جدول أو دالة موجودة.
 -- - جدولان بلا وصول مباشر (RLS مفعّل بلا سياسات): gallery_settings (visible) وgallery_photos. كل القراءة/الكتابة عبر RPC.
 -- - الإدارة بصلاحية 'settings'. القراءة العامة عبر rpc_public_gallery (anon) وتُرجِع صورًا فقط عند visible=true.
 -- - ملفات الصور في bucket player-photos بمسار <team>/<team>/<uuid>.<ext> — وهو المسار نفسه الذي تغطيه سياسات dev_photo_insert/dev_photo_delete من 0017 (صلاحية settings)، فلا سياسات تخزين جديدة.
