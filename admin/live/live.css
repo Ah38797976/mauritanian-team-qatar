@@ -204,3 +204,9 @@ body:has(#loginView:not([hidden])){min-height:100vh;background:#06120c radial-gr
   .utbl .u-a:empty{display:none}
 }
 #uf label.f span{color:#b7cfc2}
+
+/* ترتيب وتحسين اللوحة على الجوال */
+.shell label.f span{color:#b7cfc2}                                   /* تباين أوضح لعناوين الحقول على الخلفية الداكنة */
+.ppb::after{content:"";position:absolute;inset:-8px}                /* مساحة لمس ≥44px دون تكبير الشكل */
+.ppb.rm{top:auto;bottom:24px;inset-inline-end:auto;left:calc(50% + 4px)}  /* زر الإخراج على حافة الصورة السفلية فلا يتزاحم مع شارة الرقم ولا مع لاعب مجاور */
+.pp .no{white-space:nowrap;width:max-content;max-width:none}         /* رقم من خانتين لا ينكسر داخل الشارة */
