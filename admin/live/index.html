@@ -14,12 +14,18 @@
 <link rel="stylesheet" href="live.css">
 </head>
 <body>
-<main id="loginView" class="card" style="max-width:420px;margin:12vh auto 0;padding:18px" aria-labelledby="loginTitle">
+<main id="loginView" class="card login" aria-labelledby="loginTitle">
+  <div class="login-brand"><span class="logo" role="img" aria-label="شعار الجالية الموريتانية في قطر"></span>
+    <div><b>فريق الجالية الموريتانية في قطر</b><small>لوحة الإدارة</small></div></div>
   <h1 id="loginTitle">تسجيل الدخول</h1>
-  <p id="loginMsg" role="alert" class="note" hidden></p>
+  <p class="login-sub">أدخل بريدك وكلمة المرور للمتابعة.</p>
+  <p id="loginMsg" role="alert" aria-live="polite" class="note" hidden></p>
   <form id="loginForm" method="post" autocomplete="off">
-    <label class="f"><span>البريد الإلكتروني</span><input id="email" name="email" type="email" autocomplete="username" spellcheck="false" required></label>
-    <label class="f"><span>كلمة المرور</span><input id="password" name="password" type="password" autocomplete="current-password" required></label>
+    <label class="f"><span>البريد الإلكتروني</span><input id="email" name="email" type="email" inputmode="email" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+    <label class="f"><span>كلمة المرور</span>
+      <span class="pw"><input id="password" name="password" type="password" autocomplete="current-password" autocapitalize="none" spellcheck="false" required>
+      <button type="button" id="pwToggle" class="sec pw-t" aria-label="إظهار كلمة المرور" aria-pressed="false">إظهار</button></span>
+      <small id="capsHint" class="caps" hidden>مفتاح الحروف الكبيرة (Caps Lock) مُفعّل.</small></label>
     <button id="loginBtn" type="submit">دخول</button>
   </form>
 </main>

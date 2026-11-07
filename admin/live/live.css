@@ -162,3 +162,26 @@ dialog#modal .hint{color:var(--mut,#a9c4b5)}
 .coachbox .hint{margin:8px 0 0;color:var(--mut,#a9c4b5)}
 .coachbox .bh{margin-top:14px}
 @media(max-width:420px){.tk .av{width:42px;height:42px}.tk .nm{max-width:60px;font-size:.62rem}.field.fx .sl{min-width:50px}}
+
+/* شاشة الدخول (محسّنة) */
+body:has(#loginView:not([hidden])){min-height:100vh;background:#06120c radial-gradient(120% 80% at 50% 0,#12301f 0,#06120c 70%) fixed}
+#loginView.login{max-width:420px;width:calc(100% - 32px);margin:8vh auto 24px;padding:24px 20px;background:#0d2217;border:1px solid #1e3a2b;border-radius:18px;box-shadow:0 18px 50px rgba(0,0,0,.45)}
+.login-brand{display:flex;align-items:center;gap:12px;margin-bottom:18px;color:#eaf3ee}
+.login-brand b{display:block;font-size:1rem;line-height:1.3}
+.login-brand small{color:var(--gold,#c9a24a);font-weight:600}
+#loginView h1{margin:0 0 4px;font-size:1.5rem}
+.login-sub{margin:0 0 16px;color:#9bb5a6;font-size:.92rem}
+#loginView label.f{display:block;margin-bottom:14px}
+#loginView label.f>span:first-child{display:block;margin-bottom:6px;font-size:.9rem}
+#loginView input{width:100%;min-height:48px;font-size:16px;border-radius:12px}
+#loginView input:focus-visible{border-color:var(--gold,#c9a24a);box-shadow:0 0 0 3px rgba(201,162,74,.35)}
+#loginView label.f .pw{display:flex;flex-direction:row;gap:8px;align-items:stretch;margin:0}
+#loginView .pw input{flex:1 1 auto;width:auto;min-width:0}
+#loginView .pw .pw-t{flex:0 0 auto;width:auto;min-width:76px;min-height:48px;border-radius:12px;background:#0a1a12;color:#eaf3ee;border:1px solid #3b5b49;font-weight:600}
+#loginView .pw .pw-t:hover{background:#12301f}
+#loginView .pw .pw-t:focus-visible{outline:none;border-color:var(--gold,#c9a24a);box-shadow:0 0 0 3px rgba(201,162,74,.35)}
+#loginView label.f .caps{display:block;margin-top:6px;color:#e6c15a;font-size:.82rem}
+#loginBtn{width:100%;min-height:50px;font-size:1.05rem;font-weight:700;border-radius:12px;margin-top:4px}
+#loginBtn:disabled{opacity:.7;cursor:progress}
+#loginView .note{margin:0 0 14px;padding:10px 12px;border-radius:10px;background:rgba(241,153,153,.1);border:1px solid rgba(241,153,153,.35);font-size:.92rem;line-height:1.6}
+#loginView .note.info{color:#bfe3cf;background:rgba(80,160,120,.12);border-color:rgba(80,160,120,.35)}
