@@ -98,7 +98,7 @@
         q('player_contacts').select('player_id,phone,email'),
         q('staff_members').select('id,name,title,kind,staff_contacts(phone)'),
         q('team_members').select('user_id,display_name,role,active'),                                                    // [v2 F4]
-        q('matches').select('id,opponent,match_date,is_home,played,opp_goals,officer_id,match_players(player_id),match_events(player_id,event_type,minute)').order('match_date'),
+        q('matches').select('id,opponent,match_date,is_home,played,opp_goals,officer_id,match_players(player_id,match_events(event_type,minute))').order('match_date'),
         readLineup(),
         q('training_sessions').select('id,title,session_date').order('session_date'),
         q('attendance').select('session_id,player_id,present'),
@@ -117,7 +117,7 @@
       });
       cache.staff = (st.data || []).map(s => { const o = { id: s.id, teamId: tid, name: s.name, role: s.title, kind: KIND[s.kind] }; if (s.staff_contacts && s.staff_contacts[0]) o.phone = s.staff_contacts[0].phone; return o; });
       cache.members = (mb.data || []).filter(m => m.active).map(m => ({ id: m.user_id, name: m.display_name, role: m.role }));
-      cache.matches = (mt.data || []).map(m => ({ id: m.id, opp: m.opponent, date: m.match_date, home: m.is_home, played: m.played, them: m.opp_goals, officer: m.officer_id, players: m.match_players.map(x => x.player_id), events: m.match_events.map(e => ({ pid: e.player_id, type: e.event_type, min: e.minute })) }));
+      cache.matches = (mt.data || []).map(m => ({ id: m.id, opp: m.opponent, date: m.match_date, home: m.is_home, played: m.played, them: m.opp_goals, officer: m.officer_id, players: (m.match_players || []).map(x => x.player_id), events: (m.match_players || []).flatMap(x => (x.match_events || []).map(e => ({ pid: x.player_id, type: e.event_type, min: e.minute }))) }));   // الأحداث مرتبطة بجدول match_players فقط، لذا تُجلب متداخلة
       { const { ids, ...info } = ls; cache.lineup = ids; cache.lineupInfo = info; }
       cache.sessions = (ss.data || []).map(s => ({ id: s.id, title: s.title, date: s.session_date }));                    // [v2 F2]
       cache.att = {}; (at.data || []).forEach(a => { (cache.att[a.session_id] = cache.att[a.session_id] || {})[a.player_id] = a.present; });
