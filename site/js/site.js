@@ -96,6 +96,7 @@
   const NAVI = { about: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M12 11v5M12 8h.01', squad: 'M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M10 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M20 20v-1.5a3.5 3.5 0 0 0-2.5-3.3M15.5 4.2a3.5 3.5 0 0 1 0 6.6', staff: 'M3 8h18v12H3zM9 8V5h6v3', matches: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4', scorers: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M12 8l3 2-1 3.5h-4L9 10z' };
   const R = {
     about: s => `<div class="card about"><p>${esc(s.text)}</p></div>`,
+    gallery: s => `<div class="card"><div class="gal">${s.items.map((g, i) => `<button type="button" class="galt" data-gi="${i}" aria-label="${esc(g.caption || 'صورة ' + (i + 1))}"><img src="${esc(g.url)}" alt="${esc(g.caption)}" decoding="async"></button>`).join('')}</div></div>`,
     developer: s => { const d = s.dev, im = photo({ photo: d.photo }, d.name);
       return `<div class="card devcard"><div class="dev-pic">${im || `<span>${ini(d.name)}</span>`}</div><div class="dev-txt"><b class="dev-n">${esc(d.name)}</b>${d.title ? `<span class="dev-t">${esc(d.title)}</span>` : ''}${d.bio ? `<p>${esc(d.bio)}</p>` : ''}</div></div>`; },
     squad: s => squadHtml(s),
@@ -151,7 +152,18 @@
   nav.addEventListener('click', e => { if (e.target.closest('a')) setMenu(false); });
   // تحميل المحتوى من Supabase: الدالة العامة rpc_public_site (قائمة بيضاء من الحقول؛ لا هاتف ولا بريد). ما تُطفئه لوحة التحكم لا يُرسل أصلًا.
   const CFG = window.PUBLIC_CONFIG || {};
-  const toSnap = (j, dev) => {
+  // عارض الصور: يفتح بلمس صورة المعرض، أسهم للتنقل، إغلاق بالزر أو الخلفية أو Esc
+  const lightbox = (() => { let box = null, list = [], i = 0;
+    const show = () => { box.querySelector('img').src = list[i].url; box.querySelector('img').alt = list[i].caption; box.querySelector('.lb-c').textContent = list[i].caption || ''; box.querySelector('.lb-n').textContent = (i + 1) + ' / ' + list.length; };
+    const close = () => { if (box) { box.remove(); box = null; document.removeEventListener('keydown', key); } };
+    const key = e => { if (e.key === 'Escape') close(); else if (e.key === 'ArrowLeft') step(1); else if (e.key === 'ArrowRight') step(-1); };
+    const step = d => { i = (i + d + list.length) % list.length; show(); };
+    return { open(items, at) { close(); list = items; i = at; box = document.createElement('div'); box.className = 'lb'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true');
+      box.innerHTML = '<button type="button" class="lb-x" aria-label="إغلاق">×</button><button type="button" class="lb-p" aria-label="السابقة">›</button><button type="button" class="lb-nx" aria-label="التالية">‹</button><img alt=""><div class="lb-i"><span class="lb-c"></span><span class="lb-n"></span></div>';
+      box.addEventListener('click', e => { const c = e.target.classList; if (c.contains('lb-x') || e.target === box) close(); else if (c.contains('lb-p')) step(-1); else if (c.contains('lb-nx')) step(1); });
+      document.body.appendChild(box); document.addEventListener('keydown', key); show(); box.querySelector('.lb-x').focus(); } }; })();
+  document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('.galt'); if (!b) return; const all = [...document.querySelectorAll('.galt')]; lightbox.open(all.map(x => ({ url: x.querySelector('img').src, caption: x.querySelector('img').alt })), all.indexOf(b)); });
+  const toSnap = (j, dev, gal) => {
     if (!j || !j.team) throw 0;
     const S = j.sections || {}, secs = [];
     if (j.about) secs.push({ key: 'about', label: 'عن الفريق', text: j.about });
@@ -159,6 +171,7 @@
     if (S.staff) secs.push({ key: 'staff', label: 'الطاقم', staff: (j.staff || []).map(x => ({ name: x.name, role: x.role, kind: x.kind, photo: x.photo })) });
     if (S.matches) secs.push({ key: 'matches', label: 'المباريات والنتائج', matches: (j.matches || []).map(m => ({ opp: m.opp, date: m.date, home: m.home, played: m.played, us: m.us, them: m.them })) });
     if (S.stats) secs.push({ key: 'scorers', label: 'الهدافون', rows: (j.scorers || []).map(r => ({ name: r.name, goals: r.goals, apps: r.apps })) });
+    if (Array.isArray(gal)) { const items = gal.filter(g => g && photoUrl(g.path)).slice(0, 40).map(g => ({ url: photoUrl(g.path), caption: String(g.caption || '').slice(0, 80) })); if (items.length) secs.push({ key: 'gallery', label: 'معرض الصور', items }); }
     if (dev && typeof dev.name === 'string' && dev.name.trim()) secs.push({ key: 'developer', label: 'عن مطوّر التطبيق', dev: { name: dev.name.slice(0, 60), title: String(dev.title || '').slice(0, 60), bio: String(dev.bio || '').slice(0, 300), photo: dev.photo } });
     return { v: 1, t: new Date().toISOString(), data: { team: j.team, announcement: j.announcement || '', sections: secs } };
   };
@@ -166,7 +179,8 @@
     if (!CFG.SUPABASE_URL || !CFG.SUPABASE_PUBLISHABLE_KEY) { if (first) $('#sv').innerHTML = '<p class="empty">تعذّر تحميل المحتوى. حاول لاحقًا.</p>'; return; }
     const call = fn => fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/' + fn, { method: 'POST', cache: 'no-store', headers: { apikey: CFG.SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' }, body: '{}' }).then(r => { if (!r.ok) throw 0; return r.json(); });
     const dev = call('rpc_public_developer').catch(() => null);   // اختياري: قبل تطبيق 0017 أو عند الخطأ لا يظهر القسم ولا يتأثر باقي الموقع
-    call('rpc_public_site').then(j => dev.then(d => { if (!draw(toSnap(j, d))) throw 0; }))
+    const gal = call('rpc_public_gallery').catch(() => null);   // اختياري كذلك
+    call('rpc_public_site').then(j => Promise.all([dev, gal]).then(([d, g]) => { if (!draw(toSnap(j, d, g))) throw 0; }))
       .catch(() => { if (first) $('#sv').innerHTML = '<p class="empty">تعذّر تحميل المحتوى. حدّث الصفحة أو حاول لاحقًا.</p>'; });
   };
   load(true);
