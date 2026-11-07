@@ -15,6 +15,11 @@
   const rows = t => {
     if (t === 'players') return DB.players;
     if (t === 'lineups') return [{ formation: DB.formation }];
+    if (t === 'matches') return [{ id: 'm1', opponent: 'نادي الريان للجاليات', match_date: '2026-11-10', is_home: true, played: false, opp_goals: null, officer_id: 'u3', match_players: [{ player_id: 'gk1' }, { player_id: 'd1' }], match_events: [] }, { id: 'm2', opponent: 'فريق السودان', match_date: '2026-10-27', is_home: false, played: true, opp_goals: 1, officer_id: null, match_players: [{ player_id: 'm1' }, { player_id: 'f1' }], match_events: [{ player_id: 'f1', event_type: 'goal', minute: 23 }, { player_id: 'm1', event_type: 'goal', minute: 61 }] }];
+    if (t === 'staff_members') return [{ id: 's1', name: 'المدرب العام (تجريبي)', title: 'مدرب', kind: 'coach', staff_contacts: [{ phone: '+97450000000' }] }, { id: 's2', name: 'مدير إداري (تجريبي)', title: 'إداري', kind: 'admin', staff_contacts: [] }];
+    if (t === 'training_sessions') return [{ id: 'ts1', title: 'تدريب الخميس', session_date: '2026-11-05' }];
+    if (t === 'audit_log') return [{ created_at: '2026-11-07T07:00:00Z', actor_name: 'مدير إداري (تجريبي)', actor_role: 'admin', action: 'تعديل لاعب', detail: 'تغيير رقم القميص من 7 إلى 10' }, { created_at: '2026-11-06T18:20:00Z', actor_name: 'مدرب (تجريبي)', actor_role: 'coach', action: 'تعديل التشكيلة', detail: '' }];
+    if (t === 'team_members') return [{ user_id: 'u1', display_name: 'مدير إداري (تجريبي)', role: 'admin', active: true }, { user_id: 'u2', display_name: 'مدرب (تجريبي)', role: 'coach', active: true }, { user_id: 'u3', display_name: 'مسؤول مباراة 1 (تجريبي)', role: 'officer', active: false }, { user_id: 'u4', display_name: 'المؤسس', role: 'founder', active: true }];
     return [];
   };
   function writeRpc(name, a) {

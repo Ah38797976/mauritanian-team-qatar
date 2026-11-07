@@ -202,3 +202,27 @@ body.restoring #restoreView{display:block!important}
 #restoreView p{color:#eaf3ee;margin:6px 0 14px}
 #restoreBtns{display:flex;gap:10px;flex-wrap:wrap}
 #restoreBtns button{flex:1 1 140px;min-height:48px;border-radius:12px}
+/* جدول المستخدمين: على الجوال بطاقة لكل مستخدم بدل جدول يتجاوز الشاشة */
+.utbl .tag,.utbl button{white-space:nowrap}
+@media(max-width:560px){
+  .utbl{min-width:0}
+  .utbl thead{display:none}
+  .utbl tbody,.utbl tr{display:block}
+  .utbl tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px 12px;align-items:center;padding:14px;border-bottom:1px solid var(--line,#17382a)}
+  .utbl tr:last-child{border-bottom:0}
+  .utbl td{display:block;border:0;padding:0;min-width:0}
+  .utbl .u-n{grid-column:1;grid-row:1;font-weight:700;overflow-wrap:anywhere}
+  .utbl .u-s{grid-column:2;grid-row:1;justify-self:end}
+  .utbl .u-r{grid-column:1/-1;grid-row:2}
+  .utbl .u-r select{width:100%;min-height:44px}
+  .utbl .u-a{grid-column:1/-1;grid-row:3}
+  .utbl .u-a button{width:100%;min-height:44px}
+  .utbl .u-a:empty{display:none}
+}
+#uf label.f span{color:#b7cfc2}
+
+/* ترتيب وتحسين اللوحة على الجوال */
+.shell label.f span{color:#b7cfc2}                                   /* تباين أوضح لعناوين الحقول على الخلفية الداكنة */
+.ppb::after{content:"";position:absolute;inset:-8px}                /* مساحة لمس ≥44px دون تكبير الشكل */
+.ppb.rm{top:auto;bottom:24px;inset-inline-end:auto;left:calc(50% + 4px)}  /* زر الإخراج على حافة الصورة السفلية فلا يتزاحم مع شارة الرقم ولا مع لاعب مجاور */
+.pp .no{white-space:nowrap;width:max-content;max-width:none}         /* رقم من خانتين لا ينكسر داخل الشارة */
