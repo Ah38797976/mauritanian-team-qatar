@@ -269,10 +269,16 @@
   V.settings = () => { const t = St.team(), ed = St.can('settings'); return `<h1>إعدادات الفريق</h1><div class="card"><form id="tf">${fld('اسم الفريق', 'name', t.name, 'text', ed ? '' : 'disabled')}${fld('المدينة', 'city', t.city, 'text', ed ? '' : 'disabled')}${fld('اللون الرئيسي', 'color', t.color, 'color', ed ? '' : 'disabled')}<small class="hint">يظهر هذا اللون في الموقع العام فقط، ولا يغيّر ألوان لوحة الإدارة.</small>${ed ? '<button>حفظ</button>' : '<small>عرض فقط</small>'}</form></div>`; };
   // إدارة الموقع العام: ما تفعّله هنا يظهر للزوار في الموقع؛ وما تُطفئه يختفي. لا هواتف ولا بريد ولا مدن في الموقع أبدًا (الخادم يرجع قائمة بيضاء فقط).
   const SEC = [['players', 'اللاعبون', 'الاسم والرقم والمركز فقط'], ['staff', 'الطاقم', 'الاسم والدور فقط'], ['matches', 'المباريات والنتائج', 'الخصم والتاريخ والنتيجة'], ['stats', 'الهدافون', 'الاسم والأهداف والمشاركات'], ['photos', 'صور اللاعبين', 'تظهر صورة كل لاعب في الملعب وبطاقته؛ الصور المرفوعة تصبح قابلة للفتح برابطها العام']];
-  V.site = () => { if (!isPanelUser() || !St.can('settings')) return denied('إدارة الموقع العام'); return `<h1>إدارة الموقع العام</h1><div class="note">يظهر في الموقع ما تفعّله هنا فقط. كل الأقسام مطفأة افتراضيًا. لا يُنشر في الموقع أي هاتف أو بريد أو مدينة لأي لاعب أو عضو.</div><div class="card" id="sitebox"><p>جارٍ التحميل…</p></div>`; };
+  V.site = () => { if (!isPanelUser() || !St.can('settings')) return denied('إدارة الموقع العام'); return `<h1>إدارة الموقع العام</h1><div class="note">يظهر في الموقع ما تفعّله هنا فقط. كل الأقسام مطفأة افتراضيًا. لا يُنشر في الموقع أي هاتف أو بريد أو مدينة لأي لاعب أو عضو.</div><div class="card" id="sitebox"><p>جارٍ التحميل…</p></div><div class="card" id="devbox"><p>جارٍ التحميل…</p></div>`; };
   const siteForm = r => { const s = r.sections || {};
     return `<div class="row between"><h2>محتوى الموقع</h2><a class="btnlink" href="../../" target="_blank" rel="noopener">عرض الموقع ↗</a></div><form id="sf"><label class="f"><span>نبذة عن الفريق (اختيارية)</span><textarea name="about" rows="3" maxlength="500">${esc(r.about)}</textarea></label><label class="f"><span>إعلان أعلى الموقع (اختياري)</span><input name="announcement" maxlength="200" value="${esc(r.announcement)}"></label><h2>الأقسام الظاهرة في الموقع</h2><div class="secs">${SEC.map(([k, l, n]) => `<label class="ck"><input type="checkbox" name="sec_${esc(k)}" ${s[k] === true ? 'checked' : ''}><span><b>${esc(l)}</b><small>${esc(n)}</small></span></label>`).join('')}</div><button>حفظ الموقع</button></form>`; };
   const loadSite = () => { const box = $('#sitebox'); if (!box) return; TD.getSite().then(r => { const b = $('#sitebox'); if (!b || route().page !== 'site') return; b.innerHTML = r && typeof r === 'object' ? siteForm(r) : '<p>تعذّر تحميل إعدادات الموقع أو لا تملك الصلاحية.</p>'; }); };
+
+  // بطاقة «عن مطوّر التطبيق»: الاسم والصفة والنبذة والصورة، تظهر في الموقع العام عند التفعيل فقط
+  let devPhoto = '';
+  const devForm = r => { devPhoto = r.photo || ''; const u = TD.devPhotoUrl(devPhoto);
+    return `<h2>عن مطوّر التطبيق</h2><form id="df"><div class="devrow"><div class="devpic">${u ? `<img src="${esc(u)}" alt="">` : '<span>بلا صورة</span>'}</div><div class="devpick"><label class="f"><span>الصورة (JPEG أو PNG أو WebP)</span><input type="file" name="photo" accept="image/jpeg,image/png,image/webp"></label>${u ? '<div class="secs"><label class="ck"><input type="checkbox" name="rmphoto"><span><b>حذف الصورة الحالية</b></span></label></div>' : ''}</div></div>${fld('الاسم', 'name', r.name, 'text', 'maxlength="60"')}${fld('الصفة', 'title', r.title || 'مطوّر ومصمم التطبيق', 'text', 'maxlength="60"')}<label class="f"><span>نبذة قصيرة (اختيارية)</span><textarea name="bio" rows="3" maxlength="300">${esc(r.bio)}</textarea></label><div class="secs"><label class="ck"><input type="checkbox" name="visible" ${r.visible === true ? 'checked' : ''}><span><b>إظهار القسم في الموقع العام</b><small>يتطلب كتابة الاسم</small></span></label></div><button>حفظ بطاقة المطوّر</button></form>`; };
+  const loadDev = () => { const box = $('#devbox'); if (!box) return; TD.getDeveloper().then(r => { const b = $('#devbox'); if (!b || route().page !== 'site') return; b.innerHTML = r && typeof r === 'object' ? devForm(r) : '<h2>عن مطوّر التطبيق</h2><p>هذه الميزة غير مفعّلة بعد في قاعدة البيانات، أو لا تملك صلاحية إدارة الموقع.</p>'; }); };
 
   // ---- العرض والأحداث ----
   const safeColor = c => /^#[0-9a-fA-F]{6}$/.test(c) ? c : '#0b6b3a';
@@ -290,7 +296,7 @@
     v.innerHTML = (Object.prototype.hasOwnProperty.call(V, page) ? V[page] : V.dash)(id);  // لا نقرأ مفاتيح النموذج الأولي (constructor…)
     if ((page === 'pitch' || page === 'coach') && window.CoachUI) CoachUI.bind(v, St.can('lineup'));
     if (page === 'players' && St.can('viewPlayers')) drawPlayers();
-    if (page === 'site') loadSite();
+    if (page === 'site') { loadSite(); loadDev(); }
     if (page === 'finance' && St.can('finance')) loadFin();
     if (page === 'roles' && isFounder()) loadRoles();
     if (page === 'users' && isFounder()) loadUsers();
@@ -341,6 +347,14 @@
   v.addEventListener('submit', e => {
     if (e.target.classList.contains('evf')) { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); fail(St.addEvent(e.target.dataset.mid, { pid: f.pid, type: f.type, min: +f.min || 1 })); }
     if (e.target.id === 'sf') { e.preventDefault(); const fd = new FormData(e.target), sec = {}; SEC.forEach(([k]) => { sec[k] = fd.has('sec_' + k); }); fail(TD.saveSite({ about: fd.get('about'), announcement: fd.get('announcement'), sections: sec })).then(bad => { if (!bad) toast(SAVED); }); }
+    if (e.target.id === 'df') { e.preventDefault(); const form = e.target, fd = new FormData(form), file = fd.get('photo'), btn = form.querySelector('button'); btn.disabled = true;
+      (async () => {
+        let er = await TD.saveDeveloper({ name: String(fd.get('name') || ''), title: String(fd.get('title') || ''), bio: String(fd.get('bio') || ''), visible: fd.has('visible') });
+        if (!er && file && file.size) { let up; try { up = await shrink(file); } catch (_) { er = 'حُفظت البيانات لكن تعذّر قراءة الصورة'; } if (up) er = await TD.setDeveloperPhoto(up, devPhoto); }
+        else if (!er && fd.has('rmphoto') && devPhoto) er = await TD.delDeveloperPhoto(devPhoto);
+        toast(er || SAVED); loadDev();
+      })().finally(() => { btn.disabled = false; });
+    }
     if (e.target.id === 'uf') { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); fail(TD.addMemberByEmail(f.email.trim(), f.name.trim(), f.role)).then(bad => { if (!bad) toast(SAVED); }); }
     if (e.target.id === 'tf') { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); St.saveTeam({ name: f.name, city: f.city, color: f.color }).then(er => toast(er || SAVED)); }
   });

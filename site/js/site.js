@@ -96,6 +96,8 @@
   const NAVI = { about: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M12 11v5M12 8h.01', squad: 'M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M10 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M20 20v-1.5a3.5 3.5 0 0 0-2.5-3.3M15.5 4.2a3.5 3.5 0 0 1 0 6.6', staff: 'M3 8h18v12H3zM9 8V5h6v3', matches: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4', scorers: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M12 8l3 2-1 3.5h-4L9 10z' };
   const R = {
     about: s => `<div class="card about"><p>${esc(s.text)}</p></div>`,
+    developer: s => { const d = s.dev, im = photo({ photo: d.photo }, d.name);
+      return `<div class="card devcard"><div class="dev-pic">${im || `<span>${ini(d.name)}</span>`}</div><div class="dev-txt"><b class="dev-n">${esc(d.name)}</b>${d.title ? `<span class="dev-t">${esc(d.title)}</span>` : ''}${d.bio ? `<p>${esc(d.bio)}</p>` : ''}</div></div>`; },
     squad: s => squadHtml(s),
     staff: s => {
       SF = s.staff; if (!SF.length) return '<p class="empty">لا أعضاء بعد.</p>';
@@ -149,7 +151,7 @@
   nav.addEventListener('click', e => { if (e.target.closest('a')) setMenu(false); });
   // تحميل المحتوى من Supabase: الدالة العامة rpc_public_site (قائمة بيضاء من الحقول؛ لا هاتف ولا بريد). ما تُطفئه لوحة التحكم لا يُرسل أصلًا.
   const CFG = window.PUBLIC_CONFIG || {};
-  const toSnap = j => {
+  const toSnap = (j, dev) => {
     if (!j || !j.team) throw 0;
     const S = j.sections || {}, secs = [];
     if (j.about) secs.push({ key: 'about', label: 'عن الفريق', text: j.about });
@@ -157,12 +159,14 @@
     if (S.staff) secs.push({ key: 'staff', label: 'الطاقم', staff: (j.staff || []).map(x => ({ name: x.name, role: x.role, kind: x.kind, photo: x.photo })) });
     if (S.matches) secs.push({ key: 'matches', label: 'المباريات والنتائج', matches: (j.matches || []).map(m => ({ opp: m.opp, date: m.date, home: m.home, played: m.played, us: m.us, them: m.them })) });
     if (S.stats) secs.push({ key: 'scorers', label: 'الهدافون', rows: (j.scorers || []).map(r => ({ name: r.name, goals: r.goals, apps: r.apps })) });
+    if (dev && typeof dev.name === 'string' && dev.name.trim()) secs.push({ key: 'developer', label: 'عن مطوّر التطبيق', dev: { name: dev.name.slice(0, 60), title: String(dev.title || '').slice(0, 60), bio: String(dev.bio || '').slice(0, 300), photo: dev.photo } });
     return { v: 1, t: new Date().toISOString(), data: { team: j.team, announcement: j.announcement || '', sections: secs } };
   };
   const load = first => {
     if (!CFG.SUPABASE_URL || !CFG.SUPABASE_PUBLISHABLE_KEY) { if (first) $('#sv').innerHTML = '<p class="empty">تعذّر تحميل المحتوى. حاول لاحقًا.</p>'; return; }
-    fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/rpc_public_site', { method: 'POST', cache: 'no-store', headers: { apikey: CFG.SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' }, body: '{}' })
-      .then(r => { if (!r.ok) throw 0; return r.json(); }).then(j => { if (!draw(toSnap(j))) throw 0; })
+    const call = fn => fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/' + fn, { method: 'POST', cache: 'no-store', headers: { apikey: CFG.SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' }, body: '{}' }).then(r => { if (!r.ok) throw 0; return r.json(); });
+    const dev = call('rpc_public_developer').catch(() => null);   // اختياري: قبل تطبيق 0017 أو عند الخطأ لا يظهر القسم ولا يتأثر باقي الموقع
+    call('rpc_public_site').then(j => dev.then(d => { if (!draw(toSnap(j, d))) throw 0; }))
       .catch(() => { if (first) $('#sv').innerHTML = '<p class="empty">تعذّر تحميل المحتوى. حدّث الصفحة أو حاول لاحقًا.</p>'; });
   };
   load(true);
