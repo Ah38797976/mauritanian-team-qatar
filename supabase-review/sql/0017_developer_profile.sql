@@ -1,5 +1,5 @@
 -- 0017: "عن مطوّر التطبيق" — اسم وصفة ونبذة وصورة المطوّر، تُدار من لوحة التحكم وتظهر في الموقع العام عند التفعيل.
--- NOT APPLIED. يُطبَّق على staging فقط بعد موافقة صريحة. لا يغيّر أي دالة أو جدول موجود (إضافة فقط).
+-- APPLIED to staging (ddrbrskusreoktqabkvi) on 2026-11-07 (migration name 0017_developer_profile). إضافة فقط: لا يغيّر أي دالة أو جدول موجود.
 -- - جدول developer_profile (صف واحد لكل فريق) بلا وصول مباشر: كل القراءة/الكتابة عبر RPC فقط (كما site_settings).
 -- - الإدارة بصلاحية 'settings' (المؤسس/المدير افتراضيًا). القراءة العامة عبر rpc_public_developer (anon) وتُرجِع بيانات فقط عند visible=true.
 -- - الصورة في bucket player-photos (عام أصلًا) بمسار <team>/<team>/<uuid>.<ext>؛ لا يُسجَّل في الجدول إلا هذا المسار (يفرضه rpc_set_developer_photo).
