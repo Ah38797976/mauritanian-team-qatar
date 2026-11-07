@@ -238,3 +238,6 @@ body.restoring #restoreView{display:block!important}
 .devpic img{width:100%;height:100%;object-fit:cover}
 .devpick{flex:1;min-width:0}
 .ck{background:#0d2a1a;border-color:#2f7d52;color:#e8fff1}.ck small{color:#9fc4af}.ck:hover{background:#12361f;border-color:#3d9a66}
+
+/* iOS: :hover يبقى عالقًا على آخر عنصر لُمس فيظهر العنصر رمادي كأنه محدد مع الصفحة الحالية — نُلغيه على أجهزة اللمس */
+@media(hover:none){#nav a:hover{background:none;color:#cfdcd4}#nav a.on:hover{background:rgba(201,162,74,.16);color:#fff}}
