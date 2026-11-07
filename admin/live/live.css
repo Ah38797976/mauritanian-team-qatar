@@ -226,3 +226,7 @@ body.restoring #restoreView{display:block!important}
 .ppb::after{content:"";position:absolute;inset:-8px}                /* مساحة لمس ≥44px دون تكبير الشكل */
 .ppb.rm{top:auto;bottom:24px;inset-inline-end:auto;left:calc(50% + 4px)}  /* زر الإخراج على حافة الصورة السفلية فلا يتزاحم مع شارة الرقم ولا مع لاعب مجاور */
 .pp .no{white-space:nowrap;width:max-content;max-width:none}         /* رقم من خانتين لا ينكسر داخل الشارة */
+
+/* شريط التحديث التلقائي */
+.upd-bar{position:fixed;inset-inline:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:9999;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border-radius:12px;background:#0f3a24;color:#e8fff1;border:1px solid #2f7d52;box-shadow:0 8px 24px rgba(0,0,0,.45);font-size:15px}
+.upd-bar button{min-height:40px;padding:0 16px;border-radius:10px;border:0;background:#2ecc71;color:#04210f;font-weight:700;cursor:pointer}
