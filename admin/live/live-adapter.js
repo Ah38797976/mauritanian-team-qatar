@@ -190,6 +190,15 @@
       else if (oldPath) await sb.storage.from('player-photos').remove([oldPath]);
       return r;
     },
+    // ---- إشعارات الدفع (0019 + Edge Function push-send) ----
+    getPushStats: () => rpc('rpc_push_stats'),
+    async sendPush(title, body, url) {
+      try {
+        const { data, error } = await sb.functions.invoke('push-send', { body: { title, body, url } });
+        if (error) { let m = NET; try { const j = await error.context.json(); if (j && j.err) m = String(j.err); } catch (_) { if (error.name === 'FunctionsHttpError') m = 'تعذّر الإرسال'; else if (/not found|404/i.test(String(error.message))) m = FEATURE_OFF; } return { err: m }; }
+        return data && data.ok ? data : { err: (data && data.err) || NET };
+      } catch (_) { return { err: NET }; }
+    },
     // ---- معرض الصور (0018) ----
     getGallery: () => rpc('rpc_get_gallery'),
     setGalleryVisible: v => write('rpc_set_gallery_visible', { p_visible: !!v }),

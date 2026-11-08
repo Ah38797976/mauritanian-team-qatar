@@ -71,6 +71,7 @@
     if (name === 'rpc_get_stat_rows') return { data: [], error: null };
     M.calls.push({ name, args: JSON.parse(JSON.stringify(a || {})) });
     if (name === 'rpc_get_gallery') return M.galMissing ? { data: null, error: { code: 'PGRST202', message: 'missing' } } : { data: JSON.parse(JSON.stringify({ visible: GAL.visible, photos: GAL.photos })), error: null };
+    if (name === 'rpc_push_stats') return M.pushMissing ? { data: null, error: { code: 'PGRST202', message: 'missing' } } : { data: { subscribers: M.pushSubs == null ? 3 : M.pushSubs, recent: M.pushRecent || [] }, error: null };
     if (name === 'rpc_get_developer') return M.devMissing ? { data: null, error: { code: 'PGRST202', message: 'missing' } } : { data: { ...DEV }, error: null };
     if (M.missingRpc) return { data: null, error: { code: 'PGRST202', message: 'Could not find the function' } };
     if (M.rpcError) return { data: null, error: M.rpcError };
@@ -89,5 +90,5 @@
         return { data: rows(t), error: null };
       })().then(res, rej);
     } });
-  window.supabase = { createClient: () => ({ auth: { signInWithPassword: async () => ({ error: null }), signOut: async () => { window.__signedOut = true; return {}; }, getSession: async () => ({ data: { session: M.noSession || window.__signedOut ? null : { user: { id: 'u1' } } } }), onAuthStateChange: () => {} }, from: builder, rpc: rpcImpl, storage: { from: () => ({ createSignedUrl: async () => ({ data: null }), upload: async (path, file) => { (M.uploads = M.uploads || []).push({ path, type: file.type, size: file.size }); return { error: null }; }, remove: async paths => { (M.removed = M.removed || []).push(...paths); return { error: null }; }, getPublicUrl: path => ({ data: { publicUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' } }) }) } }) };
+  window.supabase = { createClient: () => ({ auth: { signInWithPassword: async () => ({ error: null }), signOut: async () => { window.__signedOut = true; return {}; }, getSession: async () => ({ data: { session: M.noSession || window.__signedOut ? null : { user: { id: 'u1' } } } }), onAuthStateChange: () => {} }, from: builder, rpc: rpcImpl, functions: { invoke: async (n, o) => { (M.invokes = M.invokes || []).push({ n, body: o && o.body }); if (M.invokeErr) return { data: null, error: { name: 'FunctionsHttpError', message: 'x', context: { json: async () => ({ err: M.invokeErr }) } } }; return { data: { ok: true, sent: 2, failed: 1, total: 3, removed: 0 }, error: null }; } }, storage: { from: () => ({ createSignedUrl: async () => ({ data: null }), upload: async (path, file) => { (M.uploads = M.uploads || []).push({ path, type: file.type, size: file.size }); return { error: null }; }, remove: async paths => { (M.removed = M.removed || []).push(...paths); return { error: null }; }, getPublicUrl: path => ({ data: { publicUrl: 'data:image/gif;base64,R0lGODlhAQABAAAAACw=' } }) }) } }) };
 })();
