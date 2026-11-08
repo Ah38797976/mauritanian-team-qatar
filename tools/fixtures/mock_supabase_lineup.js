@@ -72,6 +72,7 @@
     M.calls.push({ name, args: JSON.parse(JSON.stringify(a || {})) });
     if (name === 'rpc_get_gallery') return M.galMissing ? { data: null, error: { code: 'PGRST202', message: 'missing' } } : { data: JSON.parse(JSON.stringify({ visible: GAL.visible, photos: GAL.photos })), error: null };
     if (name === 'rpc_push_stats') return M.pushMissing ? { data: null, error: { code: 'PGRST202', message: 'missing' } } : { data: { subscribers: M.pushSubs == null ? 3 : M.pushSubs, recent: M.pushRecent || [] }, error: null };
+    if (name === 'rpc_push_roster') return M.rosterMissing ? { data: null, error: { code: 'PGRST202', message: 'missing' } } : { data: { people: M.pushPeople || [] }, error: null };
     if (name === 'rpc_get_developer') return M.devMissing ? { data: null, error: { code: 'PGRST202', message: 'missing' } } : { data: { ...DEV }, error: null };
     if (M.missingRpc) return { data: null, error: { code: 'PGRST202', message: 'Could not find the function' } };
     if (M.rpcError) return { data: null, error: M.rpcError };
