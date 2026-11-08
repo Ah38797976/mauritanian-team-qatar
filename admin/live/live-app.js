@@ -305,6 +305,7 @@
 
   // ---- العرض والأحداث ----
   const safeColor = c => /^#[0-9a-fA-F]{6}$/.test(c) ? c : '#0b6b3a';
+  let lastRoute = null;
   function render() {
     const logged = !!St.user().role;
     $('#loginView').hidden = logged; $('#shell').hidden = !logged;
@@ -314,7 +315,7 @@
     if (!isPanelUser() && (page === 'dash' || !Object.prototype.hasOwnProperty.call(V, page))) { page = St.user().role === 'coach' ? 'coach' : 'matches'; history.replaceState(null, '', '#/' + page); id = undefined; }
     // لون أزرار اللوحة ثابت (هوية الفريق)؛ «لون الفريق» من الإعدادات يخصّ الموقع العام فقط
     $('#teamName').textContent = St.team().name;
-    $('#nav').innerHTML = navFor(page); $('#crumb').textContent = TITLES[Object.prototype.hasOwnProperty.call(V, page) ? page : 'dash'] || ''; document.body.classList.remove('menu-open'); $('#menuBtn').setAttribute('aria-expanded', 'false');
+    $('#nav').innerHTML = navFor(page); $('#crumb').textContent = TITLES[Object.prototype.hasOwnProperty.call(V, page) ? page : 'dash'] || ''; if (lastRoute !== page + '/' + id) { document.body.classList.remove('menu-open'); $('#menuBtn').setAttribute('aria-expanded', 'false'); } lastRoute = page + '/' + id;   // القائمة تُغلق عند تغيّر الصفحة فقط، لا عند كل تحديث خلفي (كان يُغلقها فجأة ويضيّع اللمس)
     $('#whoName').textContent = (St.user().name || '') + ' — ' + (St.ROLES[St.user().role] || '');
     v.innerHTML = (Object.prototype.hasOwnProperty.call(V, page) ? V[page] : V.dash)(id);  // لا نقرأ مفاتيح النموذج الأولي (constructor…)
     if ((page === 'pitch' || page === 'coach') && window.CoachUI) CoachUI.bind(v, St.can('lineup'));
@@ -330,6 +331,7 @@
   const setMenu = o => { document.body.classList.toggle('menu-open', o); $('#menuBtn').setAttribute('aria-expanded', String(o)); };
   $('#menuBtn').onclick = () => setMenu(!document.body.classList.contains('menu-open'));
   $('#scrim').onclick = () => setMenu(false);
+  $('#nav').addEventListener('click', e => { if (e.target.closest('a')) setMenu(false); });   // لمس الصفحة الحالية لا يغيّر الرابط فلا يحدث تحديث: نغلق القائمة صراحةً
   document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
   const v = $('#view');
   v.addEventListener('input', e => { if (['q'].includes(e.target.id)) drawPlayers(); if (e.target.id === 'finq') { finQ = e.target.value; const pos = e.target.selectionStart; drawFin(); const n = $('#finq'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (_) {} } } });
