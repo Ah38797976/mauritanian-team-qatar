@@ -49,7 +49,7 @@ with sync_playwright() as p:
         pg.route('**/rest/v1/rpc/rpc_public_developer', lambda r: r.fulfill(status=200, content_type='application/json', body='null'))
         pg.route('**/rest/v1/rpc/rpc_public_gallery', lambda r: r.fulfill(status=status, content_type='application/json', body=json.dumps(gal)))
         pg.route('**/storage/v1/object/public/**', lambda r: r.fulfill(status=200, content_type='image/png', body=open(IMGS[0], 'rb').read()))
-        pg.goto(B + '/index.html'); pg.wait_for_timeout(2500)
+        pg.goto(B + '/index.html#s-gallery'); pg.wait_for_timeout(2500)
         if shot: pg.screenshot(path=S + shot, full_page=True)
         return pg, errs
     pg, errs = pub(GAL, shot='gal_public.png')

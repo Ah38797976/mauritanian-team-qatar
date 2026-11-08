@@ -131,21 +131,15 @@
   }
   // عدد عناصر القسم (شارة بجانب العنوان)
   const secCount = s => { const n = s.key === 'squad' ? s.players.length : s.key === 'staff' ? s.staff.length : s.key === 'matches' ? s.matches.length : s.key === 'scorers' ? s.rows.length : s.key === 'gallery' ? s.items.length : 0; return n > 0 ? n : 0; };
-  // ظهور الأقسام تدريجيًا عند التمرير + تمييز القسم الحالي في القائمة. لا يعمل إلا مع IntersectionObserver وبدون «تقليل الحركة»، وأي فشل يُبقي كل المحتوى ظاهرًا.
-  let drawn = false, spy = null, rvo = null;
-  const motion = () => {
-    const secsEl = [...document.querySelectorAll('#sv > section.sec')], first = !drawn; drawn = true;
-    if (spy) spy.disconnect(); if (rvo) rvo.disconnect();
-    if (!('IntersectionObserver' in window)) return;
-    const links = [...document.querySelectorAll('#snav a')], mark = id => links.forEach(a => { const on = a.getAttribute('href') === '#' + id; a.classList.toggle('on', on); if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
-    spy = new IntersectionObserver(es => { const v = es.filter(e => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]; if (v) mark(v.target.id); }, { rootMargin: '-25% 0px -55% 0px', threshold: [0, .1, .3] });
-    secsEl.forEach(e => spy.observe(e)); if (secsEl[0]) mark(secsEl[0].id);
-    if (!first || (reduce && reduce.matches)) return;
-    secsEl.forEach(e => { if (e.getBoundingClientRect().top > innerHeight * .9) e.classList.add('rv'); });
-    rvo = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); rvo.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px', threshold: .05 });
-    document.querySelectorAll('#sv > section.rv').forEach(e => rvo.observe(e));
-    setTimeout(() => document.querySelectorAll('#sv > section.rv:not(.in)').forEach(e => e.classList.add('in')), 6000);   // شبكة أمان
+  // الصفحة الرئيسية = بطاقات الأقسام (خانات). لمس خانة يفتح محتواها وحدها (#s-<قسم>)، وزر «الرئيسية» أو #home يرجع للخانات.
+  const UNIT = { squad: 'لاعبًا', staff: 'عضوًا', matches: 'مباراة', scorers: 'هدّافًا', gallery: 'صورة' };
+  const route = () => {
+    const secsEl = [...document.querySelectorAll('#sv > section.sec')], m = /^#s-([a-z]+)$/.exec(location.hash), cur = m && secsEl.find(e => e.id === 'sv-' + m[1] || e.id === 's-' + m[1]);
+    secsEl.forEach(e => e.classList.toggle('cur', e === cur)); document.body.classList.toggle('sec-open', !!cur);
+    document.querySelectorAll('#snav a').forEach(a => { const on = cur ? a.getAttribute('href') === '#' + cur.id : a.getAttribute('href') === '#home'; a.classList.toggle('on', on); if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
+  window.addEventListener('hashchange', route);
   function draw(raw) {
     let snap; try { snap = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return false; }
     if (!snap || snap.v !== 1 || !snap.data || !snap.data.team || !Array.isArray(snap.data.sections)) return false;
@@ -156,9 +150,9 @@
     $('#tcity').textContent = d.team.city || '';
     const a = $('#ann'); a.textContent = d.announcement || ''; a.hidden = !d.announcement;
     const secs = d.sections.filter(s => Object.prototype.hasOwnProperty.call(R, s.key));
-    $('#snav').innerHTML = secs.map(s => `<a href="#s-${esc(s.key)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${NAVI[s.key] || NAVI.about}"/></svg><span>${esc(s.label)}</span></a>`).join('');
-    $('#sv').innerHTML = secs.length ? secs.map(s => { const n = secCount(s); return `<section class="sec" id="s-${esc(s.key)}"><h2 class="sec-h"><span class="sec-i" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${NAVI[s.key] || NAVI.about}"/></svg></span><span class="sec-t">${esc(s.label)}</span>${n ? `<em class="sec-n">${n}</em>` : ''}</h2>${R[s.key](s)}</section>`; }).join('') : '<p class="empty">لا توجد أقسام ظاهرة حاليًا.</p>';
-    hero(d, secs); motion();
+    $('#snav').innerHTML = `<a href="#home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></svg><span>الرئيسية</span></a>` + secs.map(s => `<a href="#s-${esc(s.key)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${NAVI[s.key] || NAVI.about}"/></svg><span>${esc(s.label)}</span></a>`).join('');
+    $('#sv').innerHTML = secs.length ? `<nav class="tiles" aria-label="الأقسام">${secs.map(s => { const n = secCount(s); return `<a class="tile" href="#s-${esc(s.key)}"><span class="sec-i" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${NAVI[s.key] || NAVI.about}"/></svg></span><b class="tile-t">${esc(s.label)}</b><small class="tile-n">${n ? n + ' ' + (UNIT[s.key] || '') : 'عرض'}</small></a>`; }).join('')}</nav>` + secs.map(s => { const n = secCount(s); return `<section class="sec" id="s-${esc(s.key)}"><a class="sec-back" href="#home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span>الرئيسية</span></a><h2 class="sec-h"><span class="sec-i" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${NAVI[s.key] || NAVI.about}"/></svg></span><span class="sec-t">${esc(s.label)}</span>${n ? `<em class="sec-n">${n}</em>` : ''}</h2>${R[s.key](s)}</section>`; }).join('') : '<p class="empty">لا توجد أقسام ظاهرة حاليًا.</p>';
+    hero(d, secs); route();
     $('#stamp').textContent = snap.t ? 'آخر تحديث: ' + new Date(snap.t).toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit' }) : '';
     return true;
   }
@@ -188,7 +182,7 @@
   ['touchstart', 'pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, e => { if (e.target.closest && e.target.closest('.hg')) hgHold = Date.now() + 10000; }, { passive: true }));
   const reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)');
   setInterval(() => { const t = document.querySelector('.hg-track'); if (!t || t.children.length < 2 || document.hidden || Date.now() < hgHold || (reduce && reduce.matches) || document.querySelector('.lb')) return;
-    const r = t.getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) return; hgGo(t, hgIdx(t) + 1); }, 5000);
+    if (!t.offsetParent) return; const r = t.getBoundingClientRect(); if (r.bottom < 0 || r.top > innerHeight) return; hgGo(t, hgIdx(t) + 1); }, 5000);
   document.addEventListener('click', e => { const el = e.target.closest && e.target.closest('.hg-a, .hg-dot'); if (!el) return; const t = el.closest('.hg').querySelector('.hg-track'); hgHold = Date.now() + 10000;
     hgGo(t, el.classList.contains('hg-dot') ? +el.dataset.d : hgIdx(t) + (el.classList.contains('hg-next') ? 1 : -1)); });
   document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('.galt'); if (!b) return; const all = [...document.querySelectorAll('.galt')]; lightbox.open(all.map(x => ({ url: x.querySelector('img').src, caption: x.querySelector('img').alt })), all.indexOf(b)); });
