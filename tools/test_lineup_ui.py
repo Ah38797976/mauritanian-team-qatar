@@ -207,7 +207,7 @@ try:
             ctx.route('**/rest/v1/rpc/rpc_public_developer', lambda r: r.fulfill(status=200, content_type='application/json', body='null'))
             ctx.route('**/rest/v1/rpc/rpc_public_gallery', lambda r: r.fulfill(status=200, content_type='application/json', body='null'))
             pg = ctx.new_page(); pg.errs = []; pg.on('pageerror', lambda e: pg.errs.append(str(e))); pg.on('console', lambda m: pg.errs.append(m.text) if m.type == 'error' else None)
-            pg.goto(B + '/'); pg.wait_for_selector('#s-squad .pp', timeout=5000); pg.wait_for_timeout(300); return ctx, pg
+            pg.goto(B + '/#s-squad'); pg.wait_for_selector('#s-squad .pp', timeout=5000); pg.wait_for_timeout(300); return ctx, pg
         XY = json.loads(subprocess.check_output(['node', '-e', "global.window={};const s=require('fs').readFileSync('admin/live/live-coach.js','utf8');const f=new Function(s+';return window.CoachUI.XY');console.log(JSON.stringify(f()))"], cwd=ROOT).decode()) if False else None
         FM = {'4-4-2': ['gk','def','def','def','def','mid','mid','mid','mid','fwd','fwd']}
         pl = lambda i, n, pos, slot, cap=False, st=True: {'name': n, 'num': i, 'pos': pos, 'st': st, 'cap': cap, 'slot': slot}
