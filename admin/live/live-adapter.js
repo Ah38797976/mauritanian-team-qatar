@@ -55,13 +55,15 @@
   const NEW_COLS = /\b(slot|is_captain|is_goalkeeper)\b/;
   async function readLineup() {
     const prev = cache.lineupInfo, q = t => sb.from(t);
+    // بعد أن عرفنا أن 0014 مُطبَّق (قراءة سابقة ناجحة) نطلب lineups بالتوازي مع الاستعلام الأول بدل أن ننتظره (رحلة شبكة أقل). في أول قراءة، وعلى الخادم القديم، يبقى التسلسل القديم فلا نلمس جدولًا غير موجود.
+    const fq = prev && prev.v2 === true ? Promise.resolve(q('lineups').select('formation')).catch(() => null) : null;
     let r;
     try { r = await q('lineup_starters').select('player_id,slot,is_captain,is_goalkeeper'); } catch (_) { return { ...prev, err: 'net', ids: cache.lineup }; }
     if (!r.error) {
       const rows = r.data || [], slots = {}; let captain = '', gk = '';
       rows.forEach(x => { if (x.slot != null) slots[x.player_id] = x.slot; if (x.is_captain) captain = x.player_id; if (x.is_goalkeeper) gk = x.player_id; });
       let formation = '';
-      try { const f = await q('lineups').select('formation'); if (!f.error && f.data && f.data[0]) formation = String(f.data[0].formation || ''); } catch (_) {}
+      try { const f = fq ? await fq : await q('lineups').select('formation'); if (f && !f.error && f.data && f.data[0]) formation = String(f.data[0].formation || ''); } catch (_) {}
       return { v2: true, formation, slots, captain, gk, err: '', ids: rows.map(x => x.player_id) };
     }
     if (r.error.code === '42703' && NEW_COLS.test(String(r.error.message || ''))) {
@@ -87,13 +89,9 @@
     async signOut() { await sb.auth.signOut(); reset(); emit(); },
     refresh() { return serial(() => AD._refresh()); },
     async _refresh() {
-      const [me, roster, stats] = await Promise.all([rpc('rpc_get_me'), rpc('rpc_get_roster'), rpc('rpc_get_stat_rows')]);
-      // خطأ عابر (شبكة/مهلة/رمز قيد التجديد) لا يعني انتهاء الجلسة: لا نمسح الحالة ولا نُظهر شاشة الدخول؛ المستدعي يعيد المحاولة.
-      if (typeof me === 'string') return 'err';
-      if (!me) { reset(); emit(); return 'none'; }   // الخادم أجاب فعلًا: لا عضوية فعّالة لهذا الحساب
-      const tid = me.team && me.team.id;
+      // كل الطلبات دفعة واحدة (كانت موجتين متتاليتين: كل موجة تساوي رحلة شبكة كاملة إلى الخادم)
       const q = t => sb.from(t);
-      const [pl, ct, st, mb, mt, ls, ss, at, lg, ph, sph] = await Promise.all([
+      const [[me, roster, stats], [pl, ct, st, mb, mt, ls, ss, at, lg, ph, sph]] = await Promise.all([Promise.all([rpc('rpc_get_me'), rpc('rpc_get_roster'), rpc('rpc_get_stat_rows')]), Promise.all([
         q('players').select('id,name,shirt_number,position,city,status'),
         q('player_contacts').select('player_id,phone,email'),
         q('staff_members').select('id,name,title,kind,staff_contacts(phone)'),
@@ -105,7 +103,11 @@
         q('audit_log').select('created_at,actor_name,actor_role,action,detail').order('created_at', { ascending: false }).limit(500),
         q('player_photos').select('id,player_id,storage_path,is_primary'),
         q('staff_photos').select('id,staff_id,storage_path')
-      ]);
+      ])]);
+      // خطأ عابر (شبكة/مهلة/رمز قيد التجديد) لا يعني انتهاء الجلسة: لا نمسح الحالة ولا نُظهر شاشة الدخول؛ المستدعي يعيد المحاولة.
+      if (typeof me === 'string') return 'err';
+      if (!me) { reset(); emit(); return 'none'; }   // الخادم أجاب فعلًا: لا عضوية فعّالة لهذا الحساب
+      const tid = me.team && me.team.id;
       cache.me = me;
       cache.roster = Array.isArray(roster) ? roster.map(p => ({ ...p, ...(p.pos ? { pos: POS[p.pos] } : {}), ...(p.status ? { status: STATUS[p.status] } : {}) })) : [];   // [v2 F5] names-only rows keep no pos/status
       cache.stats = Array.isArray(stats) ? stats.map(r => ({ ...r, pos: POS[r.pos], status: STATUS[r.status] })) : [];
