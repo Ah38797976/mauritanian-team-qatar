@@ -114,6 +114,11 @@ dialog::backdrop{background:rgba(10,24,16,.55);backdrop-filter:blur(2px)}
   body.menu-open .side{transform:none;visibility:visible;box-shadow:var(--sh-lg)}
   .scrim{display:block;position:fixed;inset:0;background:rgba(10,24,16,.5);opacity:0;pointer-events:none;transition:opacity .2s;z-index:25}
   body.menu-open .scrim{opacity:1;pointer-events:auto}
+  html{overflow-x:clip}
+  .scrim{touch-action:none;overscroll-behavior:contain}
+  .side{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;height:100dvh}
+  body.menu-open{overflow:hidden;overscroll-behavior:none}
+  html:has(body.menu-open){overflow:hidden;overscroll-behavior:none}
   .menu{display:block}
   .top{padding:10px 14px}.demo-note{padding:7px 14px}main{padding:18px 14px 40px}
   .who span{display:none}.who select{max-width:48vw}

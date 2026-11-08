@@ -331,6 +331,7 @@
   const setMenu = o => { document.body.classList.toggle('menu-open', o); $('#menuBtn').setAttribute('aria-expanded', String(o)); };
   $('#menuBtn').onclick = () => setMenu(!document.body.classList.contains('menu-open'));
   $('#scrim').onclick = () => setMenu(false);
+  $('#scrim').addEventListener('touchmove', e => e.preventDefault(), { passive: false });   // iOS: لا تتحرك الصفحة خلف القائمة المفتوحة
   $('#nav').addEventListener('click', e => { if (e.target.closest('a')) setMenu(false); });   // لمس الصفحة الحالية لا يغيّر الرابط فلا يحدث تحديث: نغلق القائمة صراحةً
   document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
   const v = $('#view');
