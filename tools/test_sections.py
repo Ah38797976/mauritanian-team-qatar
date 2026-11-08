@@ -21,7 +21,7 @@ with sync_playwright() as p:
     ck('شارة العدد: 8 لاعبين، 2 مباراتان، 1 هدّاف', pg.locator('#s-squad .sec-n').inner_text().strip() == '8' and pg.locator('#s-matches .sec-n').inner_text().strip() == '2' and pg.locator('#s-scorers .sec-n').inner_text().strip() == '1')
     ck('«عن الفريق» بلا شارة', pg.locator('#s-about .sec-n').count() == 0)
     last = '#s-scorers'
-    ck('الأقسام البعيدة تبدأ مخفية (rv) والقريبة ظاهرة', pg.locator(last).evaluate("e=>e.classList.contains('rv')") and not pg.locator('#s-about').evaluate("e=>e.classList.contains('rv')"))
+    ck('القسم البعيد يبدأ مخفيًا (rv) ولا يوجد قسم مخفي وهو داخل الشاشة', pg.locator(last).evaluate("e=>e.classList.contains('rv')") and pg.evaluate("[...document.querySelectorAll('section.rv')].every(e=>e.getBoundingClientRect().top>innerHeight*.9)"))
     pg.locator(last).scroll_into_view_if_needed(); pg.wait_for_timeout(1200)
     ck('بعد التمرير يظهر القسم (in) وتُمرَّر الشفافية إلى 1', pg.locator(last).evaluate("e=>e.classList.contains('in') && getComputedStyle(e).opacity==='1'"))
     ck('القائمة تميّز القسم الحالي (الهدّافون)', pg.locator('#snav a.on').count() == 1 and pg.locator('#snav a.on').get_attribute('href') == '#s-scorers', pg.locator('#snav a.on').count())
