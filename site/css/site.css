@@ -173,3 +173,28 @@ section.sec:first-child{margin-top:8px}
 .pb-on .pb-b{background:transparent;color:inherit;border:1px solid var(--line,rgba(255,255,255,.25));font-weight:600;min-height:44px}
 .pb-warn .pb-ic{background:rgba(255,255,255,.08);color:#e9c46a}
 @media(min-width:720px){.pushbox{grid-template-columns:auto minmax(0,1fr) auto}.pb-b{grid-column:auto;min-width:190px}}
+
+/* عنوان القسم: أيقونة وشارة عدد */
+.sec-i{display:inline-grid;place-items:center;flex:none;width:40px;height:40px;border-radius:12px;background:color-mix(in srgb,var(--gold) 20%,transparent);color:var(--gold)}
+.sec-i svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sec-t{flex:1;min-width:0}
+.sec-n{flex:none;min-width:30px;padding:3px 10px;border-radius:99px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14);font:700 .8rem/1.4 inherit;font-style:normal;text-align:center;color:inherit;opacity:.85}
+.sec-h::before{display:none}
+/* الصفحة الرئيسية: خانات الأقسام. فتح خانة يعرض محتواها وحدها */
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0}
+.tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-height:132px;padding:16px;border:1px solid var(--line);border-radius:20px;background:var(--card);color:var(--ink);text-decoration:none;transition:transform .15s,border-color .15s,background .15s;-webkit-tap-highlight-color:transparent}
+.tile .sec-i{width:48px;height:48px;border-radius:14px}
+.tile .sec-i svg{width:26px;height:26px}
+.tile-t{margin-top:auto;font-size:1.05rem;font-weight:800}
+.tile-n{color:var(--mut);font-size:.82rem}
+.tile::after{content:"";position:absolute;top:18px;inset-inline-end:16px;width:9px;height:9px;border-bottom:2px solid var(--gold);border-left:2px solid var(--gold);transform:rotate(45deg);opacity:.8}
+.tile:active{transform:scale(.97)}
+@media(hover:hover){.tile:hover{border-color:var(--gold);transform:translateY(-2px)}}
+.tile:focus-visible,.sec-back:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+@media(min-width:720px){.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:1100px){.tiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
+#sv > section.sec{display:none}
+#sv > section.sec.cur{display:block}
+body.sec-open .tiles,body.sec-open .hero,body.sec-open #ann,body.sec-open .pbwrap{display:none}
+.sec-back{display:inline-flex;align-items:center;gap:6px;min-height:40px;margin:0 0 10px;padding:0 14px 0 10px;border:1px solid var(--line);border-radius:99px;color:var(--mut);font-size:.9rem;font-weight:700;text-decoration:none}
+.sec-back svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;transform:scaleX(-1)}

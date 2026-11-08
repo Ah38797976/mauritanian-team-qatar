@@ -47,7 +47,7 @@ with sync_playwright() as p:
         ctx = br.new_context(**p.devices['iPhone 13'], color_scheme=scheme); pg = ctx.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
         pg.route('**/rest/v1/rpc/rpc_public_site', lambda r: r.fulfill(status=200, content_type='application/json', body=json.dumps(SITE)))
         pg.route('**/rest/v1/rpc/rpc_public_developer', lambda r: r.fulfill(status=status, content_type='application/json', body=json.dumps(dev)))
-        pg.goto(B + '/index.html'); pg.wait_for_timeout(2500)
+        pg.goto(B + '/index.html#s-developer'); pg.wait_for_timeout(2500)
         if shot: pg.locator('#s-developer').scroll_into_view_if_needed() if pg.locator('#s-developer').count() else None; pg.screenshot(path=SHOTS + shot, full_page=True)
         return pg, errs
     pg, errs = pub(DEVJ, shot='public.png'); ck('العام: يظهر قسم المطوّر بالاسم والصفة والنبذة', pg.locator('#s-developer .dev-n').inner_text() == 'أحمد التجريبي' and 'مطوّر' in pg.inner_text('#s-developer .dev-t') and 'نبذة قصيرة' in pg.inner_text('#s-developer'))
