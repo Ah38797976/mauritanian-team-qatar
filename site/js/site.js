@@ -110,7 +110,7 @@
       const up = s.matches.filter(m => !m.played).sort((a, b) => String(a.date).localeCompare(String(b.date))), pl = s.matches.filter(m => m.played).sort((a, b) => String(b.date).localeCompare(String(a.date)));
       return (up.length ? `<h3 class="sub-h">المباريات القادمة</h3><div class="mgrid">${up.map(matchCard).join('')}</div>` : '') + (pl.length ? `<h3 class="sub-h">النتائج</h3><div class="mgrid">${pl.map(matchCard).join('')}</div>` : '') || '<p class="empty">لا مباريات بعد.</p>';
     },
-    scorers: s => { const max = Math.max(1, ...s.rows.map(r => num(r.goals))); return s.rows.length ? `<div class="card lb">${s.rows.map((r, i) => `<div class="lb-r"><span class="rk">${i + 1}</span><div class="lbw"><span class="lav">${photo(r, r.name) || ini(r.name)}</span><div class="lbm"><div class="nm">${esc(r.name)}</div><div class="bar"><i style="width:${Math.round(num(r.goals) / max * 100)}%"></i></div></div></div><div class="goals">${num(r.goals)}<small>هدف · ${num(r.apps)} مشاركة</small></div></div>`).join('')}</div>` : '<p class="empty">لا أهداف بعد.</p>'; }
+    scorers: s => { const max = Math.max(1, ...s.rows.map(r => num(r.goals))); return s.rows.length ? `<div class="card lbd">${s.rows.map((r, i) => `<div class="lb-r"><span class="rk">${i + 1}</span><div class="lbw"><span class="lav">${photo(r, r.name) || ini(r.name)}</span><div class="lbm"><div class="nm">${esc(r.name)}</div><div class="bar"><i style="width:${Math.round(num(r.goals) / max * 100)}%"></i></div></div></div><div class="goals">${num(r.goals)}<small>هدف · ${num(r.apps)} مشاركة</small></div></div>`).join('')}</div>` : '<p class="empty">لا أهداف بعد.</p>'; }
   };
   // العدّ التنازلي بالأيام (التاريخ فقط بلا ساعة)، بحسب تاريخ اليوم في قطر
   const untilLabel = d => {
@@ -129,6 +129,23 @@
     if (next) { const [A, B] = sides(next); h.innerHTML = `<div class="lbl"><span>المباراة القادمة</span><span class="pill">${esc(untilLabel(next.date))}</span></div><div class="vs"><span class="tm">${A}</span><span class="mid">×</span><span class="tm">${B}</span></div><div class="meta"><span>${longDate(next.date)}</span><span>${where(next)}</span></div>`; h.hidden = false; }
     else { h.innerHTML = ''; h.hidden = true; }
   }
+  // عدد عناصر القسم (شارة بجانب العنوان)
+  const secCount = s => { const n = s.key === 'squad' ? s.players.length : s.key === 'staff' ? s.staff.length : s.key === 'matches' ? s.matches.length : s.key === 'scorers' ? s.rows.length : s.key === 'gallery' ? s.items.length : 0; return n > 0 ? n : 0; };
+  // ظهور الأقسام تدريجيًا عند التمرير + تمييز القسم الحالي في القائمة. لا يعمل إلا مع IntersectionObserver وبدون «تقليل الحركة»، وأي فشل يُبقي كل المحتوى ظاهرًا.
+  let drawn = false, spy = null, rvo = null;
+  const motion = () => {
+    const secsEl = [...document.querySelectorAll('#sv > section.sec')], first = !drawn; drawn = true;
+    if (spy) spy.disconnect(); if (rvo) rvo.disconnect();
+    if (!('IntersectionObserver' in window)) return;
+    const links = [...document.querySelectorAll('#snav a')], mark = id => links.forEach(a => { const on = a.getAttribute('href') === '#' + id; a.classList.toggle('on', on); if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
+    spy = new IntersectionObserver(es => { const v = es.filter(e => e.isIntersecting).sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]; if (v) mark(v.target.id); }, { rootMargin: '-25% 0px -55% 0px', threshold: [0, .1, .3] });
+    secsEl.forEach(e => spy.observe(e)); if (secsEl[0]) mark(secsEl[0].id);
+    if (!first || (reduce && reduce.matches)) return;
+    secsEl.forEach(e => { if (e.getBoundingClientRect().top > innerHeight * .9) e.classList.add('rv'); });
+    rvo = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); rvo.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px', threshold: .05 });
+    document.querySelectorAll('#sv > section.rv').forEach(e => rvo.observe(e));
+    setTimeout(() => document.querySelectorAll('#sv > section.rv:not(.in)').forEach(e => e.classList.add('in')), 6000);   // شبكة أمان
+  };
   function draw(raw) {
     let snap; try { snap = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return false; }
     if (!snap || snap.v !== 1 || !snap.data || !snap.data.team || !Array.isArray(snap.data.sections)) return false;
@@ -140,8 +157,8 @@
     const a = $('#ann'); a.textContent = d.announcement || ''; a.hidden = !d.announcement;
     const secs = d.sections.filter(s => Object.prototype.hasOwnProperty.call(R, s.key));
     $('#snav').innerHTML = secs.map(s => `<a href="#s-${esc(s.key)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${NAVI[s.key] || NAVI.about}"/></svg><span>${esc(s.label)}</span></a>`).join('');
-    $('#sv').innerHTML = secs.length ? secs.map(s => `<section class="sec" id="s-${esc(s.key)}"><h2 class="sec-h">${esc(s.label)}</h2>${R[s.key](s)}</section>`).join('') : '<p class="empty">لا توجد أقسام ظاهرة حاليًا.</p>';
-    hero(d, secs);
+    $('#sv').innerHTML = secs.length ? secs.map(s => { const n = secCount(s); return `<section class="sec" id="s-${esc(s.key)}"><h2 class="sec-h"><span class="sec-i" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${NAVI[s.key] || NAVI.about}"/></svg></span><span class="sec-t">${esc(s.label)}</span>${n ? `<em class="sec-n">${n}</em>` : ''}</h2>${R[s.key](s)}</section>`; }).join('') : '<p class="empty">لا توجد أقسام ظاهرة حاليًا.</p>';
+    hero(d, secs); motion();
     $('#stamp').textContent = snap.t ? 'آخر تحديث: ' + new Date(snap.t).toLocaleTimeString('ar-u-nu-latn', { hour: '2-digit', minute: '2-digit' }) : '';
     return true;
   }
