@@ -116,9 +116,9 @@ dialog::backdrop{background:rgba(10,24,16,.55);backdrop-filter:blur(2px)}
   body.menu-open .scrim{opacity:1;pointer-events:auto}
   html{overflow-x:clip}
   .scrim{touch-action:none;overscroll-behavior:contain}
-  .side{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;height:100dvh}
+  .side{overflow:hidden;height:100dvh}
+  #nav{min-height:0;overflow-y:scroll;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
   body.menu-open{overflow:hidden;overscroll-behavior:none}
-  html:has(body.menu-open){overflow:hidden;overscroll-behavior:none}
   .menu{display:block}
   .top{padding:10px 14px}.demo-note{padding:7px 14px}main{padding:18px 14px 40px}
   .who span{display:none}.who select{max-width:48vw}
