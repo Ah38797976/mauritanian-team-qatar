@@ -269,7 +269,7 @@
   V.settings = () => { const t = St.team(), ed = St.can('settings'); return `<h1>إعدادات الفريق</h1><div class="card"><form id="tf">${fld('اسم الفريق', 'name', t.name, 'text', ed ? '' : 'disabled')}${fld('المدينة', 'city', t.city, 'text', ed ? '' : 'disabled')}${fld('اللون الرئيسي', 'color', t.color, 'color', ed ? '' : 'disabled')}<small class="hint">يظهر هذا اللون في الموقع العام فقط، ولا يغيّر ألوان لوحة الإدارة.</small>${ed ? '<button>حفظ</button>' : '<small>عرض فقط</small>'}</form></div>`; };
   // إدارة الموقع العام: ما تفعّله هنا يظهر للزوار في الموقع؛ وما تُطفئه يختفي. لا هواتف ولا بريد ولا مدن في الموقع أبدًا (الخادم يرجع قائمة بيضاء فقط).
   const SEC = [['players', 'اللاعبون', 'الاسم والرقم والمركز فقط'], ['staff', 'الطاقم', 'الاسم والدور فقط'], ['matches', 'المباريات والنتائج', 'الخصم والتاريخ والنتيجة'], ['stats', 'الهدافون', 'الاسم والأهداف والمشاركات'], ['photos', 'صور اللاعبين', 'تظهر صورة كل لاعب في الملعب وبطاقته؛ الصور المرفوعة تصبح قابلة للفتح برابطها العام']];
-  V.site = () => { if (!isPanelUser() || !St.can('settings')) return denied('إدارة الموقع العام'); return `<h1>إدارة الموقع العام</h1><div class="note">يظهر في الموقع ما تفعّله هنا فقط. كل الأقسام مطفأة افتراضيًا. لا يُنشر في الموقع أي هاتف أو بريد أو مدينة لأي لاعب أو عضو.</div><div class="card" id="sitebox"><p>جارٍ التحميل…</p></div><div class="card" id="devbox"><p>جارٍ التحميل…</p></div><div class="card" id="gallerybox"><p>جارٍ التحميل…</p></div>`; };
+  V.site = () => { if (!isPanelUser() || !St.can('settings')) return denied('إدارة الموقع العام'); return `<h1>إدارة الموقع العام</h1><div class="note">يظهر في الموقع ما تفعّله هنا فقط. كل الأقسام مطفأة افتراضيًا. لا يُنشر في الموقع أي هاتف أو بريد أو مدينة لأي لاعب أو عضو.</div><div class="card" id="sitebox"><p>جارٍ التحميل…</p></div><div class="card" id="devbox"><p>جارٍ التحميل…</p></div><div class="card" id="gallerybox"><p>جارٍ التحميل…</p></div><div class="card" id="pushadm"><p>جارٍ التحميل…</p></div>`; };
   const siteForm = r => { const s = r.sections || {};
     return `<div class="row between"><h2>محتوى الموقع</h2><a class="btnlink" href="../../" target="_blank" rel="noopener">عرض الموقع ↗</a></div><form id="sf"><label class="f"><span>نبذة عن الفريق (اختيارية)</span><textarea name="about" rows="3" maxlength="500">${esc(r.about)}</textarea></label><label class="f"><span>إعلان أعلى الموقع (اختياري)</span><input name="announcement" maxlength="200" value="${esc(r.announcement)}"></label><h2>الأقسام الظاهرة في الموقع</h2><div class="secs">${SEC.map(([k, l, n]) => `<label class="ck"><input type="checkbox" name="sec_${esc(k)}" ${s[k] === true ? 'checked' : ''}><span><b>${esc(l)}</b><small>${esc(n)}</small></span></label>`).join('')}</div><button>حفظ الموقع</button></form>`; };
   const loadSite = () => { const box = $('#sitebox'); if (!box) return; TD.getSite().then(r => { const b = $('#sitebox'); if (!b || route().page !== 'site') return; b.innerHTML = r && typeof r === 'object' ? siteForm(r) : '<p>تعذّر تحميل إعدادات الموقع أو لا تملك الصلاحية.</p>'; }); };
@@ -287,6 +287,15 @@
       ${ph.length ? `<div class="galgrid">${ph.map(x => `<figure class="galtile"><img src="${esc(TD.devPhotoUrl(x.path))}" alt="" loading="lazy"><button type="button" class="galx" data-gd="${esc(x.id)}" aria-label="حذف الصورة">×</button>${x.caption ? `<figcaption>${esc(x.caption)}</figcaption>` : ''}</figure>`).join('')}</div>` : '<p class="muted">لا توجد صور بعد.</p>'}
       <form id="gf"><label class="f"><span>إضافة صور (يمكن اختيار أكثر من صورة)</span><input type="file" name="gphotos" accept="image/jpeg,image/png,image/webp" multiple></label>${fld('تعليق (اختياري، يُطبَّق على كل الصور المرفوعة الآن)', 'gcap', '', 'text', 'maxlength="80"')}<button>رفع الصور</button></form>`; };
   const loadGal = () => { const box = $('#gallerybox'); if (!box) return; TD.getGallery().then(g => { const b = $('#gallerybox'); if (!b || route().page !== 'site') return; b.innerHTML = g && typeof g === 'object' ? galForm(g) : '<h2>معرض صور الفريق</h2><p>هذه الميزة غير مفعّلة بعد في قاعدة البيانات، أو لا تملك صلاحية إدارة الموقع.</p>'; }); };
+
+  // إرسال تنبيه (Web Push) لكل من فعّل التنبيهات في الموقع
+  let pushCount = 0;
+  const pushForm = r => { pushCount = r.subscribers | 0; const rec = Array.isArray(r.recent) ? r.recent : [];
+    return `<h2>إرسال تنبيه للجميع</h2><p class="muted">يصل إلى ${pushCount} جهازًا فعّل التنبيهات من الموقع. على الآيفون يعمل فقط لمن أضاف الموقع إلى الشاشة الرئيسية.</p>
+      <form id="pf">${fld('العنوان', 'ptitle', '', 'text', 'maxlength="60" required')}<label class="f"><span>نص التنبيه</span><textarea name="pbody" rows="3" maxlength="160" required></textarea></label>
+      <label class="f"><span>عند الضغط يفتح</span><select name="purl"><option value="/">الصفحة الرئيسية</option><option value="/#s-matches">المباريات والنتائج</option><option value="/#s-squad">اللاعبون</option><option value="/#s-gallery">معرض الصور</option></select></label><button>إرسال التنبيه</button></form>
+      ${rec.length ? `<h3>آخر التنبيهات</h3><ul class="plist">${rec.map(x => `<li><b>${esc(x.title)}</b> — ${esc(x.body)}<small>${esc(new Date(x.at).toLocaleString('ar'))} · وصل ${x.sent | 0} · فشل ${x.failed | 0}${x.by ? ' · ' + esc(x.by) : ''}</small></li>`).join('')}</ul>` : ''}`; };
+  const loadPush = () => { const box = $('#pushadm'); if (!box) return; TD.getPushStats().then(r => { const b = $('#pushadm'); if (!b || route().page !== 'site') return; b.innerHTML = r && typeof r === 'object' ? pushForm(r) : '<h2>إرسال تنبيه للجميع</h2><p>هذه الميزة غير مفعّلة بعد في قاعدة البيانات، أو لا تملك صلاحية إدارة الموقع.</p>'; }); };
 
   // بطاقة «عن مطوّر التطبيق»: الاسم والصفة والنبذة والصورة، تظهر في الموقع العام عند التفعيل فقط
   let devPhoto = '';
@@ -310,7 +319,7 @@
     v.innerHTML = (Object.prototype.hasOwnProperty.call(V, page) ? V[page] : V.dash)(id);  // لا نقرأ مفاتيح النموذج الأولي (constructor…)
     if ((page === 'pitch' || page === 'coach') && window.CoachUI) CoachUI.bind(v, St.can('lineup'));
     if (page === 'players' && St.can('viewPlayers')) drawPlayers();
-    if (page === 'site') { loadSite(); loadDev(); loadGal(); }
+    if (page === 'site') { loadSite(); loadDev(); loadGal(); loadPush(); }
     if (page === 'finance' && St.can('finance')) loadFin();
     if (page === 'roles' && isFounder()) loadRoles();
     if (page === 'users' && isFounder()) loadUsers();
@@ -371,6 +380,10 @@
         toast(er || SAVED); loadDev();
       })().finally(() => { btn.disabled = false; });
     }
+    if (e.target.id === 'pf') { e.preventDefault(); const form = e.target, fd = new FormData(form), ti = String(fd.get('ptitle') || '').trim(), bo = String(fd.get('pbody') || '').trim(), u = String(fd.get('purl') || '/'), btn = form.querySelector('button');
+      if (!ti || !bo) { toast('اكتب العنوان والنص'); return; }
+      if (!confirm('إرسال التنبيه إلى ' + pushCount + ' جهازًا الآن؟ لا يمكن التراجع بعد الإرسال.')) return;
+      btn.disabled = true; TD.sendPush(ti, bo, u).then(r => { if (r.err) { toast(r.err); btn.disabled = false; } else { toast('أُرسل التنبيه: وصل ' + r.sent + ' وفشل ' + r.failed); loadPush(); } }); return; }
     if (e.target.id === 'gf') { e.preventDefault(); const form = e.target, fd = new FormData(form), files = fd.getAll('gphotos').filter(f => f && f.size), cap = String(fd.get('gcap') || ''), btn = form.querySelector('button');
       if (!files.length) return toast('اختر صورة واحدة على الأقل'); if (files.length + ((galData && galData.photos) || []).length > 40) return toast('الحد الأقصى 40 صورة في المعرض');
       btn.disabled = true;
