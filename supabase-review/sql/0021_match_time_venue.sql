@@ -1,4 +1,5 @@
 -- 0021: match kick-off time (Qatar local, HH:MM) and venue name. Both optional; shown on the public site (matches section) and edited by users with the 'matches' permission.
+-- NOTE: rpc_public_site below is based on the LIVE definition (includes lineup cap/slot/formation from 0014), not on 0013.
 -- Additive: two nullable columns on public.matches + updated rpc_save_match / rpc_public_site. Old clients keep working (missing keys leave values unchanged).
 begin;
 alter table public.matches add column if not exists kickoff time;
@@ -56,14 +57,18 @@ begin
   res := jsonb_build_object('team', jsonb_build_object('name', t.name, 'city', t.city, 'color', t.color),
     'about', coalesce(st.about, ''), 'announcement', coalesce(st.announcement, ''), 'sections', sec);
   if coalesce((sec->>'players')::boolean, false) then
-    res := res || jsonb_build_object('players', coalesce((
-      select jsonb_agg(jsonb_build_object('name', p.name, 'num', p.shirt_number,
-        'pos', case p.position when 'gk' then 'حارس' when 'def' then 'مدافع' when 'mid' then 'وسط' else 'مهاجم' end,
-        'photo', case when ph then (select ph2.storage_path from public.player_photos ph2 where ph2.player_id = p.id
-                                    order by ph2.is_primary desc, ph2.created_at desc limit 1) end,
-        'st', exists (select 1 from public.lineup_starters ls where ls.player_id = p.id and ls.team_id = t.id))
-        order by p.shirt_number, p.name)
-      from public.players p where p.team_id = t.id and p.status <> 'unregistered'), '[]'::jsonb));
+    res := res || jsonb_build_object(
+      'players', coalesce((
+        select jsonb_agg(jsonb_build_object('name', p.name, 'num', p.shirt_number,
+          'pos', case p.position when 'gk' then 'حارس' when 'def' then 'مدافع' when 'mid' then 'وسط' else 'مهاجم' end,
+          'photo', case when ph then (select ph2.storage_path from public.player_photos ph2 where ph2.player_id = p.id
+                                      order by ph2.is_primary desc, ph2.created_at desc limit 1) end,
+          'st',   exists (select 1 from public.lineup_starters ls where ls.player_id = p.id and ls.team_id = t.id),
+          'cap',  coalesce((select ls.is_captain from public.lineup_starters ls where ls.player_id = p.id and ls.team_id = t.id), false),
+          'slot', (select ls.slot from public.lineup_starters ls where ls.player_id = p.id and ls.team_id = t.id))
+          order by p.shirt_number, p.name)
+        from public.players p where p.team_id = t.id and p.status <> 'unregistered'), '[]'::jsonb),
+      'formation', (select l.formation from public.lineups l where l.team_id = t.id));
   end if;
   if coalesce((sec->>'staff')::boolean, false) then
     res := res || jsonb_build_object('staff', coalesce((
