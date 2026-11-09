@@ -169,11 +169,16 @@ html.pm-lock{overflow:hidden}
 .ftr{background:var(--card);color:var(--ink);border:1px solid var(--line);border-top:2px solid var(--gold);border-radius:20px}
 .ftr-in{padding-block:18px}
 .ftr small{color:var(--mut);opacity:1}
+.ftr-in{display:flex;align-items:center;gap:12px 14px;flex-wrap:wrap;padding-inline:16px}
+.ftr-in>div{flex:1 1 0;min-width:0}
+.ftr-in .stamp{flex:1 1 100%;margin:0;padding-top:10px;border-top:1px solid var(--line);text-align:center;font-size:.8rem;overflow-wrap:anywhere}
+.ftr{margin-bottom:12px}
+body.sec-open .ftr{display:none}
 .logo{object-fit:cover}
 
 /* ---------- الجوال والتابلت: شريط تنقل سفلي ---------- */
 @media(max-width:860px){
-  .app{grid-template-columns:minmax(0,1fr);padding:10px 10px 92px;gap:10px}
+  .app{grid-template-columns:minmax(0,1fr);padding:10px 10px calc(108px + env(safe-area-inset-bottom));gap:10px}
   .rail{position:fixed;inset-inline:8px;bottom:8px;top:auto;max-height:none;flex-direction:row;justify-content:center;padding:6px;border-radius:20px;background:rgba(11,29,20,.97);backdrop-filter:blur(8px);box-shadow:0 10px 30px rgba(0,0,0,.5);overflow:visible}
   .rail .brand{display:none}
   #snav{display:flex!important;flex-direction:row;justify-content:space-around;gap:2px;position:static;padding:0}
