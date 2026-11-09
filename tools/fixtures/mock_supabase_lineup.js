@@ -87,6 +87,10 @@
           if (!M.v2 && /slot|is_captain|is_goalkeeper/.test(this.cols)) return { data: null, error: { code: '42703', message: 'column lineup_starters.slot does not exist' } };
           return { data: DB.starters.map(s => M.v2 ? s : { player_id: s.player_id }), error: null };
         }
+        if (t === 'matches' && /kickoff|venue/.test(this.cols)) {   // 0021: قبل التطبيق الأعمدة غير موجودة
+          if (M.noMatchExt) return { data: null, error: { code: '42703', message: 'column matches.kickoff does not exist' } };
+          return { data: rows(t).map(m => ({ ...m, kickoff: m.id === 'm1' ? '19:30:00' : null, venue: m.id === 'm1' ? 'ملعب الدحيل' : null })), error: null };
+        }
         return { data: rows(t), error: null };
       })().then(res, rej);
     } });

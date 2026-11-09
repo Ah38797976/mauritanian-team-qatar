@@ -40,9 +40,10 @@
   let sb = null, chain = Promise.resolve();
   let photoGen = 0;
   const urlCache = new Map();   // storage_path -> { url, exp } ; الروابط موقّعة لساعة، نعيد استعمالها حتى قبل انتهائها بخمس دقائق
-  const cache = { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], lineup: [], lineupInfo: { v2: null, formation: '', slots: {}, captain: '', gk: '', err: '' }, sessions: [], att: {}, stats: [], logs: [], photos: [], staffPhotos: [] };
+  const cache = { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], matchExt: null, lineup: [], lineupInfo: { v2: null, formation: '', slots: {}, captain: '', gk: '', err: '' }, sessions: [], att: {}, stats: [], logs: [], photos: [], staffPhotos: [] };
   const subs = [], emit = () => subs.forEach(f => f());
-  const reset = () => { urlCache.clear(); Object.assign(cache, { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], lineup: [], lineupInfo: { v2: null, formation: '', slots: {}, captain: '', gk: '', err: '' }, sessions: [], att: {}, stats: [], logs: [], photos: [], staffPhotos: [] }); };
+  const MT_BASE = 'id,opponent,match_date,is_home,played,opp_goals,officer_id,match_players(player_id,match_events(event_type,minute))', MT_EXT = MT_BASE.replace('officer_id,', 'officer_id,kickoff,venue,');
+  const reset = () => { urlCache.clear(); Object.assign(cache, { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], matchExt: null, lineup: [], lineupInfo: { v2: null, formation: '', slots: {}, captain: '', gk: '', err: '' }, sessions: [], att: {}, stats: [], logs: [], photos: [], staffPhotos: [] }); };
 
   // PGRST202 / 42883 = الدالة غير موجودة على الخادم (0014 غير مُطبَّق): رسالة واضحة بدل «تعذّر الاتصال»
   const FEATURE_OFF = 'هذه الميزة غير مفعّلة على الخادم بعد';
@@ -91,12 +92,12 @@
     async _refresh() {
       // كل الطلبات دفعة واحدة (كانت موجتين متتاليتين: كل موجة تساوي رحلة شبكة كاملة إلى الخادم)
       const q = t => sb.from(t);
-      const [[me, roster, stats], [pl, ct, st, mb, mt, ls, ss, at, lg, ph, sph]] = await Promise.all([Promise.all([rpc('rpc_get_me'), rpc('rpc_get_roster'), rpc('rpc_get_stat_rows')]), Promise.all([
+      let mt; const [[me, roster, stats], [pl, ct, st, mb, mt_, ls, ss, at, lg, ph, sph]] = await Promise.all([Promise.all([rpc('rpc_get_me'), rpc('rpc_get_roster'), rpc('rpc_get_stat_rows')]), Promise.all([
         q('players').select('id,name,shirt_number,position,city,status'),
         q('player_contacts').select('player_id,phone,email'),
         q('staff_members').select('id,name,title,kind,staff_contacts(phone)'),
         q('team_members').select('user_id,display_name,role,active'),                                                    // [v2 F4]
-        q('matches').select('id,opponent,match_date,is_home,played,opp_goals,officer_id,match_players(player_id,match_events(event_type,minute))').order('match_date'),
+        q('matches').select(cache.matchExt === false ? MT_BASE : MT_EXT).order('match_date'),   // 0021: الوقت والملعب (إن لم يُطبَّق يعود الاستعلام القديم تلقائيًا)
         readLineup(),
         q('training_sessions').select('id,title,session_date').order('session_date'),
         q('attendance').select('session_id,player_id,present'),
@@ -104,6 +105,9 @@
         q('player_photos').select('id,player_id,storage_path,is_primary'),
         q('staff_photos').select('id,staff_id,storage_path')
       ])]);
+      mt = mt_;
+      if (mt.error && cache.matchExt !== false && (mt.error.code === '42703' || /kickoff|venue|column/i.test(String(mt.error.message || '')))) { cache.matchExt = false; mt = await q('matches').select(MT_BASE).order('match_date'); }   // أعمدة 0021 غير موجودة بعد
+      else if (!mt.error && cache.matchExt === null) cache.matchExt = true;
       // خطأ عابر (شبكة/مهلة/رمز قيد التجديد) لا يعني انتهاء الجلسة: لا نمسح الحالة ولا نُظهر شاشة الدخول؛ المستدعي يعيد المحاولة.
       if (typeof me === 'string') return 'err';
       if (!me) { reset(); emit(); return 'none'; }   // الخادم أجاب فعلًا: لا عضوية فعّالة لهذا الحساب
@@ -119,7 +123,7 @@
       });
       cache.staff = (st.data || []).map(s => { const o = { id: s.id, teamId: tid, name: s.name, role: s.title, kind: KIND[s.kind] }; if (s.staff_contacts && s.staff_contacts[0]) o.phone = s.staff_contacts[0].phone; return o; });
       cache.members = (mb.data || []).filter(m => m.active).map(m => ({ id: m.user_id, name: m.display_name, role: m.role }));
-      cache.matches = (mt.data || []).map(m => ({ id: m.id, opp: m.opponent, date: m.match_date, home: m.is_home, played: m.played, them: m.opp_goals, officer: m.officer_id, players: (m.match_players || []).map(x => x.player_id), events: (m.match_players || []).flatMap(x => (x.match_events || []).map(e => ({ pid: x.player_id, type: e.event_type, min: e.minute }))) }));   // الأحداث مرتبطة بجدول match_players فقط، لذا تُجلب متداخلة
+      cache.matches = (mt.data || []).map(m => ({ id: m.id, opp: m.opponent, date: m.match_date, home: m.is_home, played: m.played, them: m.opp_goals, officer: m.officer_id, time: m.kickoff ? String(m.kickoff).slice(0, 5) : '', venue: m.venue || '', players: (m.match_players || []).map(x => x.player_id), events: (m.match_players || []).flatMap(x => (x.match_events || []).map(e => ({ pid: x.player_id, type: e.event_type, min: e.minute }))) }));   // الأحداث مرتبطة بجدول match_players فقط، لذا تُجلب متداخلة
       { const { ids, ...info } = ls; cache.lineup = ids; cache.lineupInfo = info; }
       cache.sessions = (ss.data || []).map(s => ({ id: s.id, title: s.title, date: s.session_date }));                    // [v2 F2]
       cache.att = {}; (at.data || []).forEach(a => { (cache.att[a.session_id] = cache.att[a.session_id] || {})[a.player_id] = a.present; });

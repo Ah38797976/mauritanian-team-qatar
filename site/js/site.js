@@ -19,13 +19,16 @@
   const sides = m => { const us = esc(TEAM), o = esc(m.opp); return m.home ? [us, o] : [o, us]; };
   const outcome = m => { const a = num(m.us), b = num(m.them); return a > b ? ['w', 'فوز'] : a < b ? ['l', 'خسارة'] : ['d', 'تعادل']; };
   const where = m => m.home ? 'على أرضنا' : 'خارج الأرض';
+  // وقت المباراة HH:MM (بتوقيت قطر) بنظام 12 ساعة؛ واسم الملعب نص عادي مُهرَّب (كلاهما اختياري)
+  const clock = t => { const m = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(String(t || '')); if (!m) return ''; const h = +m[1]; return ((h % 12) || 12) + ':' + m[2] + ' ' + (h < 12 ? 'ص' : 'م'); };
+  const venueOf = m => typeof m.venue === 'string' ? m.venue.trim().slice(0, 100) : '';
   const matchCard = m => {
     const [A, B] = sides(m), r = m.played ? outcome(m) : ['u', 'قادمة'];
     const us = esc(TEAM), badge = (name, ours) => `<i class="tb${ours ? ' us' : ''}" aria-hidden="true">${ini(name)}</i>`;
     const [nA, nB] = m.home ? [TEAM, m.opp] : [m.opp, TEAM];
     // الرقمان بترتيب الفريقين نفسه (الأول من اليمين)، فيجاور كل رقم فريقه
     const mid = m.played ? `<span class="sc"><b>${m.home ? num(m.us) : num(m.them)}</b><em>-</em><b>${m.home ? num(m.them) : num(m.us)}</b></span>` : '<span class="mid">VS</span>';
-    return `<article class="card m m-${r[0]}"><div class="top"><span class="md">${shortDate(m.date)}</span><span class="res ${r[0]}">${r[1]}</span></div><div class="vs"><span class="tmw">${badge(nA, m.home)}<span class="tm">${A}</span></span>${mid}<span class="tmw">${badge(nB, !m.home)}<span class="tm">${B}</span></span></div><div class="mf"><span class="mw ${m.home ? 'h' : 'a'}">${where(m)}</span></div></article>`;
+    return `<article class="card m m-${r[0]}"><div class="top"><span class="md">${shortDate(m.date)}</span><span class="res ${r[0]}">${r[1]}</span></div><div class="vs"><span class="tmw">${badge(nA, m.home)}<span class="tm">${A}</span></span>${mid}<span class="tmw">${badge(nB, !m.home)}<span class="tm">${B}</span></span></div><div class="mf"><span class="mw ${m.home ? 'h' : 'a'}">${where(m)}</span>${clock(m.time) ? `<span class="mw tm-c">${clock(m.time)}</span>` : ''}${venueOf(m) ? `<span class="mw vn">${esc(venueOf(m))}</span>` : ''}</div></article>`;
   };
   // ---------- اللاعبون: ملعب التشكيلة + الاحتياط + بطاقة اللاعب ----------
   let SQ = [], SF = [], LST = SQ, MODE = 'p'; // لاعبو القسم الحالي وأعضاء الطاقم (تُقرأ منها البطاقة عند الضغط)
@@ -128,7 +131,7 @@
     if (sc && sc.rows[0]) st.push([num(sc.rows[0].goals), 'أهداف الهداف']);
     $('#stats').innerHTML = st.map(([n, l]) => `<div class="stat"><b>${num(n)}</b><span>${esc(l)}</span></div>`).join('');
     const next = ms && ms.matches.filter(m => !m.played).sort((a, b) => String(a.date).localeCompare(String(b.date)))[0], h = $('#heroNext');
-    if (next) { const [A, B] = sides(next); h.innerHTML = `<div class="lbl"><span>المباراة القادمة</span><span class="pill">${esc(untilLabel(next.date))}</span></div><div class="vs"><span class="tm">${A}</span><span class="mid">×</span><span class="tm">${B}</span></div><div class="meta"><span>${longDate(next.date)}</span><span>${where(next)}</span></div>`; h.hidden = false; }
+    if (next) { const [A, B] = sides(next); h.innerHTML = `<div class="lbl"><span>المباراة القادمة</span><span class="pill">${esc(untilLabel(next.date))}</span></div><div class="vs"><span class="tm">${A}</span><span class="mid">×</span><span class="tm">${B}</span></div><div class="meta"><span>${longDate(next.date)}</span>${clock(next.time) ? `<span>${clock(next.time)}</span>` : ''}<span>${where(next)}</span>${venueOf(next) ? `<span>${esc(venueOf(next))}</span>` : ''}</div>`; h.hidden = false; }
     else { h.innerHTML = ''; h.hidden = true; }
   }
   // عدد عناصر القسم (شارة بجانب العنوان)
@@ -194,7 +197,7 @@
     if (j.about) secs.push({ key: 'about', label: 'عن الفريق', text: j.about });
     if (S.players) secs.push({ key: 'squad', label: 'اللاعبون', players: (j.players || []).map(p => ({ name: p.name, num: p.num, pos: p.pos, photo: p.photo, st: p.st === true ? 1 : 0, cap: p.cap === true, slot: Number.isInteger(p.slot) ? p.slot : null })), formation: typeof j.formation === 'string' ? j.formation : '' });
     if (S.staff) secs.push({ key: 'staff', label: 'الطاقم', staff: (j.staff || []).map(x => ({ name: x.name, role: x.role, kind: x.kind, photo: x.photo })) });
-    if (S.matches) secs.push({ key: 'matches', label: 'المباريات والنتائج', matches: (j.matches || []).map(m => ({ opp: m.opp, date: m.date, home: m.home, played: m.played, us: m.us, them: m.them })) });
+    if (S.matches) secs.push({ key: 'matches', label: 'المباريات والنتائج', matches: (j.matches || []).map(m => ({ opp: m.opp, date: m.date, home: m.home, played: m.played, us: m.us, them: m.them, time: m.time, venue: m.venue })) });
     if (S.stats) secs.push({ key: 'scorers', label: 'الهدافون', rows: (j.scorers || []).map(r => ({ name: r.name, goals: r.goals, apps: r.apps })) });
     if (Array.isArray(gal)) { const items = gal.filter(g => g && photoUrl(g.path)).slice(0, 40).map(g => ({ url: photoUrl(g.path), caption: String(g.caption || '').slice(0, 80) })); if (items.length) secs.push({ key: 'gallery', label: 'معرض الصور', items }); }
     if (dev && typeof dev.name === 'string' && dev.name.trim()) secs.push({ key: 'developer', label: 'عن مطوّر التطبيق', dev: { name: dev.name.slice(0, 60), title: String(dev.title || '').slice(0, 60), bio: String(dev.bio || '').slice(0, 300), photo: dev.photo } });
