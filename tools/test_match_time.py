@@ -12,7 +12,7 @@ SITE = {'team': {'name': 'فريق', 'city': 'الدوحة', 'color': '#0b6b3a'}
 with sync_playwright() as p:
     br = p.chromium.launch(); ctx = br.new_context(**p.devices['iPhone 13']); pg = ctx.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.route('**/rest/v1/rpc/rpc_public_site', lambda r: r.fulfill(status=200, content_type='application/json', body=json.dumps(SITE)))
-    for f in ('rpc_public_developer', 'rpc_public_gallery'): pg.route('**/rest/v1/rpc/' + f, lambda r: r.fulfill(status=200, content_type='application/json', body='null'))
+    for f in ('rpc_public_developer', 'rpc_public_gallery', 'rpc_public_training'): pg.route('**/rest/v1/rpc/' + f, lambda r: r.fulfill(status=200, content_type='application/json', body='null'))
     pg.route('**/rest/v1/rpc/rpc_push_*', lambda r: r.fulfill(status=200, content_type='application/json', body='""'))
     pg.goto(B + '/index.html#s-matches'); pg.wait_for_timeout(1500)
     cards = pg.eval_on_selector_all('.card.m', "els => els.map(e => ({t: e.querySelector('.tm-c') ? e.querySelector('.tm-c').textContent : null, v: e.querySelector('.vn') ? e.querySelector('.vn').textContent : null}))")

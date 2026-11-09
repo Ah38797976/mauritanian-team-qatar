@@ -10,7 +10,7 @@ SITE = {'team': {'name': 'فريق تجريبي', 'city': 'الدوحة', 'color
 def pub(br, p, pre='', dev='iPhone 13'):
     ctx = br.new_context(**p.devices[dev]); ctx.add_init_script(pre); pg = ctx.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)))
     pg.route('**/rest/v1/rpc/rpc_public_site', lambda r: r.fulfill(status=200, content_type='application/json', body=json.dumps(SITE)))
-    for f in ('rpc_public_developer', 'rpc_public_gallery'): pg.route('**/rest/v1/rpc/' + f, lambda r: r.fulfill(status=200, content_type='application/json', body='null'))
+    for f in ('rpc_public_developer', 'rpc_public_gallery', 'rpc_public_training'): pg.route('**/rest/v1/rpc/' + f, lambda r: r.fulfill(status=200, content_type='application/json', body='null'))
     pg.route('**/rest/v1/rpc/rpc_push_*', lambda r: r.fulfill(status=200, content_type='application/json', body='""'))
     pg.goto(B + '/index.html'); pg.wait_for_timeout(1500); return pg, errs
 with sync_playwright() as p:
@@ -40,7 +40,7 @@ with sync_playwright() as p:
     ck('إعادة الرسم تُبقي القسم المفتوح', pg.locator('#s-scorers').is_visible())
     ck('لا أخطاء JS', not errs, errs)
     ctx = br.new_context(**p.devices['iPhone 13']); pg2 = ctx.new_page(); pg2.route('**/rest/v1/rpc/rpc_public_site', lambda r: r.fulfill(status=200, content_type='application/json', body=json.dumps(SITE)))
-    for f in ('rpc_public_developer', 'rpc_public_gallery'): pg2.route('**/rest/v1/rpc/' + f, lambda r: r.fulfill(status=200, content_type='application/json', body='null'))
+    for f in ('rpc_public_developer', 'rpc_public_gallery', 'rpc_public_training'): pg2.route('**/rest/v1/rpc/' + f, lambda r: r.fulfill(status=200, content_type='application/json', body='null'))
     pg2.goto(B + '/index.html#s-matches'); pg2.wait_for_timeout(1500)
     ck('رابط مباشر #s-matches يفتح القسم', pg2.locator('#s-matches').is_visible() and not pg2.locator('.tiles').is_visible())
     pg2.goto(B + '/index.html#s-zzz'); pg2.wait_for_timeout(1200)
