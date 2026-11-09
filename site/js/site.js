@@ -21,9 +21,11 @@
   const where = m => m.home ? 'على أرضنا' : 'خارج الأرض';
   const matchCard = m => {
     const [A, B] = sides(m), r = m.played ? outcome(m) : ['u', 'قادمة'];
+    const us = esc(TEAM), badge = (name, ours) => `<i class="tb${ours ? ' us' : ''}" aria-hidden="true">${ini(name)}</i>`;
+    const [nA, nB] = m.home ? [TEAM, m.opp] : [m.opp, TEAM];
     // الرقمان بترتيب الفريقين نفسه (الأول من اليمين)، فيجاور كل رقم فريقه
-    const mid = m.played ? `<span class="sc">${m.home ? num(m.us) : num(m.them)} - ${m.home ? num(m.them) : num(m.us)}</span>` : '<span class="mid">×</span>';
-    return `<article class="card m"><div class="top"><span>${shortDate(m.date)} · ${where(m)}</span><span class="res ${r[0]}">${r[1]}</span></div><div class="vs"><span class="tm">${A}</span>${mid}<span class="tm">${B}</span></div></article>`;
+    const mid = m.played ? `<span class="sc"><b>${m.home ? num(m.us) : num(m.them)}</b><em>-</em><b>${m.home ? num(m.them) : num(m.us)}</b></span>` : '<span class="mid">VS</span>';
+    return `<article class="card m m-${r[0]}"><div class="top"><span class="md">${shortDate(m.date)}</span><span class="res ${r[0]}">${r[1]}</span></div><div class="vs"><span class="tmw">${badge(nA, m.home)}<span class="tm">${A}</span></span>${mid}<span class="tmw">${badge(nB, !m.home)}<span class="tm">${B}</span></span></div><div class="mf"><span class="mw ${m.home ? 'h' : 'a'}">${where(m)}</span></div></article>`;
   };
   // ---------- اللاعبون: ملعب التشكيلة + الاحتياط + بطاقة اللاعب ----------
   let SQ = [], SF = [], LST = SQ, MODE = 'p'; // لاعبو القسم الحالي وأعضاء الطاقم (تُقرأ منها البطاقة عند الضغط)

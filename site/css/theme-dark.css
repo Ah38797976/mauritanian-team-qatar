@@ -81,6 +81,22 @@ section.sec,section.sec:first-child{margin:0;background:var(--card);border:1px s
 .card.m .vs .tm{color:var(--paper-ink);font-weight:800}
 .card.m .vs .mid{color:var(--gold-ink)}
 .card.m .sc{color:var(--gold-ink);font-weight:900}
+/* بطاقة المباراة: شريط حالة + شارات الفريقين + نتيجة بارزة */
+.card.m{position:relative;overflow:hidden;padding:14px 16px 12px;border-radius:18px;box-shadow:0 8px 22px rgba(0,0,0,.25)}
+.card.m::before{content:"";position:absolute;inset-block:0;inset-inline-start:0;width:6px;background:var(--gold)}
+.card.m.m-w::before{background:#1fb865}.card.m.m-d::before{background:#8c9a91}.card.m.m-l::before{background:#d6453a}
+.card.m .top{margin-bottom:14px;padding-inline-start:6px}
+.card.m .md{font-weight:700;letter-spacing:.2px}
+.card.m .vs{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:start;padding-inline-start:6px}
+.card.m .tmw{display:grid;justify-items:center;gap:8px;min-width:0}
+.card.m .tb{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:800;font-size:.95rem;background:#e9e4d2;color:var(--paper-ink);border:2px solid var(--paper-line)}
+.card.m .tb.us{background:linear-gradient(160deg,#1c7a4a,#0a3d26);color:#fff;border-color:var(--gold)}
+.card.m .tm{font-size:.95rem;line-height:1.35}
+.card.m .sc{display:inline-flex;align-items:center;gap:8px;margin-top:6px;padding:8px 14px;border-radius:14px;background:var(--p-900);color:#fff;font-size:1.6rem;font-weight:900}
+.card.m .sc b{min-width:.7em;text-align:center;font-weight:900}.card.m .sc em{font-style:normal;opacity:.5}
+.card.m .mid{margin-top:12px;padding:6px 12px;border-radius:99px;background:var(--gold);color:#2b2000;font-size:.85rem;font-weight:900;letter-spacing:1px}
+.card.m .mf{display:flex;justify-content:center;margin-top:12px;padding-top:10px;border-top:1px dashed var(--paper-line)}
+.card.m .mw{font-size:.8rem;font-weight:700;color:var(--paper-mut);padding:2px 12px;border-radius:99px;background:rgba(11,42,27,.06)}
 .res.w{background:#d6f1e1;color:#0a6b3a}.res.d{background:#ebe8da;color:#4d5a52}.res.l{background:#fbdfda;color:#a3271b}.res.u{background:var(--gold);color:#2b2000}
 
 .pc:hover{box-shadow:0 12px 28px rgba(0,0,0,.4);border-color:var(--line2)}
