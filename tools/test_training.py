@@ -28,5 +28,48 @@ with sync_playwright() as p:
     ck('قبل 0022: الصفحة تعمل ولا تفاصيل ولا ردود ولا استدعاء', g2.locator('#tinfo').count() == 0 and g2.locator('#rsvp').count() == 0 and g2.locator('#callup').count() == 0 and g2.locator('#edses').count() == 0 and not e2, e2)
     g3, e3 = adm({})   # الحصة الافتراضية ماضية: لا زر استدعاء
     ck('حصة ماضية: لا زر استدعاء', g3.locator('#callup').count() == 0 and g3.locator('#rsvp').count() == 1)
+
+    # --- الموقع العام ---
+    SITE = {'team': {'name': 'فريق', 'city': 'الدوحة', 'color': '#0b6b3a'}, 'about': 'نبذة', 'announcement': '', 'sections': {}}
+    TR = {'id': '11111111-1111-4111-8111-111111111111', 'title': '<b>تدريب</b>', 'date': '2999-12-10', 'time': '20:00', 'venue': 'ملعب <i>س</i>', 'map': 'https://maps.app.goo.gl/abc', 'yes': 5, 'no': 2, 'total': 22, 'me': None}
+    state = {'tr': TR, 'rsvp': [], 'fail': False}
+    def pubpage():
+        c = br.new_context(**p.devices['iPhone 13']); g = c.new_page(); e = []; g.on('pageerror', lambda x: e.append(str(x)))
+        g.route('**/rest/v1/rpc/rpc_public_site', lambda r: r.fulfill(status=200, content_type='application/json', body=json.dumps(SITE)))
+        for f in ('rpc_public_developer', 'rpc_public_gallery'): g.route('**/rest/v1/rpc/' + f, lambda r: r.fulfill(status=200, content_type='application/json', body='null'))
+        g.route('**/rest/v1/rpc/rpc_push_*', lambda r: r.fulfill(status=200, content_type='application/json', body='""'))
+        def trn(r):
+            body = json.loads(r.request.post_data or '{}')
+            if state['fail']: return r.fulfill(status=404, content_type='application/json', body='{}')
+            t = dict(state['tr']); code = body.get('p_code')
+            if code == 'ABCDEFGH': t['me'] = {'name': 'محمد الأمين', 'status': state.get('mystatus')}
+            r.fulfill(status=200, content_type='application/json', body=json.dumps(t))
+        g.route('**/rest/v1/rpc/rpc_public_training', trn)
+        def rs(r):
+            state['rsvp'].append(json.loads(r.request.post_data)); state['mystatus'] = state['rsvp'][-1]['p']['status']; r.fulfill(status=200, content_type='application/json', body='""')
+        g.route('**/rest/v1/rpc/rpc_training_rsvp', rs)
+        return g, e
+    g, e = pubpage(); g.goto(B + '/index.html'); g.wait_for_timeout(1500)
+    ck('بطاقة قسم التدريب في الرئيسية', 'التدريب' in g.inner_text('.tiles') and '5 حاضر' in g.inner_text('.tiles'), g.inner_text('.tiles'))
+    g.goto(B + '/index.html#s-training'); g.wait_for_timeout(1200)
+    txt = g.inner_text('#s-training')
+    ck('القسم: العنوان والوقت والملعب والأعداد', all(x in txt for x in ('8:00 م', 'ملعب <i>س</i>', '<b>تدريب</b>', '5 حاضر', '2 معتذر', 'من 22')), txt)
+    ck('لا حقن HTML', g.locator('#s-training .trn b:has-text("تدريب") i, #s-training .trn-t b, #s-training .vn i').count() == 0)
+    ck('رابط الخريطة آمن', g.get_attribute('#s-training .tr-map', 'rel') == 'noopener noreferrer' and g.get_attribute('#s-training .tr-map', 'href') == 'https://maps.app.goo.gl/abc')
+    ck('بلا رمز: حقل الرمز ظاهر ولا أزرار رد', g.locator('#trcode').count() == 1 and g.locator('[data-rsvp]').count() == 0)
+    g.fill('#trcode', 'BADCODE1'); g.click('#trgo'); g.wait_for_timeout(500)
+    ck('رمز خاطئ: رسالة ولا يُحفظ', 'غير صحيح' in g.inner_text('.tr-msg') and g.evaluate("localStorage.getItem('pushcode')") is None)
+    g.fill('#trcode', 'abcdefgh'); g.click('#trgo'); g.wait_for_timeout(1200)
+    ck('رمز صحيح: يظهر الاسم وأزرار الرد ويُحفظ', 'محمد الأمين' in g.inner_text('#s-training') and g.locator('[data-rsvp]').count() == 2 and g.evaluate("localStorage.getItem('pushcode')") == 'ABCDEFGH', g.inner_text('#s-training')[:200])
+    ck('بقي القسم مفتوحًا بعد التحديث', g.evaluate("location.hash") == '#s-training' and g.locator('#s-training.cur').count() == 1)
+    g.click('[data-rsvp="yes"]'); g.wait_for_timeout(1200)
+    ck('الرد يُرسل الرمز والحالة والحصة', state['rsvp'] and state['rsvp'][-1]['p'] == {'code': 'ABCDEFGH', 'status': 'yes', 'session': TR['id']}, state['rsvp'])
+    ck('الزر المختار مميّز وتظهر رسالة التأكيد', g.locator('[data-rsvp="yes"].on').count() == 1 and 'تم تسجيل ردّك' in g.inner_text('#s-training'))
+    ck('لا أخطاء JS (موقع)', not e, e)
+    # رابط خريطة غير آمن + فشل الدالة (قبل 0022)
+    state['tr'] = dict(TR, map='javascript:alert(1)'); g2, e2 = pubpage(); g2.goto(B + '/index.html#s-training'); g2.wait_for_timeout(1200)
+    ck('رابط javascript: لا يُعرض', g2.locator('.tr-map').count() == 0)
+    state['fail'] = True; g3, e3 = pubpage(); g3.goto(B + '/index.html'); g3.wait_for_timeout(1200)
+    ck('قبل 0022: لا قسم تدريب والموقع سليم', g3.locator('#s-training').count() == 0 and 'عن الفريق' in g3.inner_text('.tiles') and not e3, e3)
     br.close()
 print('%d/%d' % (sum(res), len(res)))
