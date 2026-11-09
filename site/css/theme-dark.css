@@ -252,3 +252,21 @@ html.pm-lock,html.pm-lock body{overflow:hidden;overscroll-behavior:none}
 /* عن مطوّر التطبيق — الوضع الداكن */
 .dev-pic{background:#14503a;color:#d8efe2}
 .dev-n{color:#fff}.dev-t{color:#e2c26b}.dev-txt p{color:#b9cdc1}
+
+/* قسم التدريب: بطاقة التدريب القادم + الرد بالرمز الشخصي */
+.card.trn{display:grid;gap:10px;padding:16px 18px;border-radius:18px;background:var(--paper);color:var(--paper-ink);border:1px solid var(--paper-line)}
+.trn-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.trn-l{font-size:.8rem;font-weight:800;color:var(--gold-ink)}.trn-t{font-size:1.15rem}
+.trn-d{font-size:1.25rem;font-weight:900}
+.trn-chips{display:flex;flex-wrap:wrap;gap:6px 8px}.trn-chips:empty{display:none}
+.trn-chips .mw{font-size:.85rem;font-weight:700;padding:4px 12px;border-radius:99px;background:rgba(11,42,27,.08)}
+.trn-chips .mw.tm-c{background:rgba(122,92,10,.14);color:var(--gold-ink);direction:ltr;unicode-bidi:isolate}
+.tr-map{justify-self:start;display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:12px;background:var(--p-900);color:#fff;font-weight:800;text-decoration:none}
+.trn-c{font-size:.9rem;color:var(--paper-mut);padding-top:8px;border-top:1px dashed var(--paper-line)}.trn-c b{color:var(--paper-ink)}
+.tr-me{display:grid;gap:8px;padding:12px;border-radius:14px;background:rgba(11,42,27,.06)}
+.tr-btns,.tr-code{display:flex;gap:8px}
+.tr-b{flex:1;min-height:46px;border:0;border-radius:12px;background:var(--gold);color:#2b2000;font:inherit;font-weight:900;cursor:pointer}
+.tr-b.no{background:#e9e4d2;color:var(--paper-ink)}
+.tr-b.on{outline:3px solid var(--p-900);outline-offset:1px}.tr-b:disabled{opacity:.6}
+.tr-code .pb-i{margin:0;flex:2;background:#fff;color:var(--paper-ink);border-color:var(--paper-line)}.tr-code .pb-i::placeholder{color:var(--paper-mut)}
+.tr-s{color:var(--paper-mut)}.tr-msg{min-height:1.2em;margin:0;font-size:.85rem;color:#b3261e}

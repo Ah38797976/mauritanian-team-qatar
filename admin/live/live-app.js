@@ -149,7 +149,21 @@
 
   let sesId = '';   // الحصة المختارة؛ تُحسم من الحصص الفعلية (أحدثها افتراضيًا) في curSes()
   const curSes = () => { const l = S.sessions; if (l.some(x => x.id === sesId)) return sesId; const last = [...l].sort((a, b) => String(b.date).localeCompare(String(a.date)))[0]; return last ? last.id : ''; };
-  const sesForm = () => modal('إضافة حصة تدريب', fld('العنوان', 'title', 'تدريب') + fld('التاريخ', 'date', new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Qatar' }), 'date'), async f => { sesId = ''; return St.saveSession({ title: f.title, date: f.date }); });   // بعد الحفظ تُختار أحدث حصة
+  // تفاصيل الحصة (وقت/ملعب/خريطة) + ردود اللاعبين + زر الاستدعاء؛ تظهر فقط بعد تطبيق 0022
+  const clock12 = t => { const m = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(String(t || '')); if (!m) return ''; const h = +m[1]; return ((h % 12) || 12) + ':' + m[2] + ' ' + (h < 12 ? 'ص' : 'م'); };
+  const trainInfo = id => { const x = S.sessions.find(z => z.id === id); if (!x || !S.trainExt) return '';
+    const upcoming = String(x.date) >= new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Qatar' });
+    const bits = [x.time ? clock12(x.time) : '', x.venue].filter(Boolean).map(esc).join(' — ');
+    return `<div class="note" id="tinfo">${bits || 'لم يُحدَّد وقت أو ملعب لهذه الحصة بعد.'}${x.map && /^https:\/\//.test(x.map) ? ` — <a href="${esc(x.map)}" target="_blank" rel="noopener noreferrer">الخريطة</a>` : ''}</div>
+      <div class="card" id="rsvp"><h2>ردود اللاعبين على الحصة</h2><p class="empty">جارٍ التحميل…</p></div>${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إرسال استدعاء للفريق</button></div>' : ''}`; };
+  const loadRsvp = () => { const b = $('#rsvp'); if (!b) return; const id = curSes(); TD.getTrainingResponses(id).then(r => { const box = $('#rsvp'); if (!box || curSes() !== id) return;
+    if (!Array.isArray(r)) { box.innerHTML = '<h2>ردود اللاعبين على الحصة</h2><p class="empty">تعذّر تحميل الردود.</p>'; return; }
+    const g = k => r.filter(x => (x.status || '') === k), nm = l => l.length ? l.map(x => esc(x.name)).join('، ') : '—';
+    box.innerHTML = `<h2>ردود اللاعبين على الحصة</h2><p><b>حاضر (${g('yes').length}):</b> ${nm(g('yes'))}</p><p><b>معتذر (${g('no').length}):</b> ${nm(g('no'))}</p><p><b>لم يردّ (${g('').length}):</b> ${nm(g(''))}</p>`; }); };
+  const sesForm = edit => { const x = edit ? S.sessions.find(z => z.id === edit) : null, ext = S.trainExt;
+    modal(x ? 'تعديل الحصة' : 'إضافة حصة تدريب', fld('العنوان', 'title', x ? x.title : 'تدريب') + fld('التاريخ', 'date', x ? x.date : new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Qatar' }), 'date')
+      + (ext ? fld('الوقت (بتوقيت قطر)', 'time', x ? x.time : '', 'time') + fld('اسم الملعب (اختياري)', 'venue', x ? x.venue : '', 'text', 'maxlength="100"') + fld('رابط الموقع على الخريطة (اختياري، يبدأ بـ https://)', 'map', x ? x.map : '', 'url', 'maxlength="300" dir="ltr"') : ''),
+      async f => { if (!x) sesId = ''; return St.saveSession({ ...(x ? { id: x.id } : {}), title: f.title, date: f.date, ...(ext ? { time: f.time || '', venue: f.venue || '', map: f.map || '' } : {}) }); }); };   // بعد الحفظ تُختار أحدث حصة
   // الملعب: التشكيلة الأساسية على أرض الملعب (الحارس في الأسفل والمهاجمون في الأعلى)، وكل لاعب بصورته ورقمه؛ الضغط عليه يفتح بطاقته
   const PITCH_MARKS = ['pk-h', 'pk-c', 'pk-cs', 'pk-pa t', 'pk-pa b', 'pk-ga t', 'pk-ga b', 'pk-ar t', 'pk-ar b', 'pk-sp t', 'pk-sp b'].map(c => `<i class="pk ${c}" aria-hidden="true"></i>`).join('');
   const pitchHtml = (ed) => {
@@ -176,7 +190,7 @@
     ${ed ? `<h2 style="margin-top:12px">اختيار اللاعبين</h2><div class="row">${ros.map(p => `<label><input type="checkbox" data-st="${esc(p.id)}" ${st.includes(p.id) ? 'checked' : ''} ${p.status !== 'نشط' ? 'disabled' : ''}> ${esc(p.name)} (${esc(p.pos)})</label>`).join('')}</div>` : ''}</div>`;
     return `<h1>لوحة المدرب</h1>${ed ? '' : '<div class="note">عرض فقط — لا تملك صلاحية التعديل.</div>'}
     ${lineupCard}
-    <div class="card"><h2>الحضور</h2>${edA || !S.sessions.length ? '' : '<div class="note">عرض فقط — لا تملك صلاحية تسجيل الحضور.</div>'}${S.sessions.length ? `<div class="tools ses"><select id="ses" aria-label="الحصة">${[...S.sessions].sort((x, y) => String(y.date).localeCompare(String(x.date))).map(x => `<option value="${esc(x.id)}" ${x.id === cs ? 'selected' : ''}>${esc(x.title)} — ${esc(x.date)}</option>`).join('')}</select>${edA ? '<button id="addses">+ حصة</button><button class="dng" id="delses">حذف الحصة</button>' : ''}</div>` : `<p class="empty">لا توجد حصص تدريب بعد.${edA ? ' أضف حصة لتسجيل الحضور.' : ''}</p>${edA ? '<div class="tools"><button id="addses">+ حصة تدريب</button></div>' : ''}`}${S.sessions.length ? tw('جدول الحضور', `<tr><th>اللاعب</th><th>حاضر</th></tr>${ros.map(p => `<tr><td>${esc(p.name)}</td><td><input type="checkbox" data-at="${esc(p.id)}" ${ses[p.id] ? 'checked' : ''} ${edA ? '' : 'disabled'} aria-label="حضور ${esc(p.name)}"></td></tr>`).join('')}`, 'att').replace('class="card tw"', 'class="tw"') : ''}</div>`;
+    <div class="card"><h2>الحضور</h2>${edA || !S.sessions.length ? '' : '<div class="note">عرض فقط — لا تملك صلاحية تسجيل الحضور.</div>'}${S.sessions.length ? `<div class="tools ses"><select id="ses" aria-label="الحصة">${[...S.sessions].sort((x, y) => String(y.date).localeCompare(String(x.date))).map(x => `<option value="${esc(x.id)}" ${x.id === cs ? 'selected' : ''}>${esc(x.title)} — ${esc(x.date)}</option>`).join('')}</select>${edA ? '<button id="addses">+ حصة</button>' + (S.trainExt ? '<button id="edses">تعديل الحصة</button>' : '') + '<button class="dng" id="delses">حذف الحصة</button>' : ''}</div>${trainInfo(cs)}` : `<p class="empty">لا توجد حصص تدريب بعد.${edA ? ' أضف حصة لتسجيل الحضور.' : ''}</p>${edA ? '<div class="tools"><button id="addses">+ حصة تدريب</button></div>' : ''}`}${S.sessions.length ? tw('جدول الحضور', `<tr><th>اللاعب</th><th>حاضر</th></tr>${ros.map(p => `<tr><td>${esc(p.name)}</td><td><input type="checkbox" data-at="${esc(p.id)}" ${ses[p.id] ? 'checked' : ''} ${edA ? '' : 'disabled'} aria-label="حضور ${esc(p.name)}"></td></tr>`).join('')}`, 'att').replace('class="card tw"', 'class="tw"') : ''}</div>`;
   };
 
   // ---- المالية: سجل مصروفات وإيرادات (الأمين المالي والمؤسس فقط؛ الخادم يفرض الصلاحية). لا أسماء لاعبين هنا.
@@ -269,7 +283,7 @@
   V.settings = () => { const t = St.team(), ed = St.can('settings'); return `<h1>إعدادات الفريق</h1><div class="card"><form id="tf">${fld('اسم الفريق', 'name', t.name, 'text', ed ? '' : 'disabled')}${fld('المدينة', 'city', t.city, 'text', ed ? '' : 'disabled')}${fld('اللون الرئيسي', 'color', t.color, 'color', ed ? '' : 'disabled')}<small class="hint">يظهر هذا اللون في الموقع العام فقط، ولا يغيّر ألوان لوحة الإدارة.</small>${ed ? '<button>حفظ</button>' : '<small>عرض فقط</small>'}</form></div>`; };
   // إدارة الموقع العام: ما تفعّله هنا يظهر للزوار في الموقع؛ وما تُطفئه يختفي. لا هواتف ولا بريد ولا مدن في الموقع أبدًا (الخادم يرجع قائمة بيضاء فقط).
   const SEC = [['players', 'اللاعبون', 'الاسم والرقم والمركز فقط'], ['staff', 'الطاقم', 'الاسم والدور فقط'], ['matches', 'المباريات والنتائج', 'الخصم والتاريخ والنتيجة'], ['stats', 'الهدافون', 'الاسم والأهداف والمشاركات'], ['photos', 'صور اللاعبين', 'تظهر صورة كل لاعب في الملعب وبطاقته؛ الصور المرفوعة تصبح قابلة للفتح برابطها العام']];
-  V.site = () => { if (!isPanelUser() || !St.can('settings')) return denied('إدارة الموقع العام'); return `<h1>إدارة الموقع العام</h1><div class="note">يظهر في الموقع ما تفعّله هنا فقط. كل الأقسام مطفأة افتراضيًا. لا يُنشر في الموقع أي هاتف أو بريد أو مدينة لأي لاعب أو عضو.</div><div class="card" id="sitebox"><p>جارٍ التحميل…</p></div><div class="card" id="devbox"><p>جارٍ التحميل…</p></div><div class="card" id="gallerybox"><p>جارٍ التحميل…</p></div><div class="card" id="pushadm"><p>جارٍ التحميل…</p></div>`; };
+  V.site = () => { if (!isPanelUser() || !St.can('settings')) return denied('إدارة الموقع العام'); return `<h1>إدارة الموقع العام</h1><div class="note">يظهر في الموقع ما تفعّله هنا فقط. كل الأقسام مطفأة افتراضيًا. لا يُنشر في الموقع أي هاتف أو بريد أو مدينة لأي لاعب أو عضو.</div><div class="card" id="sitebox"><p>جارٍ التحميل…</p></div><div class="card" id="devbox"><p>جارٍ التحميل…</p></div><div class="card" id="gallerybox"><p>جارٍ التحميل…</p></div><div class="card" id="pushadm"><p>جارٍ التحميل…</p></div><div class="card" id="pushppl"><p>جارٍ التحميل…</p></div>`; };
   const siteForm = r => { const s = r.sections || {};
     return `<div class="row between"><h2>محتوى الموقع</h2><a class="btnlink" href="../../" target="_blank" rel="noopener">عرض الموقع ↗</a></div><form id="sf"><label class="f"><span>نبذة عن الفريق (اختيارية)</span><textarea name="about" rows="3" maxlength="500">${esc(r.about)}</textarea></label><label class="f"><span>إعلان أعلى الموقع (اختياري)</span><input name="announcement" maxlength="200" value="${esc(r.announcement)}"></label><h2>الأقسام الظاهرة في الموقع</h2><div class="secs">${SEC.map(([k, l, n]) => `<label class="ck"><input type="checkbox" name="sec_${esc(k)}" ${s[k] === true ? 'checked' : ''}><span><b>${esc(l)}</b><small>${esc(n)}</small></span></label>`).join('')}</div><button>حفظ الموقع</button></form>`; };
   const loadSite = () => { const box = $('#sitebox'); if (!box) return; TD.getSite().then(r => { const b = $('#sitebox'); if (!b || route().page !== 'site') return; b.innerHTML = r && typeof r === 'object' ? siteForm(r) : '<p>تعذّر تحميل إعدادات الموقع أو لا تملك الصلاحية.</p>'; }); };
@@ -295,6 +309,13 @@
       <form id="pf">${fld('العنوان', 'ptitle', '', 'text', 'maxlength="60" required')}<label class="f"><span>نص التنبيه</span><textarea name="pbody" rows="3" maxlength="160" required></textarea></label>
       <label class="f"><span>عند الضغط يفتح</span><select name="purl"><option value="/">الصفحة الرئيسية</option><option value="/#s-matches">المباريات والنتائج</option><option value="/#s-squad">اللاعبون</option><option value="/#s-gallery">معرض الصور</option></select></label><button>إرسال التنبيه</button></form>
       ${rec.length ? `<h3>آخر التنبيهات</h3><ul class="plist">${rec.map(x => `<li><b>${esc(x.title)}</b> — ${esc(x.body)}<small>${esc(new Date(x.at).toLocaleString('ar'))} · وصل ${x.sent | 0} · فشل ${x.failed | 0}${x.by ? ' · ' + esc(x.by) : ''}</small></li>`).join('')}</ul>` : ''}`; };
+  // من فعّل التنبيهات ومن لم يفعّل: لكل لاعب وعضو إدارة رمز شخصي يكتبه في الموقع فيُربط جهازه باسمه
+  let pplData = [], pplFilter = 'all';
+  const pplForm = () => { const list = pplData.filter(x => pplFilter === 'all' || (pplFilter === 'on' ? x.devices > 0 : x.devices === 0)), on = pplData.filter(x => x.devices > 0).length;
+    return `<h2>من فعّل التنبيهات؟</h2><p class="muted">فعّل ${on} من ${pplData.length}. أعطِ كل شخص رمزه ليكتبه في صندوق التنبيهات بالموقع (أو أرسل له الرابط). الأجهزة التي فُعّلت بلا رمز تُحسب في عدد المشتركين لكنها لا تظهر هنا.</p>
+      <div class="secs"><label class="f"><span>عرض</span><select id="pplf"><option value="all" ${pplFilter === 'all' ? 'selected' : ''}>الكل</option><option value="off" ${pplFilter === 'off' ? 'selected' : ''}>لم يفعّلوا</option><option value="on" ${pplFilter === 'on' ? 'selected' : ''}>فعّلوا</option></select></label></div>
+      ${list.length ? `<ul class="plist">${list.map(x => `<li><b>${esc(x.name)}</b> <small>${x.kind === 'player' ? 'لاعب' : 'إدارة'}</small> — ${x.devices > 0 ? `<span class="ok">فعّل (${x.devices | 0} جهاز)</span>` : '<span class="no">لم يفعّل</span>'}<small>الرمز: <code>${esc(x.code)}</code> <button type="button" class="linkbtn" data-pcopy="${esc(x.code)}">نسخ الرابط</button></small></li>`).join('')}</ul>` : '<p class="muted">لا أحد في هذه القائمة.</p>'}`; };
+  const loadPpl = () => { const box = $('#pushppl'); if (!box) return; TD.getPushRoster().then(r => { const b = $('#pushppl'); if (!b || route().page !== 'site') return; if (r && typeof r === 'object' && Array.isArray(r.people)) { pplData = r.people.map(x => ({ kind: x.kind === 'member' ? 'member' : 'player', name: String(x.name || ''), code: String(x.code || ''), devices: x.devices | 0 })); b.innerHTML = pplForm(); } else b.innerHTML = '<h2>من فعّل التنبيهات؟</h2><p>هذه الميزة غير مفعّلة بعد في قاعدة البيانات، أو لا تملك صلاحية إدارة الموقع.</p>'; }); };
   const loadPush = () => { const box = $('#pushadm'); if (!box) return; TD.getPushStats().then(r => { const b = $('#pushadm'); if (!b || route().page !== 'site') return; b.innerHTML = r && typeof r === 'object' ? pushForm(r) : '<h2>إرسال تنبيه للجميع</h2><p>هذه الميزة غير مفعّلة بعد في قاعدة البيانات، أو لا تملك صلاحية إدارة الموقع.</p>'; }); };
 
   // بطاقة «عن مطوّر التطبيق»: الاسم والصفة والنبذة والصورة، تظهر في الموقع العام عند التفعيل فقط
@@ -320,7 +341,8 @@
     v.innerHTML = (Object.prototype.hasOwnProperty.call(V, page) ? V[page] : V.dash)(id);  // لا نقرأ مفاتيح النموذج الأولي (constructor…)
     if ((page === 'pitch' || page === 'coach') && window.CoachUI) CoachUI.bind(v, St.can('lineup'));
     if (page === 'players' && St.can('viewPlayers')) drawPlayers();
-    if (page === 'site') { loadSite(); loadDev(); loadGal(); loadPush(); }
+    if (page === 'coach') loadRsvp();
+    if (page === 'site') { loadSite(); loadDev(); loadGal(); loadPush(); loadPpl(); }
     if (page === 'finance' && St.can('finance')) loadFin();
     if (page === 'roles' && isFounder()) loadRoles();
     if (page === 'users' && isFounder()) loadUsers();
@@ -351,6 +373,7 @@
   v.addEventListener('change', e => {
     const t = e.target, d = t.dataset;
     if (t.id === 'fp' || t.id === 'fs') drawPlayers();
+    if (t.id === 'pplf') { pplFilter = t.value; const b = $('#pushppl'); if (b) b.innerHTML = pplForm(); }
     if (t.id === 'gvis') { fail(TD.setGalleryVisible(t.checked)).then(bad => { if (!bad) toast(SAVED); loadGal(); }); }
     if (t.id === 'ses') { sesId = t.value; render(); }
     if (t.id === 'finm') { finM = t.value; drawFin(); }
@@ -364,6 +387,7 @@
   v.addEventListener('click', e => {
     const t = e.target, d = t.dataset, id = t.id;
     if (d.as) { const ids = S.lineup.starters; if (ids.length >= 11) return toast('الحد الأقصى 11 لاعبًا'); fail(St.setStarters([...ids, d.as])); }
+    if (d.pcopy) { const link = location.origin + '/?n=' + encodeURIComponent(d.pcopy); (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(link) : Promise.reject()).then(() => toast('نُسخ الرابط'), () => toast('الرابط: ' + link)); }
     if (d.gd && confirm('حذف هذه الصورة من المعرض؟')) { const ph = ((galData && galData.photos) || []).find(x => x.id === d.gd); fail(TD.deleteGalleryPhoto(d.gd, ph && ph.path)).then(bad => { if (!bad) toast('تم الحذف'); loadGal(); }); }
     if (d.rs) fail(St.setStarters(S.lineup.starters.filter(x => x !== d.rs)));
     if (id === 'addp') playerForm();
@@ -375,6 +399,11 @@
     if (d.fe && FIN) finForm(null, (FIN.entries || []).find(x => x.id === d.fe));
     if (d.fd && confirm('حذف هذه المعاملة؟')) fail(St.delFinance(d.fd)).then(bad => { if (!bad) toast('تم الحذف'); });
     if (id === 'addses') sesForm();
+    if (id === 'edses' && curSes()) sesForm(curSes());
+    if (id === 'callup' && curSes()) { const x = S.sessions.find(z => z.id === curSes()); if (!x) return;
+      const when = new Date(x.date + 'T00:00:00Z').toLocaleDateString('ar', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }), body = [x.title, when, x.time ? clock12(x.time) : '', x.venue].filter(Boolean).join(' — ');
+      if (!confirm('إرسال استدعاء لكل من فعّل التنبيهات؟\n\n' + body + '\n\nلا يمكن التراجع بعد الإرسال.')) return;
+      e.target.disabled = true; TD.sendPush('استدعاء للتدريب', body, '/#s-training').then(r => { e.target.disabled = false; toast(r.err ? r.err : 'أُرسل الاستدعاء: وصل ' + r.sent + ' وفشل ' + r.failed); }); }
     if (id === 'delses' && curSes() && confirm('حذف هذه الحصة وكل سجلات حضورها؟')) { fail(St.delSession(curSes())).then(bad => { if (!bad) { sesId = ''; toast('تم الحذف'); } }); }
     if (id === 'adds') staffForm();
     if (d.es) staffForm(St.staffList().find(x => x.id === d.es));

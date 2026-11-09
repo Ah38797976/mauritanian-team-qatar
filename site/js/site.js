@@ -98,8 +98,12 @@
   document.addEventListener('click', e => { const t = e.target.closest('#s-squad [data-i]'), u = e.target.closest('#s-staff [data-s]'); if (t) openCard(+t.dataset.i, t, 'p'); else if (u) openCard(+u.dataset.s, u, 's'); });
   document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('#s-squad article[data-i], #s-staff article[data-s]')) { e.preventDefault(); const sf = e.target.dataset.s != null; openCard(+(sf ? e.target.dataset.s : e.target.dataset.i), e.target, sf ? 's' : 'p'); } });
   // مفاتيح هذا السجل هي نفسها مفاتيح Store.SITE في لوحة التحكم؛ يتحقق منها tools/test_site_sync.js
-  const NAVI = { about: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M12 11v5M12 8h.01', squad: 'M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M10 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M20 20v-1.5a3.5 3.5 0 0 0-2.5-3.3M15.5 4.2a3.5 3.5 0 0 1 0 6.6', staff: 'M3 8h18v12H3zM9 8V5h6v3', matches: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4', scorers: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M12 8l3 2-1 3.5h-4L9 10z' };
+  const NAVI = { training: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M12 7v5l3 2', about: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M12 11v5M12 8h.01', squad: 'M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M10 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7M20 20v-1.5a3.5 3.5 0 0 0-2.5-3.3M15.5 4.2a3.5 3.5 0 0 1 0 6.6', staff: 'M3 8h18v12H3zM9 8V5h6v3', matches: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4', scorers: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18M12 8l3 2-1 3.5h-4L9 10z' };
   const R = {
+    training: s => { const t = s.tr, clk = clock(t.time), v = venueOf(t), me = t.me;
+      const rsvp = me ? `<div class="tr-me"><span>أهلًا <b>${esc(me.name)}</b> — هل ستحضر؟</span><div class="tr-btns"><button type="button" class="tr-b${me.status === 'yes' ? ' on' : ''}" data-rsvp="yes" data-sid="${esc(t.id)}">حاضر</button><button type="button" class="tr-b no${me.status === 'no' ? ' on' : ''}" data-rsvp="no" data-sid="${esc(t.id)}">معتذر</button></div>${me.status ? `<small class="tr-s">تم تسجيل ردّك: ${me.status === 'yes' ? 'حاضر' : 'معتذر'}. يمكنك تغييره.</small>` : ''}</div>`
+        : `<div class="tr-me"><span>لتأكيد حضورك أدخل رمزك الشخصي (يعطيك إياه المسؤول)</span><div class="tr-code"><input id="trcode" class="pb-i" type="text" maxlength="8" autocomplete="off" autocapitalize="characters" aria-label="رمزك الشخصي" placeholder="الرمز الشخصي"><button type="button" class="tr-b" id="trgo">تأكيد</button></div></div>`;
+      return `<div class="card trn"><div class="trn-h"><span class="trn-l">التدريب القادم</span><b class="trn-t">${esc(t.title)}</b></div><div class="trn-d">${longDate(t.date)}</div><div class="trn-chips">${clk ? `<span class="mw tm-c">${clk}</span>` : ''}${v ? `<span class="mw vn">${esc(v)}</span>` : ''}</div>${t.map ? `<a class="tr-map" href="${esc(t.map)}" target="_blank" rel="noopener noreferrer">الموقع على الخريطة</a>` : ''}<div class="trn-c"><b>${t.yes}</b> حاضر · <b>${t.no}</b> معتذر · من ${t.total} لاعبًا</div>${rsvp}<p class="tr-msg" role="status" aria-live="polite"></p></div>`; },
     about: s => `<div class="card about"><p>${esc(s.text)}</p></div>`,
     gallery: s => `<div class="card gal-card"><div class="hg" role="region" aria-roledescription="carousel" aria-label="معرض الصور"><div class="hg-track" tabindex="0">${s.items.map((g, i) => `<button type="button" class="galt hg-slide" data-gi="${i}" aria-label="${esc(g.caption || 'صورة ' + (i + 1))}"><img src="${esc(g.url)}" alt="${esc(g.caption)}" decoding="async"${i ? ' loading="lazy"' : ''}>${g.caption ? `<span class="hg-cap">${esc(g.caption)}</span>` : ''}</button>`).join('')}</div>${s.items.length > 1 ? `<span class="hg-n" aria-live="polite">1 / ${s.items.length}</span><button type="button" class="hg-a hg-prev" aria-label="السابقة">›</button><button type="button" class="hg-a hg-next" aria-label="التالية">‹</button><div class="hg-dots">${s.items.map((g, i) => `<button type="button" class="hg-dot" data-d="${i}" aria-label="صورة ${i + 1}"${i ? '' : ' aria-current="true"'}></button>`).join('')}</div>` : ''}</div></div>`,
     developer: s => { const d = s.dev, im = photo({ photo: d.photo }, d.name);
@@ -135,9 +139,9 @@
     else { h.innerHTML = ''; h.hidden = true; }
   }
   // عدد عناصر القسم (شارة بجانب العنوان)
-  const secCount = s => { const n = s.key === 'squad' ? s.players.length : s.key === 'staff' ? s.staff.length : s.key === 'matches' ? s.matches.length : s.key === 'scorers' ? s.rows.length : s.key === 'gallery' ? s.items.length : 0; return n > 0 ? n : 0; };
+  const secCount = s => { const n = s.key === 'squad' ? s.players.length : s.key === 'staff' ? s.staff.length : s.key === 'matches' ? s.matches.length : s.key === 'scorers' ? s.rows.length : s.key === 'gallery' ? s.items.length : s.key === 'training' ? s.tr.yes : 0; return n > 0 ? n : 0; };
   // الصفحة الرئيسية = بطاقات الأقسام (خانات). لمس خانة يفتح محتواها وحدها (#s-<قسم>)، وزر «الرئيسية» أو #home يرجع للخانات.
-  const UNIT = { squad: 'لاعبًا', staff: 'عضوًا', matches: 'مباراة', scorers: 'هدّافًا', gallery: 'صورة' };
+  const UNIT = { squad: 'لاعبًا', staff: 'عضوًا', matches: 'مباراة', scorers: 'هدّافًا', gallery: 'صورة', training: 'حاضر' };
   const route = () => {
     const secsEl = [...document.querySelectorAll('#sv > section.sec')], m = /^#s-([a-z]+)$/.exec(location.hash), cur = m && secsEl.find(e => e.id === 'sv-' + m[1] || e.id === 's-' + m[1]);
     secsEl.forEach(e => e.classList.toggle('cur', e === cur)); document.body.classList.toggle('sec-open', !!cur);
@@ -145,6 +149,26 @@
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
   window.addEventListener('hashchange', route);
+  // تأكيد حضور التدريب: بالرمز الشخصي المحفوظ على الجهاز (نفس رمز التنبيهات)
+  document.addEventListener('click', async e => {
+    const b = e.target.closest && e.target.closest('[data-rsvp], #trgo'); if (!b) return;
+    const card = b.closest('.trn'), msg = card && card.querySelector('.tr-msg'), say = m => { if (msg) msg.textContent = m; };
+    const post = (fn, body) => fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/' + fn, { method: 'POST', cache: 'no-store', headers: { apikey: CFG.SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => { if (!r.ok) throw 0; return r.json(); });
+    if (b.disabled) return; b.disabled = true;
+    try {
+      if (b.id === 'trgo') {
+        const c = String(document.getElementById('trcode').value || '').trim().toUpperCase();
+        if (!/^[A-HJ-NP-Z2-9]{8}$/.test(c)) { say('الرمز غير صحيح. تأكد منه.'); return; }
+        const j = await post('rpc_public_training', { p_code: c });
+        if (!j || !j.me) { say('الرمز غير صحيح. تأكد منه.'); return; }
+        try { localStorage.setItem('pushcode', c); } catch (_) {}
+        load(false); return;
+      }
+      let c = ''; try { c = localStorage.getItem('pushcode') || ''; } catch (_) {}
+      const r = await post('rpc_training_rsvp', { p: { code: c, status: b.dataset.rsvp, session: b.dataset.sid } });
+      if (r === '') { load(false); } else say(typeof r === 'string' && r ? r : 'تعذّر تسجيل الرد. حاول لاحقًا.');
+    } catch (_) { say('تعذّر الاتصال. حاول لاحقًا.'); } finally { b.disabled = false; }
+  });
   function draw(raw) {
     let snap; try { snap = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return false; }
     if (!snap || snap.v !== 1 || !snap.data || !snap.data.team || !Array.isArray(snap.data.sections)) return false;
@@ -191,10 +215,11 @@
   document.addEventListener('click', e => { const el = e.target.closest && e.target.closest('.hg-a, .hg-dot'); if (!el) return; const t = el.closest('.hg').querySelector('.hg-track'); hgHold = Date.now() + 10000;
     hgGo(t, el.classList.contains('hg-dot') ? +el.dataset.d : hgIdx(t) + (el.classList.contains('hg-next') ? 1 : -1)); });
   document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('.galt'); if (!b) return; const all = [...document.querySelectorAll('.galt')]; lightbox.open(all.map(x => ({ url: x.querySelector('img').src, caption: x.querySelector('img').alt })), all.indexOf(b)); });
-  const toSnap = (j, dev, gal) => {
+  const toSnap = (j, dev, gal, trn) => {
     if (!j || !j.team) throw 0;
     const S = j.sections || {}, secs = [];
     if (j.about) secs.push({ key: 'about', label: 'عن الفريق', text: j.about });
+    if (trn && typeof trn.id === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(String(trn.date)) && typeof trn.title === 'string') secs.push({ key: 'training', label: 'التدريب', tr: { id: trn.id, title: trn.title.slice(0, 80), date: trn.date, time: trn.time, venue: trn.venue, map: /^https:\/\/[^\s<>"']+$/.test(String(trn.map || '')) && String(trn.map).length <= 300 ? trn.map : '', yes: num(trn.yes), no: num(trn.no), total: num(trn.total), me: trn.me && typeof trn.me.name === 'string' ? { name: trn.me.name.slice(0, 60), status: trn.me.status === 'yes' || trn.me.status === 'no' ? trn.me.status : '' } : null } });
     if (S.players) secs.push({ key: 'squad', label: 'اللاعبون', players: (j.players || []).map(p => ({ name: p.name, num: p.num, pos: p.pos, photo: p.photo, st: p.st === true ? 1 : 0, cap: p.cap === true, slot: Number.isInteger(p.slot) ? p.slot : null })), formation: typeof j.formation === 'string' ? j.formation : '' });
     if (S.staff) secs.push({ key: 'staff', label: 'الطاقم', staff: (j.staff || []).map(x => ({ name: x.name, role: x.role, kind: x.kind, photo: x.photo })) });
     if (S.matches) secs.push({ key: 'matches', label: 'المباريات والنتائج', matches: (j.matches || []).map(m => ({ opp: m.opp, date: m.date, home: m.home, played: m.played, us: m.us, them: m.them, time: m.time, venue: m.venue })) });
@@ -208,7 +233,9 @@
     const call = fn => fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/' + fn, { method: 'POST', cache: 'no-store', headers: { apikey: CFG.SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' }, body: '{}' }).then(r => { if (!r.ok) throw 0; return r.json(); });
     const dev = call('rpc_public_developer').catch(() => null);   // اختياري: قبل تطبيق 0017 أو عند الخطأ لا يظهر القسم ولا يتأثر باقي الموقع
     const gal = call('rpc_public_gallery').catch(() => null);   // اختياري كذلك
-    call('rpc_public_site').then(j => Promise.all([dev, gal]).then(([d, g]) => { if (!draw(toSnap(j, d, g))) throw 0; }))
+    let code = ''; try { code = localStorage.getItem('pushcode') || ''; } catch (_) {}
+    const trn = fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/rpc_public_training', { method: 'POST', cache: 'no-store', headers: { apikey: CFG.SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(/^[A-HJ-NP-Z2-9]{8}$/.test(code) ? { p_code: code } : {}) }).then(r => { if (!r.ok) throw 0; return r.json(); }).catch(() => null);   // اختياري: قبل تطبيق 0022 لا يظهر القسم
+    call('rpc_public_site').then(j => Promise.all([dev, gal, trn]).then(([d, g, tr]) => { if (!draw(toSnap(j, d, g, tr))) throw 0; }))
       .catch(() => { if (first) $('#sv').innerHTML = '<p class="empty">تعذّر تحميل المحتوى. حدّث الصفحة أو حاول لاحقًا.</p>'; });
   };
   load(true);

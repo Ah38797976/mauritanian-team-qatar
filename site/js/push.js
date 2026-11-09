@@ -10,15 +10,18 @@
   const ab = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   const rpc = (fn, body) => fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/' + fn, { method: 'POST', cache: 'no-store', headers: { apikey: CFG.SUPABASE_PUBLISHABLE_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(r => { if (!r.ok) throw 0; return r.json(); });
   let busy = false;
+  // الرمز الشخصي (اختياري): يصل من المسؤول برابط ?n=CODE أو يُكتب يدويًا، ويُحفظ على الجهاز (يُستعمل أيضًا لتأكيد حضور التدريب)
+  let prefill = ''; try { const q = new URLSearchParams(location.search).get('n'); if (q && /^[A-Za-z0-9]{8}$/.test(q)) { prefill = q.toUpperCase(); localStorage.setItem('pushcode', prefill); } else prefill = localStorage.getItem('pushcode') || ''; } catch (_) {}
   const BELL = 'M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0';
   const svg = d => { const n = 'http://www.w3.org/2000/svg', s = document.createElementNS(n, 'svg'), p = document.createElementNS(n, 'path'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); p.setAttribute('d', d); s.appendChild(p); return s; };
   // state: off (يمكن التفعيل) | on (مفعّل) | warn (محظور/آيفون غير مثبّت)
-  const draw = (msg, btn, on, state) => {
+  const draw = (msg, btn, on, state, withCode) => {
     box.hidden = false; box.textContent = ''; box.className = 'pushbox pb-' + (state || 'off');
     const ic = document.createElement('span'); ic.className = 'pb-ic'; ic.appendChild(svg(state === 'on' ? 'M20 6 9 17l-5-5' : BELL)); box.appendChild(ic);
     const body = document.createElement('div'); body.className = 'pb-body';
     const h = document.createElement('b'); h.className = 'pb-h'; h.textContent = state === 'on' ? 'التنبيهات مفعّلة' : 'تنبيهات الفريق'; body.appendChild(h);
     const p = document.createElement('span'); p.className = 'pb-t'; p.textContent = msg; body.appendChild(p);
+    if (withCode) { const i = document.createElement('input'); i.id = 'pushcode'; i.className = 'pb-i'; i.type = 'text'; i.maxLength = 8; i.autocomplete = 'off'; i.setAttribute('autocapitalize', 'characters'); i.placeholder = 'رمزك الشخصي (اختياري)'; i.setAttribute('aria-label', 'رمزك الشخصي (اختياري)'); i.value = prefill; body.appendChild(i); }
     box.appendChild(body);
     if (btn) { const b = document.createElement('button'); b.type = 'button'; b.className = 'pb-b'; b.textContent = btn; b.disabled = busy; b.onclick = on; box.appendChild(b); }
   };
@@ -30,17 +33,27 @@
     if (Notification.permission === 'denied') { draw('التنبيهات محظورة لهذا الموقع. فعّلها من إعدادات المتصفح إن أردت.', null, null, 'warn'); return; }
     let st; try { st = await getSub(); } catch (_) { box.hidden = true; return; }
     if (st.s && Notification.permission === 'granted') draw('تنبيهات الفريق مفعّلة على هذا الجهاز.', 'إيقاف التنبيهات', off, 'on');
-    else draw('فعّل التنبيهات لتصلك أخبار الفريق والمباريات.', 'تفعيل التنبيهات', on);
+    else draw('فعّل التنبيهات لتصلك أخبار الفريق والمباريات. إن أعطاك المسؤول رمزًا شخصيًا فاكتبه ليُسجَّل اسمك.', 'تفعيل التنبيهات', on, 'off', true);
   }
   async function on() {
-    if (busy) return; busy = true; refresh();
+    if (busy) return;
+    const ci = document.getElementById('pushcode'); let code = ci ? ci.value.trim().toUpperCase() : '';
+    if (code) {
+      const say = m => { const t = box.querySelector('.pb-t'); if (t) t.textContent = m; };
+      if (!/^[A-HJ-NP-Z2-9]{8}$/.test(code)) { say('الرمز غير صحيح. تأكد منه أو اتركه فارغًا.'); return; }
+      busy = true; const nm = await rpc('rpc_push_code_name', { p_code: code }).catch(() => null); busy = false;
+      if (nm === null) { say('تعذّر التحقق من الرمز. حاول لاحقًا.'); return; }
+      if (nm === '') { say('الرمز غير صحيح. تأكد منه أو اتركه فارغًا.'); return; }
+      prefill = code; try { localStorage.setItem('pushcode', code); } catch (_) {}
+    }
+    busy = true; refresh();
     try {
       const perm = await Notification.requestPermission();
       if (perm !== 'granted') throw 0;
       const { reg, s } = await getSub();
       const sub = s || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64(KEY) });
       const j = sub.toJSON(), k = j.keys || {};
-      const r = await rpc('rpc_push_subscribe', { p: { endpoint: j.endpoint, p256dh: k.p256dh || ab(sub.getKey('p256dh')), auth: k.auth || ab(sub.getKey('auth')) } }).catch(() => 'x');
+      const r = await rpc('rpc_push_subscribe', { p: { endpoint: j.endpoint, p256dh: k.p256dh || ab(sub.getKey('p256dh')), auth: k.auth || ab(sub.getKey('auth')), code } }).catch(() => 'x');
       if (r !== '') { await sub.unsubscribe().catch(() => {}); throw 0; }   // لم يُسجَّل في الخادم: لا نُبقي اشتراكًا محليًا يوهم المستخدم بأنه مفعّل
     } catch (_) { busy = false; await refresh(); const t = box.querySelector('.pb-t'); if (t && Notification.permission !== 'denied') t.textContent = 'تعذّر تفعيل التنبيهات. حاول مرة أخرى لاحقًا.'; return; }
     busy = false; refresh();

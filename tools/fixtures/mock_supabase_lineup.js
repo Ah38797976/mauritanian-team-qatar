@@ -72,6 +72,8 @@
     M.calls.push({ name, args: JSON.parse(JSON.stringify(a || {})) });
     if (name === 'rpc_get_gallery') return M.galMissing ? { data: null, error: { code: 'PGRST202', message: 'missing' } } : { data: JSON.parse(JSON.stringify({ visible: GAL.visible, photos: GAL.photos })), error: null };
     if (name === 'rpc_push_stats') return M.pushMissing ? { data: null, error: { code: 'PGRST202', message: 'missing' } } : { data: { subscribers: M.pushSubs == null ? 3 : M.pushSubs, recent: M.pushRecent || [] }, error: null };
+    if (name === 'rpc_training_responses') return { data: M.noTrainExt ? null : [{ id: 'p1', name: 'لاعب ١', status: 'yes' }, { id: 'p2', name: 'لاعب ٢', status: 'no' }, { id: 'p3', name: 'لاعب ٣', status: null }], error: null };
+    if (name === 'rpc_push_roster') return M.rosterMissing ? { data: null, error: { code: 'PGRST202', message: 'missing' } } : { data: { people: M.pushPeople || [] }, error: null };
     if (name === 'rpc_get_developer') return M.devMissing ? { data: null, error: { code: 'PGRST202', message: 'missing' } } : { data: { ...DEV }, error: null };
     if (M.missingRpc) return { data: null, error: { code: 'PGRST202', message: 'Could not find the function' } };
     if (M.rpcError) return { data: null, error: M.rpcError };
@@ -90,6 +92,10 @@
         if (t === 'matches' && /kickoff|venue/.test(this.cols)) {   // 0021: قبل التطبيق الأعمدة غير موجودة
           if (M.noMatchExt) return { data: null, error: { code: '42703', message: 'column matches.kickoff does not exist' } };
           return { data: rows(t).map(m => ({ ...m, kickoff: m.id === 'm1' ? '19:30:00' : null, venue: m.id === 'm1' ? 'ملعب الدحيل' : null })), error: null };
+        }
+        if (t === 'training_sessions' && /start_time|venue|map_url/.test(this.cols)) {   // 0022
+          if (M.noTrainExt) return { data: null, error: { code: '42703', message: 'column training_sessions.start_time does not exist' } };
+          return { data: rows(t).map(x => ({ ...x, session_date: M.upSession ? '2999-01-01' : x.session_date, start_time: '20:00:00', venue: 'ملعب التدريب', map_url: 'https://maps.app.goo.gl/x' })), error: null };
         }
         return { data: rows(t), error: null };
       })().then(res, rej);
