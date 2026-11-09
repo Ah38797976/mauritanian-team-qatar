@@ -331,6 +331,18 @@
   const setMenu = o => { document.body.classList.toggle('menu-open', o); $('#menuBtn').setAttribute('aria-expanded', String(o)); };
   $('#menuBtn').onclick = () => setMenu(!document.body.classList.contains('menu-open'));
   $('#scrim').onclick = () => setMenu(false);
+  // قفل صلب للصفحة خلف القائمة (iOS يتجاهل overflow:hidden): تُثبَّت الصفحة بموضعها وتُستعاد عند الإغلاق
+  let lockY = null;
+  new MutationObserver(() => {
+    const o = document.body.classList.contains('menu-open');
+    if (o && lockY === null) { lockY = window.scrollY; document.body.style.position = 'fixed'; document.body.style.top = (-lockY) + 'px'; document.body.style.width = '100%'; }
+    else if (!o && lockY !== null) { document.body.style.position = ''; document.body.style.top = ''; document.body.style.width = ''; const y = lockY; lockY = null; window.scrollTo({ top: y, behavior: 'instant' }); }
+  }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  // لمس داخل القائمة: لا ينتقل التمرير للصفحة عند بلوغ أول القائمة أو آخرها
+  (() => { let y0 = 0; const nav = $('#nav');
+    nav.addEventListener('touchstart', e => { y0 = e.touches[0].clientY; }, { passive: true });
+    nav.addEventListener('touchmove', e => { const dy = e.touches[0].clientY - y0, top = nav.scrollTop <= 0, end = nav.scrollTop + nav.clientHeight >= nav.scrollHeight - 1;
+      if ((dy > 0 && top) || (dy < 0 && end)) e.preventDefault(); }, { passive: false }); })();
   $('#scrim').addEventListener('touchmove', e => e.preventDefault(), { passive: false });   // iOS: لا تتحرك الصفحة خلف القائمة المفتوحة
   $('#nav').addEventListener('click', e => { if (e.target.closest('a')) setMenu(false); });   // لمس الصفحة الحالية لا يغيّر الرابط فلا يحدث تحديث: نغلق القائمة صراحةً
   document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
