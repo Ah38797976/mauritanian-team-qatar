@@ -40,10 +40,11 @@
   let sb = null, chain = Promise.resolve();
   let photoGen = 0;
   const urlCache = new Map();   // storage_path -> { url, exp } ; الروابط موقّعة لساعة، نعيد استعمالها حتى قبل انتهائها بخمس دقائق
-  const cache = { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], matchExt: null, lineup: [], lineupInfo: { v2: null, formation: '', slots: {}, captain: '', gk: '', err: '' }, sessions: [], att: {}, stats: [], logs: [], photos: [], staffPhotos: [] };
+  const cache = { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], matchExt: null, trainExt: null, lineup: [], lineupInfo: { v2: null, formation: '', slots: {}, captain: '', gk: '', err: '' }, sessions: [], att: {}, stats: [], logs: [], photos: [], staffPhotos: [] };
   const subs = [], emit = () => subs.forEach(f => f());
   const MT_BASE = 'id,opponent,match_date,is_home,played,opp_goals,officer_id,match_players(player_id,match_events(event_type,minute))', MT_EXT = MT_BASE.replace('officer_id,', 'officer_id,kickoff,venue,');
-  const reset = () => { urlCache.clear(); Object.assign(cache, { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], matchExt: null, lineup: [], lineupInfo: { v2: null, formation: '', slots: {}, captain: '', gk: '', err: '' }, sessions: [], att: {}, stats: [], logs: [], photos: [], staffPhotos: [] }); };
+  const TS_BASE = 'id,title,session_date', TS_EXT = 'id,title,session_date,start_time,venue,map_url';
+  const reset = () => { urlCache.clear(); Object.assign(cache, { me: null, roster: [], players: [], contacts: {}, staff: [], members: [], matches: [], matchExt: null, trainExt: null, lineup: [], lineupInfo: { v2: null, formation: '', slots: {}, captain: '', gk: '', err: '' }, sessions: [], att: {}, stats: [], logs: [], photos: [], staffPhotos: [] }); };
 
   // PGRST202 / 42883 = الدالة غير موجودة على الخادم (0014 غير مُطبَّق): رسالة واضحة بدل «تعذّر الاتصال»
   const FEATURE_OFF = 'هذه الميزة غير مفعّلة على الخادم بعد';
@@ -92,20 +93,22 @@
     async _refresh() {
       // كل الطلبات دفعة واحدة (كانت موجتين متتاليتين: كل موجة تساوي رحلة شبكة كاملة إلى الخادم)
       const q = t => sb.from(t);
-      let mt; const [[me, roster, stats], [pl, ct, st, mb, mt_, ls, ss, at, lg, ph, sph]] = await Promise.all([Promise.all([rpc('rpc_get_me'), rpc('rpc_get_roster'), rpc('rpc_get_stat_rows')]), Promise.all([
+      let mt, ss; const [[me, roster, stats], [pl, ct, st, mb, mt_, ls, ss_, at, lg, ph, sph]] = await Promise.all([Promise.all([rpc('rpc_get_me'), rpc('rpc_get_roster'), rpc('rpc_get_stat_rows')]), Promise.all([
         q('players').select('id,name,shirt_number,position,city,status'),
         q('player_contacts').select('player_id,phone,email'),
         q('staff_members').select('id,name,title,kind,staff_contacts(phone)'),
         q('team_members').select('user_id,display_name,role,active'),                                                    // [v2 F4]
         q('matches').select(cache.matchExt === false ? MT_BASE : MT_EXT).order('match_date'),   // 0021: الوقت والملعب (إن لم يُطبَّق يعود الاستعلام القديم تلقائيًا)
         readLineup(),
-        q('training_sessions').select('id,title,session_date').order('session_date'),
+        q('training_sessions').select(cache.trainExt === false ? TS_BASE : TS_EXT).order('session_date'),   // 0022: وقت/ملعب/خريطة (إن لم يُطبَّق يعود الاستعلام القديم)
         q('attendance').select('session_id,player_id,present'),
         q('audit_log').select('created_at,actor_name,actor_role,action,detail').order('created_at', { ascending: false }).limit(500),
         q('player_photos').select('id,player_id,storage_path,is_primary'),
         q('staff_photos').select('id,staff_id,storage_path')
       ])]);
-      mt = mt_;
+      mt = mt_; ss = ss_;
+      if (ss.error && cache.trainExt !== false && (ss.error.code === '42703' || /start_time|venue|map_url|column/i.test(String(ss.error.message || '')))) { cache.trainExt = false; ss = await q('training_sessions').select(TS_BASE).order('session_date'); }
+      else if (!ss.error && cache.trainExt === null) cache.trainExt = true;
       if (mt.error && cache.matchExt !== false && (mt.error.code === '42703' || /kickoff|venue|column/i.test(String(mt.error.message || '')))) { cache.matchExt = false; mt = await q('matches').select(MT_BASE).order('match_date'); }   // أعمدة 0021 غير موجودة بعد
       else if (!mt.error && cache.matchExt === null) cache.matchExt = true;
       // خطأ عابر (شبكة/مهلة/رمز قيد التجديد) لا يعني انتهاء الجلسة: لا نمسح الحالة ولا نُظهر شاشة الدخول؛ المستدعي يعيد المحاولة.
@@ -125,7 +128,7 @@
       cache.members = (mb.data || []).filter(m => m.active).map(m => ({ id: m.user_id, name: m.display_name, role: m.role }));
       cache.matches = (mt.data || []).map(m => ({ id: m.id, opp: m.opponent, date: m.match_date, home: m.is_home, played: m.played, them: m.opp_goals, officer: m.officer_id, time: m.kickoff ? String(m.kickoff).slice(0, 5) : '', venue: m.venue || '', players: (m.match_players || []).map(x => x.player_id), events: (m.match_players || []).flatMap(x => (x.match_events || []).map(e => ({ pid: x.player_id, type: e.event_type, min: e.minute }))) }));   // الأحداث مرتبطة بجدول match_players فقط، لذا تُجلب متداخلة
       { const { ids, ...info } = ls; cache.lineup = ids; cache.lineupInfo = info; }
-      cache.sessions = (ss.data || []).map(s => ({ id: s.id, title: s.title, date: s.session_date }));                    // [v2 F2]
+      cache.sessions = (ss.data || []).map(s => ({ id: s.id, title: s.title, date: s.session_date, time: s.start_time ? String(s.start_time).slice(0, 5) : '', venue: s.venue || '', map: s.map_url || '' }));                    // [v2 F2]
       cache.att = {}; (at.data || []).forEach(a => { (cache.att[a.session_id] = cache.att[a.session_id] || {})[a.player_id] = a.present; });
       cache.logs = (lg.data || []).map(l => ({ t: l.created_at, who: l.actor_name, role: l.actor_role, a: l.action, d: l.detail }));
       cache.photos = ph.data || [];
@@ -199,6 +202,7 @@
     // ---- إشعارات الدفع (0019 + Edge Function push-send) ----
     getPushStats: () => rpc('rpc_push_stats'),
     getPushRoster: () => rpc('rpc_push_roster'),
+    getTrainingResponses: id => rpc('rpc_training_responses', { p_session: id }),
     async sendPush(title, body, url) {
       try {
         const { data, error } = await sb.functions.invoke('push-send', { body: { title, body, url } });

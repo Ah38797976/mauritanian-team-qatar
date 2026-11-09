@@ -18,6 +18,7 @@
     get players() { return c().players || []; },
     get matches() { return c().matches || []; },
     get matchExt() { return c().matchExt === true; },
+    get trainExt() { return c().trainExt === true; },
     get sessions() { return c().sessions || []; },
     get att() { return c().att || {}; },
     // starters تبقى مصفوفة معرّفات كما كانت (بقية الشاشات تعتمد عليها)؛ الباقي من 0014: v2=true/false/null(غير معروف: خطأ في القراءة)

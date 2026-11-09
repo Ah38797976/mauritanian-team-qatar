@@ -149,7 +149,21 @@
 
   let sesId = '';   // الحصة المختارة؛ تُحسم من الحصص الفعلية (أحدثها افتراضيًا) في curSes()
   const curSes = () => { const l = S.sessions; if (l.some(x => x.id === sesId)) return sesId; const last = [...l].sort((a, b) => String(b.date).localeCompare(String(a.date)))[0]; return last ? last.id : ''; };
-  const sesForm = () => modal('إضافة حصة تدريب', fld('العنوان', 'title', 'تدريب') + fld('التاريخ', 'date', new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Qatar' }), 'date'), async f => { sesId = ''; return St.saveSession({ title: f.title, date: f.date }); });   // بعد الحفظ تُختار أحدث حصة
+  // تفاصيل الحصة (وقت/ملعب/خريطة) + ردود اللاعبين + زر الاستدعاء؛ تظهر فقط بعد تطبيق 0022
+  const clock12 = t => { const m = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(String(t || '')); if (!m) return ''; const h = +m[1]; return ((h % 12) || 12) + ':' + m[2] + ' ' + (h < 12 ? 'ص' : 'م'); };
+  const trainInfo = id => { const x = S.sessions.find(z => z.id === id); if (!x || !S.trainExt) return '';
+    const upcoming = String(x.date) >= new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Qatar' });
+    const bits = [x.time ? clock12(x.time) : '', x.venue].filter(Boolean).map(esc).join(' — ');
+    return `<div class="note" id="tinfo">${bits || 'لم يُحدَّد وقت أو ملعب لهذه الحصة بعد.'}${x.map && /^https:\/\//.test(x.map) ? ` — <a href="${esc(x.map)}" target="_blank" rel="noopener noreferrer">الخريطة</a>` : ''}</div>
+      <div class="card" id="rsvp"><h2>ردود اللاعبين على الحصة</h2><p class="empty">جارٍ التحميل…</p></div>${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إرسال استدعاء للفريق</button></div>' : ''}`; };
+  const loadRsvp = () => { const b = $('#rsvp'); if (!b) return; const id = curSes(); TD.getTrainingResponses(id).then(r => { const box = $('#rsvp'); if (!box || curSes() !== id) return;
+    if (!Array.isArray(r)) { box.innerHTML = '<h2>ردود اللاعبين على الحصة</h2><p class="empty">تعذّر تحميل الردود.</p>'; return; }
+    const g = k => r.filter(x => (x.status || '') === k), nm = l => l.length ? l.map(x => esc(x.name)).join('، ') : '—';
+    box.innerHTML = `<h2>ردود اللاعبين على الحصة</h2><p><b>حاضر (${g('yes').length}):</b> ${nm(g('yes'))}</p><p><b>معتذر (${g('no').length}):</b> ${nm(g('no'))}</p><p><b>لم يردّ (${g('').length}):</b> ${nm(g(''))}</p>`; }); };
+  const sesForm = edit => { const x = edit ? S.sessions.find(z => z.id === edit) : null, ext = S.trainExt;
+    modal(x ? 'تعديل الحصة' : 'إضافة حصة تدريب', fld('العنوان', 'title', x ? x.title : 'تدريب') + fld('التاريخ', 'date', x ? x.date : new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Qatar' }), 'date')
+      + (ext ? fld('الوقت (بتوقيت قطر)', 'time', x ? x.time : '', 'time') + fld('اسم الملعب (اختياري)', 'venue', x ? x.venue : '', 'text', 'maxlength="100"') + fld('رابط الموقع على الخريطة (اختياري، يبدأ بـ https://)', 'map', x ? x.map : '', 'url', 'maxlength="300" dir="ltr"') : ''),
+      async f => { if (!x) sesId = ''; return St.saveSession({ ...(x ? { id: x.id } : {}), title: f.title, date: f.date, ...(ext ? { time: f.time || '', venue: f.venue || '', map: f.map || '' } : {}) }); }); };   // بعد الحفظ تُختار أحدث حصة
   // الملعب: التشكيلة الأساسية على أرض الملعب (الحارس في الأسفل والمهاجمون في الأعلى)، وكل لاعب بصورته ورقمه؛ الضغط عليه يفتح بطاقته
   const PITCH_MARKS = ['pk-h', 'pk-c', 'pk-cs', 'pk-pa t', 'pk-pa b', 'pk-ga t', 'pk-ga b', 'pk-ar t', 'pk-ar b', 'pk-sp t', 'pk-sp b'].map(c => `<i class="pk ${c}" aria-hidden="true"></i>`).join('');
   const pitchHtml = (ed) => {
@@ -176,7 +190,7 @@
     ${ed ? `<h2 style="margin-top:12px">اختيار اللاعبين</h2><div class="row">${ros.map(p => `<label><input type="checkbox" data-st="${esc(p.id)}" ${st.includes(p.id) ? 'checked' : ''} ${p.status !== 'نشط' ? 'disabled' : ''}> ${esc(p.name)} (${esc(p.pos)})</label>`).join('')}</div>` : ''}</div>`;
     return `<h1>لوحة المدرب</h1>${ed ? '' : '<div class="note">عرض فقط — لا تملك صلاحية التعديل.</div>'}
     ${lineupCard}
-    <div class="card"><h2>الحضور</h2>${edA || !S.sessions.length ? '' : '<div class="note">عرض فقط — لا تملك صلاحية تسجيل الحضور.</div>'}${S.sessions.length ? `<div class="tools ses"><select id="ses" aria-label="الحصة">${[...S.sessions].sort((x, y) => String(y.date).localeCompare(String(x.date))).map(x => `<option value="${esc(x.id)}" ${x.id === cs ? 'selected' : ''}>${esc(x.title)} — ${esc(x.date)}</option>`).join('')}</select>${edA ? '<button id="addses">+ حصة</button><button class="dng" id="delses">حذف الحصة</button>' : ''}</div>` : `<p class="empty">لا توجد حصص تدريب بعد.${edA ? ' أضف حصة لتسجيل الحضور.' : ''}</p>${edA ? '<div class="tools"><button id="addses">+ حصة تدريب</button></div>' : ''}`}${S.sessions.length ? tw('جدول الحضور', `<tr><th>اللاعب</th><th>حاضر</th></tr>${ros.map(p => `<tr><td>${esc(p.name)}</td><td><input type="checkbox" data-at="${esc(p.id)}" ${ses[p.id] ? 'checked' : ''} ${edA ? '' : 'disabled'} aria-label="حضور ${esc(p.name)}"></td></tr>`).join('')}`, 'att').replace('class="card tw"', 'class="tw"') : ''}</div>`;
+    <div class="card"><h2>الحضور</h2>${edA || !S.sessions.length ? '' : '<div class="note">عرض فقط — لا تملك صلاحية تسجيل الحضور.</div>'}${S.sessions.length ? `<div class="tools ses"><select id="ses" aria-label="الحصة">${[...S.sessions].sort((x, y) => String(y.date).localeCompare(String(x.date))).map(x => `<option value="${esc(x.id)}" ${x.id === cs ? 'selected' : ''}>${esc(x.title)} — ${esc(x.date)}</option>`).join('')}</select>${edA ? '<button id="addses">+ حصة</button>' + (S.trainExt ? '<button id="edses">تعديل الحصة</button>' : '') + '<button class="dng" id="delses">حذف الحصة</button>' : ''}</div>${trainInfo(cs)}` : `<p class="empty">لا توجد حصص تدريب بعد.${edA ? ' أضف حصة لتسجيل الحضور.' : ''}</p>${edA ? '<div class="tools"><button id="addses">+ حصة تدريب</button></div>' : ''}`}${S.sessions.length ? tw('جدول الحضور', `<tr><th>اللاعب</th><th>حاضر</th></tr>${ros.map(p => `<tr><td>${esc(p.name)}</td><td><input type="checkbox" data-at="${esc(p.id)}" ${ses[p.id] ? 'checked' : ''} ${edA ? '' : 'disabled'} aria-label="حضور ${esc(p.name)}"></td></tr>`).join('')}`, 'att').replace('class="card tw"', 'class="tw"') : ''}</div>`;
   };
 
   // ---- المالية: سجل مصروفات وإيرادات (الأمين المالي والمؤسس فقط؛ الخادم يفرض الصلاحية). لا أسماء لاعبين هنا.
@@ -327,6 +341,7 @@
     v.innerHTML = (Object.prototype.hasOwnProperty.call(V, page) ? V[page] : V.dash)(id);  // لا نقرأ مفاتيح النموذج الأولي (constructor…)
     if ((page === 'pitch' || page === 'coach') && window.CoachUI) CoachUI.bind(v, St.can('lineup'));
     if (page === 'players' && St.can('viewPlayers')) drawPlayers();
+    if (page === 'coach') loadRsvp();
     if (page === 'site') { loadSite(); loadDev(); loadGal(); loadPush(); loadPpl(); }
     if (page === 'finance' && St.can('finance')) loadFin();
     if (page === 'roles' && isFounder()) loadRoles();
@@ -384,6 +399,11 @@
     if (d.fe && FIN) finForm(null, (FIN.entries || []).find(x => x.id === d.fe));
     if (d.fd && confirm('حذف هذه المعاملة؟')) fail(St.delFinance(d.fd)).then(bad => { if (!bad) toast('تم الحذف'); });
     if (id === 'addses') sesForm();
+    if (id === 'edses' && curSes()) sesForm(curSes());
+    if (id === 'callup' && curSes()) { const x = S.sessions.find(z => z.id === curSes()); if (!x) return;
+      const when = new Date(x.date + 'T00:00:00Z').toLocaleDateString('ar', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }), body = [x.title, when, x.time ? clock12(x.time) : '', x.venue].filter(Boolean).join(' — ');
+      if (!confirm('إرسال استدعاء لكل من فعّل التنبيهات؟\n\n' + body + '\n\nلا يمكن التراجع بعد الإرسال.')) return;
+      e.target.disabled = true; TD.sendPush('استدعاء للتدريب', body, '/#s-training').then(r => { e.target.disabled = false; toast(r.err ? r.err : 'أُرسل الاستدعاء: وصل ' + r.sent + ' وفشل ' + r.failed); }); }
     if (id === 'delses' && curSes() && confirm('حذف هذه الحصة وكل سجلات حضورها؟')) { fail(St.delSession(curSes())).then(bad => { if (!bad) { sesId = ''; toast('تم الحذف'); } }); }
     if (id === 'adds') staffForm();
     if (d.es) staffForm(St.staffList().find(x => x.id === d.es));
