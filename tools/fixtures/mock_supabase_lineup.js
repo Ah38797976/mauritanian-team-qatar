@@ -3,7 +3,7 @@
 (function () {
   const init = window.__mockInit || {};
   const M = window.__mock = Object.assign({ role: 'coach', perms: ['viewPlayers', 'lineup', 'attendance', 'viewStaff'], v2: true, delay: 0, reject: null, lineupReadError: null, calls: [], reads: [] }, init);
-  const F = { '4-4-2': 'gk,def,def,def,def,mid,mid,mid,mid,fwd,fwd', '4-3-3': 'gk,def,def,def,def,mid,mid,mid,fwd,fwd,fwd', '3-5-2': 'gk,def,def,def,mid,mid,mid,mid,mid,fwd,fwd', '4-2-3-1': 'gk,def,def,def,def,mid,mid,mid,mid,mid,fwd' };
+  const F = { '4-4-2': 'gk,def,def,def,def,mid,mid,mid,mid,fwd,fwd', '4-3-3': 'gk,def,def,def,def,mid,mid,mid,fwd,fwd,fwd', '3-5-2': 'gk,def,def,def,mid,mid,mid,mid,mid,fwd,fwd', '4-2-3-1': 'gk,def,def,def,def,mid,mid,mid,mid,mid,fwd', '4-1-4-1': 'gk,def,def,def,def,mid,mid,mid,mid,mid,fwd', '4-5-1': 'gk,def,def,def,def,mid,mid,mid,mid,mid,fwd', '3-4-3': 'gk,def,def,def,mid,mid,mid,mid,fwd,fwd,fwd', '5-3-2': 'gk,def,def,def,def,def,mid,mid,mid,fwd,fwd', '5-4-1': 'gk,def,def,def,def,def,mid,mid,mid,mid,fwd', '4-3-2-1': 'gk,def,def,def,def,mid,mid,mid,mid,mid,fwd', '4-1-2-3': 'gk,def,def,def,def,mid,mid,mid,fwd,fwd,fwd', '3-4-1-2': 'gk,def,def,def,mid,mid,mid,mid,mid,fwd,fwd' };
   const slots = f => F[f].split(',');
   const ok = (sc, pc) => (sc === 'gk' || pc === 'gk') ? sc === pc : (sc === pc || sc === 'mid' || pc === 'mid');
   const P = [['gk1', 'حارس أول', 1, 'gk'], ['gk2', 'حارس ثان', 12, 'gk'], ['d1', 'مدافع ١', 2, 'def'], ['d2', 'مدافع ٢', 3, 'def'], ['d3', 'مدافع ٣', 4, 'def'], ['d4', 'مدافع ٤', 5, 'def'], ['d5', 'مدافع ٥', 15, 'def'], ['d6', 'مدافع ٦ (مصاب)', 16, 'def', 'injured'],
