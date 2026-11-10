@@ -162,6 +162,9 @@
     saveSession: x => write('rpc_save_session', { s: x }),
     delSession: id => write('rpc_delete_session', { p_id: id }),
     setAtt: (sid, pid, v) => write('rpc_set_attendance', { p_session: sid, p_player: pid, p_present: v === true }),
+    // تسجيل جماعي: كل الاستدعاءات معًا ثم تحديث واحد للبيانات (بدل تحديث لكل لاعب)
+    setAttMany: (sid, ids, v) => serial(async () => { const rs = await Promise.all(ids.map(pid => rpc('rpc_set_attendance', { p_session: sid, p_player: pid, p_present: v === true })));
+      const bad = rs.find(r => typeof r !== 'string' || r !== ''); await AD._refresh(); return bad === undefined ? '' : (typeof bad === 'string' ? bad : NET); }),
     setPerm: (role, mod, v) => write('rpc_set_permission', { p_role: role, p_perm: mod, p_value: v }),
     saveTeam: t => write('rpc_save_team', { tm: t }),
     // ---- public-site settings (added for admin/live) ----

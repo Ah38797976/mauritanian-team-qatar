@@ -88,6 +88,7 @@
     saveSession: x => TD.saveSession(x),
     delSession: id => TD.delSession(id),
     setAtt: (sid, pid, v) => TD.setAtt(sid, pid, v),
+    setAttMany: (sid, ids, v) => TD.setAttMany(sid, ids, v),
     // الحضور: قبل 0014 كان يتبع صلاحية lineup؛ بعده صلاحية attendance مستقلة. الواجهة القديمة (v2 غير مفعّل) تبقى على lineup حتى لا تنكسر.
     canAttendance() { const v = (c().lineupInfo || {}).v2; return v === true ? St.can('attendance') : St.can('lineup'); },
     saveTeam: t => TD.saveTeam(t)

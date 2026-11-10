@@ -176,6 +176,11 @@ ${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إر�
     if (c) return `<h1>الملعب</h1><div class="card">${c}</div>`;
     return `<h1>الملعب</h1><div class="note">${ed ? `اضغط «+» على لاعب الاحتياط لإضافته إلى الملعب في مركزه، و«×» لإخراجه. (${S.lineup.starters.length}/11)` : 'اضغط على أي لاعب لفتح بطاقته الكاملة.'}</div><div class="card">${pitchHtml(ed)}${benchHtml(ed)}</div>`;
   };
+  // تسجيل الحضور السريع: عدّاد، حضّر الجميع/إلغاء الكل، فلتر (الكل/الغائبون)، وصف كامل قابل للّمس
+  let attF = 'all';
+  const attBlock = (ros, ses, edA) => { const yes = ros.filter(p => ses[p.id]).length, list = attF === 'no' ? ros.filter(p => !ses[p.id]) : ros;
+    return `<div class="attbar"><b id="attc">حاضر ${yes} من ${ros.length}</b><span class="attbtns">${edA ? '<button id="attall">حضّر الجميع</button><button class="sec" id="attnone">إلغاء الكل</button>' : ''}<button class="sec${attF === 'no' ? ' on' : ''}" id="attf" aria-pressed="${attF === 'no'}">الغائبون فقط</button></span></div>
+    <div class="attl" id="att">${list.length ? list.map(p => `<label class="attr${ses[p.id] ? ' on' : ''}"><span>${esc(p.name)}</span><input type="checkbox" data-at="${esc(p.id)}" ${ses[p.id] ? 'checked' : ''} ${edA ? '' : 'disabled'} aria-label="حضور ${esc(p.name)}"></label>`).join('') : '<p class="empty">الجميع حاضرون.</p>'}</div>`; };
   V.coach = () => {
     if (!St.can('lineup') && !St.can('viewPlayers')) return denied('لوحة المدرب');
     const ed = St.can('lineup'), edA = St.canAttendance(), st = S.lineup.starters, g = pos => st.map(St.player).filter(p => p && p.pos === pos);
@@ -186,7 +191,7 @@ ${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إر�
     ${ed ? `<h2 style="margin-top:12px">اختيار اللاعبين</h2><div class="row">${ros.map(p => `<label><input type="checkbox" data-st="${esc(p.id)}" ${st.includes(p.id) ? 'checked' : ''} ${p.status !== 'نشط' ? 'disabled' : ''}> ${esc(p.name)} (${esc(p.pos)})</label>`).join('')}</div>` : ''}</div>`;
     return `<h1>لوحة المدرب</h1>${ed ? '' : '<div class="note">عرض فقط — لا تملك صلاحية التعديل.</div>'}
     ${lineupCard}
-    <div class="card"><h2>الحضور</h2>${edA || !S.sessions.length ? '' : '<div class="note">عرض فقط — لا تملك صلاحية تسجيل الحضور.</div>'}${S.sessions.length ? `<div class="tools ses"><select id="ses" aria-label="الحصة">${[...S.sessions].sort((x, y) => String(y.date).localeCompare(String(x.date))).map(x => `<option value="${esc(x.id)}" ${x.id === cs ? 'selected' : ''}>${esc(x.title)} — ${esc(x.date)}</option>`).join('')}</select>${edA ? '<button id="addses">+ حصة</button>' + (S.trainExt ? '<button id="edses">تعديل الحصة</button>' : '') + '<button class="dng" id="delses">حذف الحصة</button>' : ''}</div>${trainInfo(cs)}` : `<p class="empty">لا توجد حصص تدريب بعد.${edA ? ' أضف حصة لتسجيل الحضور.' : ''}</p>${edA ? '<div class="tools"><button id="addses">+ حصة تدريب</button></div>' : ''}`}${S.sessions.length ? tw('جدول الحضور', `<tr><th>اللاعب</th><th>حاضر</th></tr>${ros.map(p => `<tr><td>${esc(p.name)}</td><td><input type="checkbox" data-at="${esc(p.id)}" ${ses[p.id] ? 'checked' : ''} ${edA ? '' : 'disabled'} aria-label="حضور ${esc(p.name)}"></td></tr>`).join('')}`, 'att').replace('class="card tw"', 'class="tw"') : ''}</div>`;
+    <div class="card"><h2>الحضور</h2>${edA || !S.sessions.length ? '' : '<div class="note">عرض فقط — لا تملك صلاحية تسجيل الحضور.</div>'}${S.sessions.length ? `<div class="tools ses"><select id="ses" aria-label="الحصة">${[...S.sessions].sort((x, y) => String(y.date).localeCompare(String(x.date))).map(x => `<option value="${esc(x.id)}" ${x.id === cs ? 'selected' : ''}>${esc(x.title)} — ${esc(x.date)}</option>`).join('')}</select>${edA ? '<button id="addses">+ حصة</button>' + (S.trainExt ? '<button id="edses">تعديل الحصة</button>' : '') + '<button class="dng" id="delses">حذف الحصة</button>' : ''}</div>${trainInfo(cs)}` : `<p class="empty">لا توجد حصص تدريب بعد.${edA ? ' أضف حصة لتسجيل الحضور.' : ''}</p>${edA ? '<div class="tools"><button id="addses">+ حصة تدريب</button></div>' : ''}`}${S.sessions.length ? attBlock(ros, ses, edA) : ''}</div>`;
   };
 
   // ---- المالية: سجل مصروفات وإيرادات (الأمين المالي والمؤسس فقط؛ الخادم يفرض الصلاحية). لا أسماء لاعبين هنا.
@@ -386,6 +391,8 @@ ${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إر�
     if (d.fe && FIN) finForm(null, (FIN.entries || []).find(x => x.id === d.fe));
     if (d.fd && confirm('حذف هذه المعاملة؟')) fail(St.delFinance(d.fd)).then(bad => { if (!bad) toast('تم الحذف'); });
     if (id === 'addses') sesForm();
+    if ((id === 'attall' || id === 'attnone') && curSes()) { const c = curSes(), on = id === 'attall', cur = S.att[c] || {}, ids = St.roster().filter(p => !!cur[p.id] !== on).map(p => p.id); if (!ids.length) return toast(on ? 'الجميع حاضرون' : 'لا أحد مسجَّل حاضرًا'); if (!on && !confirm('إلغاء حضور الجميع في هذه الحصة؟')) return; fail(St.setAttMany(c, ids, on)); }
+    if (id === 'attf') { attF = attF === 'no' ? 'all' : 'no'; render(); }
     if (id === 'edses' && curSes()) sesForm(curSes());
     if (id === 'callup' && curSes()) { const x = S.sessions.find(z => z.id === curSes()); if (!x) return;
       const when = new Date(x.date + 'T00:00:00Z').toLocaleDateString('ar', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }), body = [x.title, when, x.time ? clock12(x.time) : '', x.venue].filter(Boolean).join(' — ');
