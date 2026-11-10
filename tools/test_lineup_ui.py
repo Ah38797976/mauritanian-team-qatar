@@ -47,7 +47,7 @@ try:
         # ===== 1) 0014 مُطبَّق: الواجهة الجديدة =====
         ctx, pg = mk(br, p); open_(pg)
         ok('v2: ملعب بخانات (.field.fx) و11 خانة', pg.locator('.field.fx').count() == 1 and pg.locator('.field.fx .sl').count() == 11)
-        ok('v2: أربع أزرار خطط', pg.locator('[data-fm]').count() == 4 and pg.locator('[data-fm].on').inner_text().strip() == '4-4-2')
+        ok('v2: 12 زر خطة', pg.locator('[data-fm]').count() == 12 and pg.locator('[data-fm].on').inner_text().strip() == '4-4-2')
         ok('v2: 11 أساسيًا على الملعب والاحتياط 5', pg.locator('.sl .tk').count() == 11 and pg.locator('[data-bench] .tk').count() == 5)
         ok('v2: شارة القائد على مدافع ١ فقط', pg.locator('.cb').count() == 1 and pg.locator('.sl:has([data-pid="d1"]) .cb').count() == 1)
         ok('v2: الحارس بالخانة 1 (أسفل الملعب)', slot_of(pg, 'gk1') == 1)
