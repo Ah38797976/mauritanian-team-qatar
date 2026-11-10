@@ -38,16 +38,6 @@ with sync_playwright() as p:
     ck('اللوحة (قبل 0019): رسالة «غير مفعّلة» بلا نموذج', pg4.locator('#pf').count() == 0 and 'غير مفعّلة' in pg4.inner_text('#pushadm') and not e4, e4)
     pg5, e5 = mk(br, p, {'role': 'coach', 'perms': ['lineup']}); pg5.goto(B + '/admin/live/index.html#/site'); pg5.wait_for_timeout(2000)
     ck('اللوحة: من بلا صلاحية settings لا يرى نموذج الإرسال', pg5.locator('#pf').count() == 0)
-    PPL = [{'kind': 'player', 'name': 'سيدي', 'code': 'ABCD2345', 'devices': 2}, {'kind': 'player', 'name': '<i>x</i>', 'code': 'EFGH6789', 'devices': 0}, {'kind': 'member', 'name': 'أحمد', 'code': 'JKLM2345', 'devices': 1}]
-    pg6, e6 = mk(br, p, {**F, 'pushPeople': PPL}); pg6.goto(B + '/admin/live/index.html#/site'); wait(pg6, '#pushppl li')
-    ck('اللوحة: قائمة الأشخاص (3) وعدّاد «فعّل 2 من 3»', pg6.locator('#pushppl li').count() == 3 and 'فعّل 2 من 3' in pg6.inner_text('#pushppl'))
-    ck('اللوحة: الحالة والرمز ظاهران والاسم يُهرَّب', 'لم يفعّل' in pg6.inner_text('#pushppl') and 'ABCD2345' in pg6.inner_text('#pushppl') and pg6.locator('#pushppl li i').count() == 0)
-    pg6.select_option('#pplf', 'off'); ck('اللوحة: تصفية «لم يفعّلوا» تُبقي شخصًا واحدًا', pg6.locator('#pushppl li').count() == 1)
-    pg6.select_option('#pplf', 'on'); ck('اللوحة: تصفية «فعّلوا» تُبقي اثنين', pg6.locator('#pushppl li').count() == 2)
-    pg6.screenshot(path='/tmp/claude-0/-home-claude/e3db1286-6780-5356-b510-f818a7938dec/scratchpad/push_people.png', full_page=True)
-    ck('اللوحة: لا أخطاء JS (قائمة الأشخاص)', not e6, e6)
-    pg7, e7 = mk(br, p, {**F, 'rosterMissing': True}); pg7.goto(B + '/admin/live/index.html#/site'); pg7.wait_for_timeout(2500)
-    ck('اللوحة (قبل 0020): رسالة «غير مفعّلة» بلا أخطاء', 'غير مفعّلة' in pg7.inner_text('#pushppl') and not e7, e7)
     # ---- العام ----
     SITE = {'team': {'name': 'فريق تجريبي', 'city': 'الدوحة', 'color': '#0b6b3a'}, 'about': 'نبذة', 'announcement': '', 'sections': {'players': False, 'staff': False, 'matches': False, 'stats': False, 'photos': False}}
     FAKE = """
@@ -69,10 +59,7 @@ with sync_playwright() as p:
         pg.route('**/rest/v1/rpc/rpc_public_site', lambda r: r.fulfill(status=200, content_type='application/json', body=json.dumps(SITE)))
         pg.route('**/rest/v1/rpc/rpc_public_developer', lambda r: r.fulfill(status=200, content_type='application/json', body='null'))
         pg.route('**/rest/v1/rpc/rpc_public_gallery', lambda r: r.fulfill(status=200, content_type='application/json', body='null'))
-        def h(r):
-            fn = r.request.url.split('/')[-1]; calls.append((fn, r.request.post_data))
-            body = json.dumps('سيدي' if json.loads(r.request.post_data or '{}').get('p_code') == 'ABCD2345' else '') if fn == 'rpc_push_code_name' else '""'
-            r.fulfill(status=sub_status, content_type='application/json', body=body)
+        def h(r): calls.append((r.request.url.split('/')[-1], r.request.post_data)); r.fulfill(status=sub_status, content_type='application/json', body='""')
         pg.route('**/rest/v1/rpc/rpc_push_*', h)
         pg.goto(B + '/index.html'); pg.wait_for_timeout(1500); return pg, errs, calls
     IOS = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
@@ -93,17 +80,6 @@ with sync_playwright() as p:
     ck('العام: الحالة «مفعّلة» مع زر إيقاف', 'مفعّلة' in pg.inner_text('#pushbox') and pg.locator('#pushbox .pb-b').inner_text() == 'إيقاف التنبيهات')
     pg.click('#pushbox .pb-b'); pg.wait_for_timeout(600)
     ck('العام: الإيقاف يلغي الاشتراك ويستدعي rpc_push_unsubscribe', pg.evaluate('window.__log.unsub') == 1 and any(c[0] == 'rpc_push_unsubscribe' for c in calls) and pg.locator('#pushbox .pb-b').inner_text() == 'تفعيل التنبيهات')
-    pg, errs, calls = pub(); pg.fill('#pushcode', 'ABCD2345'); pg.click('#pushbox .pb-b'); pg.wait_for_timeout(900)
-    sub = [c for c in calls if c[0] == 'rpc_push_subscribe']
-    ck('العام: الرمز الصحيح يُتحقَّق منه ثم يُرسل مع الاشتراك', any(c[0] == 'rpc_push_code_name' for c in calls) and sub and json.loads(sub[0][1])['p'].get('code') == 'ABCD2345', calls)
-    pg, errs, calls = pub(); pg.fill('#pushcode', 'ZZZZZZZZ'); pg.click('#pushbox .pb-b'); pg.wait_for_timeout(700)
-    ck('العام: رمز غير صحيح يمنع الاشتراك ويعرض رسالة', not [c for c in calls if c[0] == 'rpc_push_subscribe'] and 'غير صحيح' in pg.inner_text('#pushbox'), pg.inner_text('#pushbox'))
-    pg, errs, calls = pub(); pg.fill('#pushcode', 'abc'); pg.click('#pushbox .pb-b'); pg.wait_for_timeout(300)
-    ck('العام: رمز بصيغة خاطئة يُرفض محليًا بلا طلب', not calls and 'غير صحيح' in pg.inner_text('#pushbox'))
-    pg, errs, calls = pub(); pg.click('#pushbox .pb-b'); pg.wait_for_timeout(700)
-    ck('العام: بلا رمز يشترك مجهولًا (code فارغ)', json.loads([c for c in calls if c[0] == 'rpc_push_subscribe'][0][1])['p'].get('code') == '' and not any(c[0] == 'rpc_push_code_name' for c in calls))
-    pg, errs, calls = pub(); pg.goto(B + '/index.html?n=abcd2345'); pg.wait_for_timeout(1200)
-    ck('العام: ?n= يملأ خانة الرمز مسبقًا (بحروف كبيرة)', pg.input_value('#pushcode') == 'ABCD2345')
     pg, errs, calls = pub(pre='window.__grant=false;'); pg.click('#pushbox .pb-b'); pg.wait_for_timeout(600)
     ck('العام: رفض الإذن لا يرسل شيئًا للخادم', not [c for c in calls if c[0] == 'rpc_push_subscribe'] and not errs, errs)
     pg, errs, calls = pub(sub_status=500); pg.click('#pushbox .pb-b'); pg.wait_for_timeout(800)

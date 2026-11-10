@@ -167,3 +167,11 @@ a.pn{font-weight:700;color:inherit;text-decoration:none;border-bottom:1px dashed
 .bench{display:flex;flex-wrap:wrap;gap:14px;padding:12px;background:#eef4f0;border-radius:12px}
 .pp.sm{color:inherit}.pp.sm .av{width:46px;height:46px}.pp.sm .nm{color:#fff}
 @media(max-width:420px){.pp .av{width:48px;height:48px}.pp .nm{font-size:.7rem;max-width:70px}.field{min-height:480px}}
+
+/* تسجيل الحضور السريع */
+.attbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 8px}
+.attbtns{display:flex;flex-wrap:wrap;gap:8px}.attbtns button{min-height:44px}.attbtns button.on{outline:2px solid currentColor}
+.attl{display:grid;gap:6px}
+.attr{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:0 14px;border-radius:12px;border:1px solid var(--line,#d9dfdb);background:var(--card,#fff);cursor:pointer}
+.attr.on{background:rgba(31,191,117,.12);border-color:rgba(31,191,117,.5)}
+.attr input{width:26px;height:26px;flex:none}

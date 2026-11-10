@@ -155,11 +155,7 @@
     const upcoming = String(x.date) >= new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Qatar' });
     const bits = [x.time ? clock12(x.time) : '', x.venue].filter(Boolean).map(esc).join(' — ');
     return `<div class="note" id="tinfo">${bits || 'لم يُحدَّد وقت أو ملعب لهذه الحصة بعد.'}${x.map && /^https:\/\//.test(x.map) ? ` — <a href="${esc(x.map)}" target="_blank" rel="noopener noreferrer">الخريطة</a>` : ''}</div>
-      <div class="card" id="rsvp"><h2>ردود اللاعبين على الحصة</h2><p class="empty">جارٍ التحميل…</p></div>${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إرسال استدعاء للفريق</button></div>' : ''}`; };
-  const loadRsvp = () => { const b = $('#rsvp'); if (!b) return; const id = curSes(); TD.getTrainingResponses(id).then(r => { const box = $('#rsvp'); if (!box || curSes() !== id) return;
-    if (!Array.isArray(r)) { box.innerHTML = '<h2>ردود اللاعبين على الحصة</h2><p class="empty">تعذّر تحميل الردود.</p>'; return; }
-    const g = k => r.filter(x => (x.status || '') === k), nm = l => l.length ? l.map(x => esc(x.name)).join('، ') : '—';
-    box.innerHTML = `<h2>ردود اللاعبين على الحصة</h2><p><b>حاضر (${g('yes').length}):</b> ${nm(g('yes'))}</p><p><b>معتذر (${g('no').length}):</b> ${nm(g('no'))}</p><p><b>لم يردّ (${g('').length}):</b> ${nm(g(''))}</p>`; }); };
+${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إرسال استدعاء للفريق</button></div>' : ''}`; };
   const sesForm = edit => { const x = edit ? S.sessions.find(z => z.id === edit) : null, ext = S.trainExt;
     modal(x ? 'تعديل الحصة' : 'إضافة حصة تدريب', fld('العنوان', 'title', x ? x.title : 'تدريب') + fld('التاريخ', 'date', x ? x.date : new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Qatar' }), 'date')
       + (ext ? fld('الوقت (بتوقيت قطر)', 'time', x ? x.time : '', 'time') + fld('اسم الملعب (اختياري)', 'venue', x ? x.venue : '', 'text', 'maxlength="100"') + fld('رابط الموقع على الخريطة (اختياري، يبدأ بـ https://)', 'map', x ? x.map : '', 'url', 'maxlength="300" dir="ltr"') : ''),
@@ -180,6 +176,11 @@
     if (c) return `<h1>الملعب</h1><div class="card">${c}</div>`;
     return `<h1>الملعب</h1><div class="note">${ed ? `اضغط «+» على لاعب الاحتياط لإضافته إلى الملعب في مركزه، و«×» لإخراجه. (${S.lineup.starters.length}/11)` : 'اضغط على أي لاعب لفتح بطاقته الكاملة.'}</div><div class="card">${pitchHtml(ed)}${benchHtml(ed)}</div>`;
   };
+  // تسجيل الحضور السريع: عدّاد، حضّر الجميع/إلغاء الكل، فلتر (الكل/الغائبون)، وصف كامل قابل للّمس
+  let attF = 'all';
+  const attBlock = (ros, ses, edA) => { const yes = ros.filter(p => ses[p.id]).length, list = attF === 'no' ? ros.filter(p => !ses[p.id]) : ros;
+    return `<div class="attbar"><b id="attc">حاضر ${yes} من ${ros.length}</b><span class="attbtns">${edA ? '<button id="attall">حضّر الجميع</button><button class="sec" id="attnone">إلغاء الكل</button>' : ''}<button class="sec${attF === 'no' ? ' on' : ''}" id="attf" aria-pressed="${attF === 'no'}">الغائبون فقط</button></span></div>
+    <div class="attl" id="att">${list.length ? list.map(p => `<label class="attr${ses[p.id] ? ' on' : ''}"><span>${esc(p.name)}</span><input type="checkbox" data-at="${esc(p.id)}" ${ses[p.id] ? 'checked' : ''} ${edA ? '' : 'disabled'} aria-label="حضور ${esc(p.name)}"></label>`).join('') : '<p class="empty">الجميع حاضرون.</p>'}</div>`; };
   V.coach = () => {
     if (!St.can('lineup') && !St.can('viewPlayers')) return denied('لوحة المدرب');
     const ed = St.can('lineup'), edA = St.canAttendance(), st = S.lineup.starters, g = pos => st.map(St.player).filter(p => p && p.pos === pos);
@@ -190,7 +191,7 @@
     ${ed ? `<h2 style="margin-top:12px">اختيار اللاعبين</h2><div class="row">${ros.map(p => `<label><input type="checkbox" data-st="${esc(p.id)}" ${st.includes(p.id) ? 'checked' : ''} ${p.status !== 'نشط' ? 'disabled' : ''}> ${esc(p.name)} (${esc(p.pos)})</label>`).join('')}</div>` : ''}</div>`;
     return `<h1>لوحة المدرب</h1>${ed ? '' : '<div class="note">عرض فقط — لا تملك صلاحية التعديل.</div>'}
     ${lineupCard}
-    <div class="card"><h2>الحضور</h2>${edA || !S.sessions.length ? '' : '<div class="note">عرض فقط — لا تملك صلاحية تسجيل الحضور.</div>'}${S.sessions.length ? `<div class="tools ses"><select id="ses" aria-label="الحصة">${[...S.sessions].sort((x, y) => String(y.date).localeCompare(String(x.date))).map(x => `<option value="${esc(x.id)}" ${x.id === cs ? 'selected' : ''}>${esc(x.title)} — ${esc(x.date)}</option>`).join('')}</select>${edA ? '<button id="addses">+ حصة</button>' + (S.trainExt ? '<button id="edses">تعديل الحصة</button>' : '') + '<button class="dng" id="delses">حذف الحصة</button>' : ''}</div>${trainInfo(cs)}` : `<p class="empty">لا توجد حصص تدريب بعد.${edA ? ' أضف حصة لتسجيل الحضور.' : ''}</p>${edA ? '<div class="tools"><button id="addses">+ حصة تدريب</button></div>' : ''}`}${S.sessions.length ? tw('جدول الحضور', `<tr><th>اللاعب</th><th>حاضر</th></tr>${ros.map(p => `<tr><td>${esc(p.name)}</td><td><input type="checkbox" data-at="${esc(p.id)}" ${ses[p.id] ? 'checked' : ''} ${edA ? '' : 'disabled'} aria-label="حضور ${esc(p.name)}"></td></tr>`).join('')}`, 'att').replace('class="card tw"', 'class="tw"') : ''}</div>`;
+    <div class="card"><h2>الحضور</h2>${edA || !S.sessions.length ? '' : '<div class="note">عرض فقط — لا تملك صلاحية تسجيل الحضور.</div>'}${S.sessions.length ? `<div class="tools ses"><select id="ses" aria-label="الحصة">${[...S.sessions].sort((x, y) => String(y.date).localeCompare(String(x.date))).map(x => `<option value="${esc(x.id)}" ${x.id === cs ? 'selected' : ''}>${esc(x.title)} — ${esc(x.date)}</option>`).join('')}</select>${edA ? '<button id="addses">+ حصة</button>' + (S.trainExt ? '<button id="edses">تعديل الحصة</button>' : '') + '<button class="dng" id="delses">حذف الحصة</button>' : ''}</div>${trainInfo(cs)}` : `<p class="empty">لا توجد حصص تدريب بعد.${edA ? ' أضف حصة لتسجيل الحضور.' : ''}</p>${edA ? '<div class="tools"><button id="addses">+ حصة تدريب</button></div>' : ''}`}${S.sessions.length ? attBlock(ros, ses, edA) : ''}</div>`;
   };
 
   // ---- المالية: سجل مصروفات وإيرادات (الأمين المالي والمؤسس فقط؛ الخادم يفرض الصلاحية). لا أسماء لاعبين هنا.
@@ -310,12 +311,6 @@
       <label class="f"><span>عند الضغط يفتح</span><select name="purl"><option value="/">الصفحة الرئيسية</option><option value="/#s-matches">المباريات والنتائج</option><option value="/#s-squad">اللاعبون</option><option value="/#s-gallery">معرض الصور</option></select></label><button>إرسال التنبيه</button></form>
       ${rec.length ? `<h3>آخر التنبيهات</h3><ul class="plist">${rec.map(x => `<li><b>${esc(x.title)}</b> — ${esc(x.body)}<small>${esc(new Date(x.at).toLocaleString('ar'))} · وصل ${x.sent | 0} · فشل ${x.failed | 0}${x.by ? ' · ' + esc(x.by) : ''}</small></li>`).join('')}</ul>` : ''}`; };
   // من فعّل التنبيهات ومن لم يفعّل: لكل لاعب وعضو إدارة رمز شخصي يكتبه في الموقع فيُربط جهازه باسمه
-  let pplData = [], pplFilter = 'all';
-  const pplForm = () => { const list = pplData.filter(x => pplFilter === 'all' || (pplFilter === 'on' ? x.devices > 0 : x.devices === 0)), on = pplData.filter(x => x.devices > 0).length;
-    return `<h2>من فعّل التنبيهات؟</h2><p class="muted">فعّل ${on} من ${pplData.length}. أعطِ كل شخص رمزه ليكتبه في صندوق التنبيهات بالموقع (أو أرسل له الرابط). الأجهزة التي فُعّلت بلا رمز تُحسب في عدد المشتركين لكنها لا تظهر هنا.</p>
-      <div class="secs"><label class="f"><span>عرض</span><select id="pplf"><option value="all" ${pplFilter === 'all' ? 'selected' : ''}>الكل</option><option value="off" ${pplFilter === 'off' ? 'selected' : ''}>لم يفعّلوا</option><option value="on" ${pplFilter === 'on' ? 'selected' : ''}>فعّلوا</option></select></label></div>
-      ${list.length ? `<ul class="plist">${list.map(x => `<li><b>${esc(x.name)}</b> <small>${x.kind === 'player' ? 'لاعب' : 'إدارة'}</small> — ${x.devices > 0 ? `<span class="ok">فعّل (${x.devices | 0} جهاز)</span>` : '<span class="no">لم يفعّل</span>'}<small>الرمز: <code>${esc(x.code)}</code> <button type="button" class="linkbtn" data-pcopy="${esc(x.code)}">نسخ الرابط</button></small></li>`).join('')}</ul>` : '<p class="muted">لا أحد في هذه القائمة.</p>'}`; };
-  const loadPpl = () => { const box = $('#pushppl'); if (!box) return; TD.getPushRoster().then(r => { const b = $('#pushppl'); if (!b || route().page !== 'site') return; if (r && typeof r === 'object' && Array.isArray(r.people)) { pplData = r.people.map(x => ({ kind: x.kind === 'member' ? 'member' : 'player', name: String(x.name || ''), code: String(x.code || ''), devices: x.devices | 0 })); b.innerHTML = pplForm(); } else b.innerHTML = '<h2>من فعّل التنبيهات؟</h2><p>هذه الميزة غير مفعّلة بعد في قاعدة البيانات، أو لا تملك صلاحية إدارة الموقع.</p>'; }); };
   const loadPush = () => { const box = $('#pushadm'); if (!box) return; TD.getPushStats().then(r => { const b = $('#pushadm'); if (!b || route().page !== 'site') return; b.innerHTML = r && typeof r === 'object' ? pushForm(r) : '<h2>إرسال تنبيه للجميع</h2><p>هذه الميزة غير مفعّلة بعد في قاعدة البيانات، أو لا تملك صلاحية إدارة الموقع.</p>'; }); };
 
   // بطاقة «عن مطوّر التطبيق»: الاسم والصفة والنبذة والصورة، تظهر في الموقع العام عند التفعيل فقط
@@ -341,8 +336,7 @@
     v.innerHTML = (Object.prototype.hasOwnProperty.call(V, page) ? V[page] : V.dash)(id);  // لا نقرأ مفاتيح النموذج الأولي (constructor…)
     if ((page === 'pitch' || page === 'coach') && window.CoachUI) CoachUI.bind(v, St.can('lineup'));
     if (page === 'players' && St.can('viewPlayers')) drawPlayers();
-    if (page === 'coach') loadRsvp();
-    if (page === 'site') { loadSite(); loadDev(); loadGal(); loadPush(); loadPpl(); }
+    if (page === 'site') { loadSite(); loadDev(); loadGal(); loadPush(); }
     if (page === 'finance' && St.can('finance')) loadFin();
     if (page === 'roles' && isFounder()) loadRoles();
     if (page === 'users' && isFounder()) loadUsers();
@@ -373,7 +367,6 @@
   v.addEventListener('change', e => {
     const t = e.target, d = t.dataset;
     if (t.id === 'fp' || t.id === 'fs') drawPlayers();
-    if (t.id === 'pplf') { pplFilter = t.value; const b = $('#pushppl'); if (b) b.innerHTML = pplForm(); }
     if (t.id === 'gvis') { fail(TD.setGalleryVisible(t.checked)).then(bad => { if (!bad) toast(SAVED); loadGal(); }); }
     if (t.id === 'ses') { sesId = t.value; render(); }
     if (t.id === 'finm') { finM = t.value; drawFin(); }
@@ -387,7 +380,6 @@
   v.addEventListener('click', e => {
     const t = e.target, d = t.dataset, id = t.id;
     if (d.as) { const ids = S.lineup.starters; if (ids.length >= 11) return toast('الحد الأقصى 11 لاعبًا'); fail(St.setStarters([...ids, d.as])); }
-    if (d.pcopy) { const link = location.origin + '/?n=' + encodeURIComponent(d.pcopy); (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(link) : Promise.reject()).then(() => toast('نُسخ الرابط'), () => toast('الرابط: ' + link)); }
     if (d.gd && confirm('حذف هذه الصورة من المعرض؟')) { const ph = ((galData && galData.photos) || []).find(x => x.id === d.gd); fail(TD.deleteGalleryPhoto(d.gd, ph && ph.path)).then(bad => { if (!bad) toast('تم الحذف'); loadGal(); }); }
     if (d.rs) fail(St.setStarters(S.lineup.starters.filter(x => x !== d.rs)));
     if (id === 'addp') playerForm();
@@ -399,11 +391,13 @@
     if (d.fe && FIN) finForm(null, (FIN.entries || []).find(x => x.id === d.fe));
     if (d.fd && confirm('حذف هذه المعاملة؟')) fail(St.delFinance(d.fd)).then(bad => { if (!bad) toast('تم الحذف'); });
     if (id === 'addses') sesForm();
+    if ((id === 'attall' || id === 'attnone') && curSes()) { const c = curSes(), on = id === 'attall', cur = S.att[c] || {}, ids = St.roster().filter(p => !!cur[p.id] !== on).map(p => p.id); if (!ids.length) return toast(on ? 'الجميع حاضرون' : 'لا أحد مسجَّل حاضرًا'); if (!on && !confirm('إلغاء حضور الجميع في هذه الحصة؟')) return; fail(St.setAttMany(c, ids, on)); }
+    if (id === 'attf') { attF = attF === 'no' ? 'all' : 'no'; render(); }
     if (id === 'edses' && curSes()) sesForm(curSes());
     if (id === 'callup' && curSes()) { const x = S.sessions.find(z => z.id === curSes()); if (!x) return;
       const when = new Date(x.date + 'T00:00:00Z').toLocaleDateString('ar', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }), body = [x.title, when, x.time ? clock12(x.time) : '', x.venue].filter(Boolean).join(' — ');
       if (!confirm('إرسال استدعاء لكل من فعّل التنبيهات؟\n\n' + body + '\n\nلا يمكن التراجع بعد الإرسال.')) return;
-      e.target.disabled = true; TD.sendPush('استدعاء للتدريب', body, '/#s-training').then(r => { e.target.disabled = false; toast(r.err ? r.err : 'أُرسل الاستدعاء: وصل ' + r.sent + ' وفشل ' + r.failed); }); }
+      e.target.disabled = true; TD.sendPush('استدعاء للتدريب', body, '/').then(r => { e.target.disabled = false; toast(r.err ? r.err : 'أُرسل الاستدعاء: وصل ' + r.sent + ' وفشل ' + r.failed); }); }
     if (id === 'delses' && curSes() && confirm('حذف هذه الحصة وكل سجلات حضورها؟')) { fail(St.delSession(curSes())).then(bad => { if (!bad) { sesId = ''; toast('تم الحذف'); } }); }
     if (id === 'adds') staffForm();
     if (d.es) staffForm(St.staffList().find(x => x.id === d.es));
