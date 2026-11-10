@@ -155,11 +155,7 @@
     const upcoming = String(x.date) >= new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Qatar' });
     const bits = [x.time ? clock12(x.time) : '', x.venue].filter(Boolean).map(esc).join(' — ');
     return `<div class="note" id="tinfo">${bits || 'لم يُحدَّد وقت أو ملعب لهذه الحصة بعد.'}${x.map && /^https:\/\//.test(x.map) ? ` — <a href="${esc(x.map)}" target="_blank" rel="noopener noreferrer">الخريطة</a>` : ''}</div>
-      <div class="card" id="rsvp"><h2>ردود اللاعبين على الحصة</h2><p class="empty">جارٍ التحميل…</p></div>${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إرسال استدعاء للفريق</button></div>' : ''}`; };
-  const loadRsvp = () => { const b = $('#rsvp'); if (!b) return; const id = curSes(); TD.getTrainingResponses(id).then(r => { const box = $('#rsvp'); if (!box || curSes() !== id) return;
-    if (!Array.isArray(r)) { box.innerHTML = '<h2>ردود اللاعبين على الحصة</h2><p class="empty">تعذّر تحميل الردود.</p>'; return; }
-    const g = k => r.filter(x => (x.status || '') === k), nm = l => l.length ? l.map(x => esc(x.name)).join('، ') : '—';
-    box.innerHTML = `<h2>ردود اللاعبين على الحصة</h2><p><b>حاضر (${g('yes').length}):</b> ${nm(g('yes'))}</p><p><b>معتذر (${g('no').length}):</b> ${nm(g('no'))}</p><p><b>لم يردّ (${g('').length}):</b> ${nm(g(''))}</p>`; }); };
+${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إرسال استدعاء للفريق</button></div>' : ''}`; };
   const sesForm = edit => { const x = edit ? S.sessions.find(z => z.id === edit) : null, ext = S.trainExt;
     modal(x ? 'تعديل الحصة' : 'إضافة حصة تدريب', fld('العنوان', 'title', x ? x.title : 'تدريب') + fld('التاريخ', 'date', x ? x.date : new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Qatar' }), 'date')
       + (ext ? fld('الوقت (بتوقيت قطر)', 'time', x ? x.time : '', 'time') + fld('اسم الملعب (اختياري)', 'venue', x ? x.venue : '', 'text', 'maxlength="100"') + fld('رابط الموقع على الخريطة (اختياري، يبدأ بـ https://)', 'map', x ? x.map : '', 'url', 'maxlength="300" dir="ltr"') : ''),
@@ -310,12 +306,6 @@
       <label class="f"><span>عند الضغط يفتح</span><select name="purl"><option value="/">الصفحة الرئيسية</option><option value="/#s-matches">المباريات والنتائج</option><option value="/#s-squad">اللاعبون</option><option value="/#s-gallery">معرض الصور</option></select></label><button>إرسال التنبيه</button></form>
       ${rec.length ? `<h3>آخر التنبيهات</h3><ul class="plist">${rec.map(x => `<li><b>${esc(x.title)}</b> — ${esc(x.body)}<small>${esc(new Date(x.at).toLocaleString('ar'))} · وصل ${x.sent | 0} · فشل ${x.failed | 0}${x.by ? ' · ' + esc(x.by) : ''}</small></li>`).join('')}</ul>` : ''}`; };
   // من فعّل التنبيهات ومن لم يفعّل: لكل لاعب وعضو إدارة رمز شخصي يكتبه في الموقع فيُربط جهازه باسمه
-  let pplData = [], pplFilter = 'all';
-  const pplForm = () => { const list = pplData.filter(x => pplFilter === 'all' || (pplFilter === 'on' ? x.devices > 0 : x.devices === 0)), on = pplData.filter(x => x.devices > 0).length;
-    return `<h2>من فعّل التنبيهات؟</h2><p class="muted">فعّل ${on} من ${pplData.length}. أعطِ كل شخص رمزه ليكتبه في صندوق التنبيهات بالموقع (أو أرسل له الرابط). الأجهزة التي فُعّلت بلا رمز تُحسب في عدد المشتركين لكنها لا تظهر هنا.</p>
-      <div class="secs"><label class="f"><span>عرض</span><select id="pplf"><option value="all" ${pplFilter === 'all' ? 'selected' : ''}>الكل</option><option value="off" ${pplFilter === 'off' ? 'selected' : ''}>لم يفعّلوا</option><option value="on" ${pplFilter === 'on' ? 'selected' : ''}>فعّلوا</option></select></label></div>
-      ${list.length ? `<ul class="plist">${list.map(x => `<li><b>${esc(x.name)}</b> <small>${x.kind === 'player' ? 'لاعب' : 'إدارة'}</small> — ${x.devices > 0 ? `<span class="ok">فعّل (${x.devices | 0} جهاز)</span>` : '<span class="no">لم يفعّل</span>'}<small>الرمز: <code>${esc(x.code)}</code> <button type="button" class="linkbtn" data-pcopy="${esc(x.code)}">نسخ الرابط</button></small></li>`).join('')}</ul>` : '<p class="muted">لا أحد في هذه القائمة.</p>'}`; };
-  const loadPpl = () => { const box = $('#pushppl'); if (!box) return; TD.getPushRoster().then(r => { const b = $('#pushppl'); if (!b || route().page !== 'site') return; if (r && typeof r === 'object' && Array.isArray(r.people)) { pplData = r.people.map(x => ({ kind: x.kind === 'member' ? 'member' : 'player', name: String(x.name || ''), code: String(x.code || ''), devices: x.devices | 0 })); b.innerHTML = pplForm(); } else b.innerHTML = '<h2>من فعّل التنبيهات؟</h2><p>هذه الميزة غير مفعّلة بعد في قاعدة البيانات، أو لا تملك صلاحية إدارة الموقع.</p>'; }); };
   const loadPush = () => { const box = $('#pushadm'); if (!box) return; TD.getPushStats().then(r => { const b = $('#pushadm'); if (!b || route().page !== 'site') return; b.innerHTML = r && typeof r === 'object' ? pushForm(r) : '<h2>إرسال تنبيه للجميع</h2><p>هذه الميزة غير مفعّلة بعد في قاعدة البيانات، أو لا تملك صلاحية إدارة الموقع.</p>'; }); };
 
   // بطاقة «عن مطوّر التطبيق»: الاسم والصفة والنبذة والصورة، تظهر في الموقع العام عند التفعيل فقط
@@ -341,8 +331,7 @@
     v.innerHTML = (Object.prototype.hasOwnProperty.call(V, page) ? V[page] : V.dash)(id);  // لا نقرأ مفاتيح النموذج الأولي (constructor…)
     if ((page === 'pitch' || page === 'coach') && window.CoachUI) CoachUI.bind(v, St.can('lineup'));
     if (page === 'players' && St.can('viewPlayers')) drawPlayers();
-    if (page === 'coach') loadRsvp();
-    if (page === 'site') { loadSite(); loadDev(); loadGal(); loadPush(); loadPpl(); }
+    if (page === 'site') { loadSite(); loadDev(); loadGal(); loadPush(); }
     if (page === 'finance' && St.can('finance')) loadFin();
     if (page === 'roles' && isFounder()) loadRoles();
     if (page === 'users' && isFounder()) loadUsers();
@@ -373,7 +362,6 @@
   v.addEventListener('change', e => {
     const t = e.target, d = t.dataset;
     if (t.id === 'fp' || t.id === 'fs') drawPlayers();
-    if (t.id === 'pplf') { pplFilter = t.value; const b = $('#pushppl'); if (b) b.innerHTML = pplForm(); }
     if (t.id === 'gvis') { fail(TD.setGalleryVisible(t.checked)).then(bad => { if (!bad) toast(SAVED); loadGal(); }); }
     if (t.id === 'ses') { sesId = t.value; render(); }
     if (t.id === 'finm') { finM = t.value; drawFin(); }
@@ -387,7 +375,6 @@
   v.addEventListener('click', e => {
     const t = e.target, d = t.dataset, id = t.id;
     if (d.as) { const ids = S.lineup.starters; if (ids.length >= 11) return toast('الحد الأقصى 11 لاعبًا'); fail(St.setStarters([...ids, d.as])); }
-    if (d.pcopy) { const link = location.origin + '/?n=' + encodeURIComponent(d.pcopy); (navigator.clipboard && navigator.clipboard.writeText ? navigator.clipboard.writeText(link) : Promise.reject()).then(() => toast('نُسخ الرابط'), () => toast('الرابط: ' + link)); }
     if (d.gd && confirm('حذف هذه الصورة من المعرض؟')) { const ph = ((galData && galData.photos) || []).find(x => x.id === d.gd); fail(TD.deleteGalleryPhoto(d.gd, ph && ph.path)).then(bad => { if (!bad) toast('تم الحذف'); loadGal(); }); }
     if (d.rs) fail(St.setStarters(S.lineup.starters.filter(x => x !== d.rs)));
     if (id === 'addp') playerForm();
@@ -403,7 +390,7 @@
     if (id === 'callup' && curSes()) { const x = S.sessions.find(z => z.id === curSes()); if (!x) return;
       const when = new Date(x.date + 'T00:00:00Z').toLocaleDateString('ar', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }), body = [x.title, when, x.time ? clock12(x.time) : '', x.venue].filter(Boolean).join(' — ');
       if (!confirm('إرسال استدعاء لكل من فعّل التنبيهات؟\n\n' + body + '\n\nلا يمكن التراجع بعد الإرسال.')) return;
-      e.target.disabled = true; TD.sendPush('استدعاء للتدريب', body, '/#s-training').then(r => { e.target.disabled = false; toast(r.err ? r.err : 'أُرسل الاستدعاء: وصل ' + r.sent + ' وفشل ' + r.failed); }); }
+      e.target.disabled = true; TD.sendPush('استدعاء للتدريب', body, '/').then(r => { e.target.disabled = false; toast(r.err ? r.err : 'أُرسل الاستدعاء: وصل ' + r.sent + ' وفشل ' + r.failed); }); }
     if (id === 'delses' && curSes() && confirm('حذف هذه الحصة وكل سجلات حضورها؟')) { fail(St.delSession(curSes())).then(bad => { if (!bad) { sesId = ''; toast('تم الحذف'); } }); }
     if (id === 'adds') staffForm();
     if (d.es) staffForm(St.staffList().find(x => x.id === d.es));

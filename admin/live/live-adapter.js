@@ -201,8 +201,6 @@
     },
     // ---- إشعارات الدفع (0019 + Edge Function push-send) ----
     getPushStats: () => rpc('rpc_push_stats'),
-    getPushRoster: () => rpc('rpc_push_roster'),
-    getTrainingResponses: id => rpc('rpc_training_responses', { p_session: id }),
     async sendPush(title, body, url) {
       try {
         const { data, error } = await sb.functions.invoke('push-send', { body: { title, body, url } });
