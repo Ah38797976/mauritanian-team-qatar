@@ -29,9 +29,12 @@
   const venueHtml = m => { const v = venueOf(m), u = mapOf(m); if (!v && !u) return ''; const t = v ? esc(v) : 'موقع الملعب'; return u ? `<a class="vc vn vl" href="${esc(u)}" target="_blank" rel="noopener noreferrer" aria-label="${esc((v || 'الملعب') + ' — فتح الموقع في الخريطة')}"><span class="vc-i">${PIN}</span><span class="vc-go">افتح الخريطة${GO}</span><span class="vc-t"><small>الملعب</small><b>${t}</b></span></a>` : `<div class="vc vn"><span class="vc-i">${PIN}</span><span class="vc-t"><small>الملعب</small><b>${t}</b></span></div>`; };
   // شعار الخصم (اختياري): مسار تخزين من الخادم فقط، يمر عبر photoUrl نفسه
   const logoImg = (m, cls, alt) => { const u = photoUrl(m.logo); return u ? `<img class="${cls}" src="${esc(u)}" alt="${esc(alt)}" decoding="async" loading="lazy">` : ''; };
+  // علم موريتانيا لفريقنا (رسم مضمّن ثابت بلا أي مدخلات خارجية)
+  const MR_FLAG = '<svg viewBox="0 0 60 40" aria-hidden="true" focusable="false"><rect width="60" height="40" fill="#00a95c"/><rect width="60" height="5.5" fill="#d01c1f"/><rect y="34.5" width="60" height="5.5" fill="#d01c1f"/><g fill="#ffd700"><path d="M19.5 15.5A10.5 10.5 0 0 0 40.5 15.5A13.5 13.5 0 0 1 19.5 15.5Z"/><polygon points="30.00,9.40 30.90,12.16 33.80,12.16 31.45,13.87 32.35,16.64 30.00,14.93 27.65,16.64 28.55,13.87 26.20,12.16 29.10,12.16"/></g></svg>';
+  const ownFlag = cls => `<span class="${cls} mrf" role="img" aria-label="علم موريتانيا">${MR_FLAG}</span>`;
   const matchCard = m => {
     const [A, B] = sides(m), r = m.played ? outcome(m) : ['u', 'قادمة'];
-    const us = esc(TEAM), badge = (name, ours) => { const lg = ours ? '' : logoImg(m, 'tbi', ''); return `<i class="tb${ours ? ' us' : lg ? ' lg' : ''}" aria-hidden="true">${lg || ini(name)}</i>`; };
+    const us = esc(TEAM), badge = (name, ours) => { const lg = ours ? MR_FLAG : logoImg(m, 'tbi', ''); return `<i class="tb${ours ? ' us lg' : lg ? ' lg' : ''}" aria-hidden="true">${lg || ini(name)}</i>`; };
     const [nA, nB] = m.home ? [TEAM, m.opp] : [m.opp, TEAM];
     // الرقمان بترتيب الفريقين نفسه (الأول من اليمين)، فيجاور كل رقم فريقه
     const mid = m.played ? `<span class="sc"><b>${m.home ? num(m.us) : num(m.them)}</b><em>-</em><b>${m.home ? num(m.them) : num(m.us)}</b></span>` : '<span class="mid">VS</span>';
@@ -146,7 +149,7 @@
     if (sc && sc.rows[0]) st.push([num(sc.rows[0].goals), 'أهداف الهداف']);
     $('#stats').innerHTML = st.map(([n, l]) => `<div class="stat"><b>${num(n)}</b><span>${esc(l)}</span></div>`).join('');
     const next = ms && ms.matches.filter(m => !m.played).sort((a, b) => String(a.date).localeCompare(String(b.date)))[0], h = $('#heroNext');
-    if (next) { const [A, B] = sides(next); h.innerHTML = `<div class="lbl"><span>المباراة القادمة</span><span class="pill">${esc(untilLabel(next.date))}</span></div><div class="vs"><span class="tm">${next.home ? '' : logoImg(next, 'hl', next.opp)}${A}</span><span class="mid">×</span><span class="tm">${next.home ? logoImg(next, 'hl', next.opp) : ''}${B}</span></div><div class="meta"><span>${longDate(next.date)}</span>${clock(next.time) ? `<span>${clock(next.time)}</span>` : ''}<span>${where(next)}</span>${venueHtml(next)}</div>`; h.hidden = false; }
+    if (next) { const [A, B] = sides(next); h.innerHTML = `<div class="lbl"><span>المباراة القادمة</span><span class="pill">${esc(untilLabel(next.date))}</span></div><div class="vs"><span class="tm">${next.home ? ownFlag('hl') : logoImg(next, 'hl', next.opp)}${A}</span><span class="mid">×</span><span class="tm">${next.home ? logoImg(next, 'hl', next.opp) : ownFlag('hl')}${B}</span></div><div class="meta"><span>${longDate(next.date)}</span>${clock(next.time) ? `<span>${clock(next.time)}</span>` : ''}<span>${where(next)}</span>${venueHtml(next)}</div>`; h.hidden = false; }
     else { h.innerHTML = ''; h.hidden = true; }
   }
   // عدد عناصر القسم (شارة بجانب العنوان)

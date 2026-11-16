@@ -274,3 +274,10 @@ a.vc:focus-visible{outline:3px solid var(--gold-ink);outline-offset:2px}
 .card.m .tb .tbi{width:100%;height:100%;object-fit:contain;padding:5px;box-sizing:border-box;display:block}
 .hero-card .vs .tm{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px}
 .hero-card .vs .hl{width:56px;height:56px;object-fit:contain;padding:6px;box-sizing:border-box;border-radius:50%;background:#fff;border:2px solid var(--paper-line);box-shadow:0 2px 8px rgba(11,42,27,.12)}
+
+/* علم موريتانيا لفريقنا */
+.card.m .tb.us.lg{border-color:var(--gold)}
+.card.m .tb svg{width:100%;height:100%;padding:7px 5px;box-sizing:border-box;display:block}
+.card.m .tb svg rect:first-child,.hero-card .vs .mrf svg{border-radius:2px}
+.hero-card .vs .mrf{display:grid;place-items:center;border-color:var(--gold)}
+.hero-card .vs .mrf svg{width:100%;height:auto;display:block}
