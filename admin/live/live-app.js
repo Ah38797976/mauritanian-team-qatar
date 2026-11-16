@@ -338,7 +338,7 @@ ${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إر�
   V.settings = () => { const t = St.team(), ed = St.can('settings'); return `<h1>إعدادات الفريق</h1><div class="card"><form id="tf">${fld('اسم الفريق', 'name', t.name, 'text', ed ? '' : 'disabled')}${fld('المدينة', 'city', t.city, 'text', ed ? '' : 'disabled')}${fld('اللون الرئيسي', 'color', t.color, 'color', ed ? '' : 'disabled')}<small class="hint">يظهر هذا اللون في الموقع العام فقط، ولا يغيّر ألوان لوحة الإدارة.</small>${ed ? '<button>حفظ</button>' : '<small>عرض فقط</small>'}</form></div>`; };
   // إدارة الموقع العام: ما تفعّله هنا يظهر للزوار في الموقع؛ وما تُطفئه يختفي. لا هواتف ولا بريد ولا مدن في الموقع أبدًا (الخادم يرجع قائمة بيضاء فقط).
   const SEC = [['players', 'اللاعبون', 'الاسم والرقم والمركز فقط'], ['staff', 'الطاقم', 'الاسم والدور فقط'], ['matches', 'المباريات والنتائج', 'الخصم والتاريخ والنتيجة'], ['stats', 'الهدافون', 'الاسم والأهداف والمشاركات'], ['photos', 'صور اللاعبين', 'تظهر صورة كل لاعب في الملعب وبطاقته؛ الصور المرفوعة تصبح قابلة للفتح برابطها العام']];
-  V.site = () => { if (!isPanelUser() || !St.can('settings')) return denied('إدارة الموقع العام'); return `<h1>إدارة الموقع العام</h1><div class="note">يظهر في الموقع ما تفعّله هنا فقط. كل الأقسام مطفأة افتراضيًا. لا يُنشر في الموقع أي هاتف أو بريد أو مدينة لأي لاعب أو عضو.</div><div class="card" id="sitebox"><p>جارٍ التحميل…</p></div><div class="card" id="devbox"><p>جارٍ التحميل…</p></div><div class="card" id="gallerybox"><p>جارٍ التحميل…</p></div><div class="card" id="pushadm"><p>جارٍ التحميل…</p></div>`; };
+  V.site = () => { if (!isPanelUser() || !St.can('settings')) return denied('إدارة الموقع العام'); return `<h1>إدارة الموقع العام</h1><div class="note">يظهر في الموقع ما تفعّله هنا فقط. كل الأقسام مطفأة افتراضيًا. لا يُنشر في الموقع أي هاتف أو بريد أو مدينة لأي لاعب أو عضو.</div><div class="card" id="sitebox"><p>جارٍ التحميل…</p></div><div class="card" id="devbox"><p>جارٍ التحميل…</p></div><div class="card" id="gallerybox"><p>جارٍ التحميل…</p></div><div class="card" id="logosbox"><p>جارٍ التحميل…</p></div><div class="card" id="pushadm"><p>جارٍ التحميل…</p></div>`; };
   const siteForm = r => { const s = r.sections || {};
     return `<div class="row between"><h2>محتوى الموقع</h2><a class="btnlink" href="../../" target="_blank" rel="noopener">عرض الموقع ↗</a></div><form id="sf"><label class="f"><span>نبذة عن الفريق (اختيارية)</span><textarea name="about" rows="3" maxlength="500">${esc(r.about)}</textarea></label><label class="f"><span>إعلان أعلى الموقع (اختياري)</span><input name="announcement" maxlength="200" value="${esc(r.announcement)}"></label><h2>الأقسام الظاهرة في الموقع</h2><div class="secs">${SEC.map(([k, l, n]) => `<label class="ck"><input type="checkbox" name="sec_${esc(k)}" ${s[k] === true ? 'checked' : ''}><span><b>${esc(l)}</b><small>${esc(n)}</small></span></label>`).join('')}</div><button>حفظ الموقع</button></form>`; };
   const loadSite = () => { const box = $('#sitebox'); if (!box) return; TD.getSite().then(r => { const b = $('#sitebox'); if (!b || route().page !== 'site') return; b.innerHTML = r && typeof r === 'object' ? siteForm(r) : '<p>تعذّر تحميل إعدادات الموقع أو لا تملك الصلاحية.</p>'; }); };
@@ -356,6 +356,23 @@ ${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إر�
       ${ph.length ? `<div class="galgrid">${ph.map(x => `<figure class="galtile"><img src="${esc(TD.devPhotoUrl(x.path))}" alt="" loading="lazy"><button type="button" class="galx" data-gd="${esc(x.id)}" aria-label="حذف الصورة">×</button>${x.caption ? `<figcaption>${esc(x.caption)}</figcaption>` : ''}</figure>`).join('')}</div>` : '<p class="muted">لا توجد صور بعد.</p>'}
       <form id="gf"><label class="f"><span>إضافة صور (يمكن اختيار أكثر من صورة)</span><input type="file" name="gphotos" accept="image/jpeg,image/png,image/webp" multiple></label>${fld('تعليق (اختياري، يُطبَّق على كل الصور المرفوعة الآن)', 'gcap', '', 'text', 'maxlength="80"')}<button>رفع الصور</button></form>`; };
   const loadGal = () => { const box = $('#gallerybox'); if (!box) return; TD.getGallery().then(g => { const b = $('#gallerybox'); if (!b || route().page !== 'site') return; b.innerHTML = g && typeof g === 'object' ? galForm(g) : '<h2>معرض صور الفريق</h2><p>هذه الميزة غير مفعّلة بعد في قاعدة البيانات، أو لا تملك صلاحية إدارة الموقع.</p>'; }); };
+
+  // شعارات الفرق المنافسة: علم/شعار لكل خصم يُرفع مرة واحدة ويظهر في كل مبارياته بالموقع العام (مصغّر إلى 400px بلا قصّ، PNG)
+  const lgKey = n => String(n || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  const shrinkLogo = async file => {
+    const im = await loadImg(await readUrl(file)), k = Math.min(1, 400 / Math.max(im.naturalWidth, im.naturalHeight)), w = Math.max(1, Math.round(im.naturalWidth * k)), h = Math.max(1, Math.round(im.naturalHeight * k));
+    const c = document.createElement('canvas'); c.width = w; c.height = h; c.getContext('2d').drawImage(im, 0, 0, w, h);
+    const b = await new Promise(r => c.toBlob(r, 'image/png')); if (!b || b.size > 1900000) throw new Error('blob'); return new File([b], 'logo.png', { type: 'image/png' });
+  };
+  let logoData = [];
+  const logoForm = list => { logoData = Array.isArray(list) ? list : [];
+    const by = new Map(logoData.map(x => [x.key, x])), names = new Map();
+    for (const m of St.visibleMatches()) { const n = String(m.opp || '').trim().replace(/\s+/g, ' '); if (n && !names.has(lgKey(n))) names.set(lgKey(n), n); }
+    for (const x of logoData) if (!names.has(x.key)) names.set(x.key, x.name);
+    const rows = [...names].map(([k, n]) => { const L = by.get(k);
+      return `<div class="lgrow"><span class="lgav">${L ? `<img src="${esc(TD.devPhotoUrl(L.path))}" alt="">` : ini(n)}</span><b class="lgn">${esc(n)}</b><label class="btnlink lgup">${L ? 'تغيير' : 'رفع شعار'}<input type="file" accept="image/jpeg,image/png,image/webp" data-lgf="${esc(n)}" aria-label="رفع شعار ${esc(n)}"></label>${L ? `<button type="button" class="galx lgx" data-lgd="${esc(n)}" aria-label="حذف شعار ${esc(n)}">×</button>` : ''}</div>`; });
+    return `<h2>شعارات الفرق المنافسة</h2><p class="muted">ارفع علم أو شعار كل فريق مرة واحدة ويظهر في كل مبارياته بالموقع العام. تظهر هنا أسماء الخصوم من المباريات المسجّلة.</p>${rows.length ? `<div class="lglist">${rows.join('')}</div>` : '<p class="muted">أضف مباراة أولًا لتظهر أسماء الفرق هنا.</p>'}`; };
+  const loadLogos = () => { const box = $('#logosbox'); if (!box) return; TD.getOpponentLogos().then(l => { const b = $('#logosbox'); if (!b || route().page !== 'site') return; b.innerHTML = Array.isArray(l) ? logoForm(l) : '<h2>شعارات الفرق المنافسة</h2><p>هذه الميزة غير مفعّلة بعد في قاعدة البيانات، أو لا تملك صلاحية إدارة الموقع.</p>'; }); };
 
   // إرسال تنبيه (Web Push) لكل من فعّل التنبيهات في الموقع
   let pushCount = 0;
@@ -390,7 +407,7 @@ ${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إر�
     v.innerHTML = (Object.prototype.hasOwnProperty.call(V, page) ? V[page] : V.dash)(id);  // لا نقرأ مفاتيح النموذج الأولي (constructor…)
     if ((page === 'pitch' || page === 'coach') && window.CoachUI) CoachUI.bind(v, St.can('lineup'));
     if (page === 'players' && St.can('viewPlayers')) drawPlayers();
-    if (page === 'site') { loadSite(); loadDev(); loadGal(); loadPush(); }
+    if (page === 'site') { loadSite(); loadDev(); loadGal(); loadLogos(); loadPush(); }
     if (page === 'finance' && St.can('finance')) loadFin();
     if (page === 'roles' && isFounder()) loadRoles();
     if (page === 'users' && isFounder()) loadUsers();
@@ -421,6 +438,8 @@ ${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إر�
   v.addEventListener('change', e => {
     const t = e.target, d = t.dataset;
     if (t.id === 'fp' || t.id === 'fs') drawPlayers();
+    if (d.lgf !== undefined && t.files && t.files[0]) { const f = t.files[0], nm = d.lgf, old = (logoData.find(x => x.key === lgKey(nm)) || {}).path; t.disabled = true; toast('جارٍ الرفع…');
+      (async () => { let er = '', up; try { up = await shrinkLogo(f); } catch (_) { er = 'تعذّر قراءة الصورة'; } if (up) er = await TD.setOpponentLogo(nm, up, old); toast(er || SAVED); loadLogos(); })(); }
     if (t.id === 'gvis') { fail(TD.setGalleryVisible(t.checked)).then(bad => { if (!bad) toast(SAVED); loadGal(); }); }
     if (t.id === 'ses') { sesId = t.value; render(); }
     if (t.id === 'finm') { finM = t.value; drawFin(); }
@@ -434,6 +453,7 @@ ${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إر�
   v.addEventListener('click', e => {
     const t = e.target, d = t.dataset, id = t.id;
     if (d.as) { const ids = S.lineup.starters; if (ids.length >= 11) return toast('الحد الأقصى 11 لاعبًا'); fail(St.setStarters([...ids, d.as])); }
+    if (d.lgd && confirm('حذف شعار فريق «' + d.lgd + '»؟')) { const L = logoData.find(x => x.key === lgKey(d.lgd)); fail(TD.deleteOpponentLogo(d.lgd, L && L.path)).then(bad => { if (!bad) toast('تم الحذف'); loadLogos(); }); }
     if (d.gd && confirm('حذف هذه الصورة من المعرض؟')) { const ph = ((galData && galData.photos) || []).find(x => x.id === d.gd); fail(TD.deleteGalleryPhoto(d.gd, ph && ph.path)).then(bad => { if (!bad) toast('تم الحذف'); loadGal(); }); }
     if (d.rs) fail(St.setStarters(S.lineup.starters.filter(x => x !== d.rs)));
     if (id === 'addp') playerForm();

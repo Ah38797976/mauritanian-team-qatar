@@ -11,6 +11,7 @@
   const DB = M.db = { formation: init.formation || '4-4-2', players: P.map(([id, name, n, pos, st]) => ({ id, name, shirt_number: n, position: pos, city: 'الدوحة', status: st || 'active' })),
     starters: init.starters || [['gk1', 1], ['d1', 2], ['d2', 3], ['d3', 4], ['d4', 5], ['m1', 6], ['m2', 7], ['m3', 8], ['m4', 9], ['f1', 10], ['m5', 11]].map(([player_id, slot]) => ({ player_id, slot, is_captain: player_id === 'd1', is_goalkeeper: player_id === 'gk1' })) };
   const DEV = M.dev = Object.assign({ name: '', title: '', bio: '', photo: null, visible: false }, init.dev || {});
+  const LOGOS = M.logos = (init.logos || []).slice();   // 0028
   const GAL = M.gal = { visible: false, n: 0, photos: [], ...(init.gal || {}) };
   const pl = id => DB.players.find(p => p.id === id);
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -58,6 +59,8 @@
       DB.starters = st.filter(s => pl(s.player_id).position !== 'gk' || s.player_id === x.id); if (!DB.starters.some(s => s.player_id === x.id)) DB.starters.push({ player_id: x.id, slot: 1, is_captain: false, is_goalkeeper: true }); return '';
     }
     if (name === 'rpc_save_developer') { if (!a.s.name.trim() && a.s.visible) return 'اكتب الاسم قبل إظهار القسم في الموقع'; Object.assign(DEV, { name: a.s.name, title: a.s.title, bio: a.s.bio, visible: a.s.visible }); return ''; }
+    if (name === 'rpc_set_opponent_logo') { const k = String(a.p_name).trim().replace(/\s+/g, ' ').toLowerCase(); const i = LOGOS.findIndex(x => x.key === k); const row = { name: String(a.p_name).trim(), key: k, path: a.p_path }; if (i >= 0) LOGOS[i] = row; else LOGOS.push(row); return ''; }
+    if (name === 'rpc_delete_opponent_logo') { const k = String(a.p_name).trim().replace(/\s+/g, ' ').toLowerCase(), keep = LOGOS.filter(x => x.key !== k), removed = keep.length !== LOGOS.length; LOGOS.length = 0; LOGOS.push(...keep); return removed ? '' : 'الشعار غير موجود'; }
     if (name === 'rpc_set_developer_photo') { DEV.photo = a.p_path; return ''; }
     if (name === 'rpc_delete_developer_photo') { DEV.photo = null; return ''; }
     if (name === 'rpc_set_gallery_visible') { GAL.visible = a.p_visible; return ''; }
@@ -72,6 +75,7 @@
     if (name === 'rpc_get_roster') return { data: DB.players.map(p => ({ id: p.id, name: p.name, num: p.shirt_number, pos: p.position, status: p.status })), error: null };
     if (name === 'rpc_get_stat_rows') return { data: [], error: null };
     M.calls.push({ name, args: JSON.parse(JSON.stringify(a || {})) });
+    if (name === 'rpc_get_opponent_logos') return M.logosMissing ? { data: null, error: { code: 'PGRST202', message: 'missing' } } : { data: JSON.parse(JSON.stringify(LOGOS)), error: null };
     if (name === 'rpc_get_gallery') return M.galMissing ? { data: null, error: { code: 'PGRST202', message: 'missing' } } : { data: JSON.parse(JSON.stringify({ visible: GAL.visible, photos: GAL.photos })), error: null };
     if (name === 'rpc_push_stats') return M.pushMissing ? { data: null, error: { code: 'PGRST202', message: 'missing' } } : { data: { subscribers: M.pushSubs == null ? 3 : M.pushSubs, recent: M.pushRecent || [] }, error: null };
     if (name === 'rpc_training_responses') return { data: M.noTrainExt ? null : [{ id: 'p1', name: 'لاعب ١', status: 'yes' }, { id: 'p2', name: 'لاعب ٢', status: 'no' }, { id: 'p3', name: 'لاعب ٣', status: null }], error: null };
