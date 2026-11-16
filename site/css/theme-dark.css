@@ -293,3 +293,17 @@ a.vc:focus-visible{outline:3px solid var(--gold-ink);outline-offset:2px}
 .nt-f{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding-top:8px;border-top:1px dashed var(--paper-line);font-size:.8rem;color:var(--paper-mut)}
 .nt-go{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border-radius:99px;background:var(--gold);color:#2b2000;font-weight:800;text-decoration:none}
 .nt-go:focus-visible{outline:3px solid var(--gold-ink);outline-offset:2px}
+
+/* شريط التنبيه الثابت (يبقى في أعلى الصفحة حتى يُفتح قسم التنبيهات) */
+.ntbar{position:sticky;top:0;z-index:40;padding:8px 12px 0;pointer-events:none}
+.ntbar[hidden]{display:none}
+body.sec-open .ntbar{display:none}
+.nt-banner{pointer-events:auto;display:flex;align-items:center;gap:12px;max-width:720px;margin:0 auto;min-height:56px;padding:8px 12px;border-radius:16px;background:var(--gold);color:#2b2000;text-decoration:none;box-shadow:0 8px 24px rgba(0,0,0,.45);animation:ntpulse 2.4s ease-in-out infinite}
+.nt-banner:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.nt-banner .nt-ic{background:#0b2a1b;box-shadow:none}
+.nt-bt{flex:1;min-width:0;display:flex;flex-direction:column}
+.nt-bt b{font-size:1rem;font-weight:900}
+.nt-bt small{font-size:.82rem;font-weight:700;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nt-open{flex:none;padding:7px 16px;border-radius:99px;background:#0b2a1b;color:var(--gold);font-size:.85rem;font-weight:800}
+@keyframes ntpulse{0%,100%{box-shadow:0 8px 24px rgba(0,0,0,.45),0 0 0 0 rgba(212,175,79,.5)}50%{box-shadow:0 8px 24px rgba(0,0,0,.45),0 0 0 8px rgba(212,175,79,0)}}
+@media (prefers-reduced-motion:reduce){.nt-banner{animation:none}}

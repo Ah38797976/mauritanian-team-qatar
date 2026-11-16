@@ -123,7 +123,7 @@
     developer: s => { const d = s.dev, im = photo({ photo: d.photo }, d.name);
       return `<div class="card devcard"><div class="dev-pic">${im || `<span>${ini(d.name)}</span>`}</div><div class="dev-txt"><b class="dev-n">${esc(d.name)}</b>${d.title ? `<span class="dev-t">${esc(d.title)}</span>` : ''}${d.bio ? `<p>${esc(d.bio)}</p>` : ''}</div></div>`; },
     // التنبيهات المرسلة: عنوان + نص + وقت (بتوقيت قطر) + زر اختياري لمسار داخلي معروف فقط
-    notices: s => `<div class="nt-list">${s.items.map(n => `<article class="card nt"><div class="nt-top"><span class="nt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${NAVI.notices}"/></svg></span><b class="nt-t">${esc(n.title)}</b></div><p class="nt-b">${esc(n.body)}</p><div class="nt-f"><time datetime="${esc(n.at)}">${esc(n.when)}</time>${n.go ? `<a class="nt-go" href="${esc(n.go[0])}">${esc(n.go[1])}</a>` : ''}</div></article>`).join('')}</div>`,
+    notices: s => `<div class="nt-list">${s.items.map(n => `<article class="card nt" data-id="${n.id}"><div class="nt-top"><span class="nt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${NAVI.notices}"/></svg></span><b class="nt-t">${esc(n.title)}</b></div><p class="nt-b">${esc(n.body)}</p><div class="nt-f"><time datetime="${esc(n.at)}">${esc(n.when)}</time>${n.go ? `<a class="nt-go" href="${esc(n.go[0])}">${esc(n.go[1])}</a>` : ''}</div></article>`).join('')}</div>`,
     squad: s => squadHtml(s),
     staff: s => {
       SF = s.staff; if (!SF.length) return '<p class="empty">لا أعضاء بعد.</p>';
@@ -158,9 +158,17 @@
   const secCount = s => { const n = s.key === 'squad' ? s.players.length : s.key === 'staff' ? s.staff.length : s.key === 'matches' ? s.matches.length : s.key === 'scorers' ? s.rows.length : s.key === 'gallery' ? s.items.length : s.key === 'notices' ? s.items.length : 0; return n > 0 ? n : 0; };
   // الصفحة الرئيسية = بطاقات الأقسام (خانات). لمس خانة يفتح محتواها وحدها (#s-<قسم>)، وزر «الرئيسية» أو #home يرجع للخانات.
   const UNIT = { squad: 'لاعبًا', staff: 'عضوًا', matches: 'مباراة', scorers: 'هدّافًا', gallery: 'صورة', notices: 'تنبيهًا' };
+  // التنبيهات: ما لم يُفتح يبقى ثابتًا (شريط أعلى الصفحة + بلاطة) وبعد فتح القسم يُحفظ «مشاهَد» على هذا الجهاز ويختفي
+  const SEEN_KEY = 'mt.notices.seen.v1';
+  const memSeen = new Set();   // احتياط إن كان التخزين المحلي محجوبًا: يبقى «المشاهَد» في هذه الجلسة على الأقل
+  const seenSet = () => { const st = new Set(memSeen); try { const a = JSON.parse(localStorage.getItem(SEEN_KEY) || '[]'); if (Array.isArray(a)) a.forEach(i => { if (Number.isInteger(i)) st.add(i); }); } catch (_) {} return st; };
+  const markSeen = ids => { ids.forEach(i => { if (Number.isInteger(i)) memSeen.add(i); }); try { localStorage.setItem(SEEN_KEY, JSON.stringify([...seenSet()].slice(-200))); } catch (_) {} };
+  let lastSnap = null, ntWas = false, openIds = [];
   const route = () => {
     const secsEl = [...document.querySelectorAll('#sv > section.sec')], m = /^#s-([a-z]+)$/.exec(location.hash), cur = m && secsEl.find(e => e.id === 'sv-' + m[1] || e.id === 's-' + m[1]);
     secsEl.forEach(e => e.classList.toggle('cur', e === cur)); document.body.classList.toggle('sec-open', !!cur);
+    if (cur && cur.id === 's-notices') { openIds = [...cur.querySelectorAll('.nt')].map(e => +e.dataset.id); markSeen(openIds); ntWas = true; }
+    else if (ntWas) { ntWas = false; if (lastSnap) { draw(lastSnap); return; } }
     document.querySelectorAll('#snav a').forEach(a => { const on = cur ? a.getAttribute('href') === '#' + cur.id : a.getAttribute('href') === '#home'; a.classList.toggle('on', on); if (on) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current'); });
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
@@ -174,7 +182,10 @@
     ['#bname', '#tname', '#fname'].forEach(i => { $(i).textContent = TEAM; });
     $('#tcity').textContent = d.team.city || '';
     const a = $('#ann'); a.textContent = d.announcement || ''; a.hidden = !d.announcement;
-    const secs = d.sections.filter(s => Object.prototype.hasOwnProperty.call(R, s.key));
+    lastSnap = snap; const seen = seenSet(); if (location.hash === '#s-notices') openIds.forEach(i => seen.delete(i));
+    const secs = d.sections.filter(s => Object.prototype.hasOwnProperty.call(R, s.key)).map(s => s.key === 'notices' ? { ...s, items: s.items.filter(n => !seen.has(n.id)) } : s).filter(s => s.key !== 'notices' || s.items.length);
+    const ns = secs.find(s => s.key === 'notices'), bar = $('#ntbar');
+    if (ns) { bar.innerHTML = `<a class="nt-banner" href="#s-notices"><span class="nt-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${NAVI.notices}"/></svg></span><span class="nt-bt"><b>${ns.items.length > 1 ? ns.items.length + ' تنبيهات جديدة' : 'تنبيه جديد'}</b><small>${esc(ns.items[0].title)}</small></span><span class="nt-open">افتح</span></a>`; bar.hidden = false; } else { bar.innerHTML = ''; bar.hidden = true; }
     $('#snav').innerHTML = `<a href="#home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></svg><span>الرئيسية</span></a>` + secs.map(s => `<a href="#s-${esc(s.key)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${NAVI[s.key] || NAVI.about}"/></svg><span>${esc(s.label)}</span></a>`).join('');
     $('#sv').innerHTML = secs.length ? `<nav class="tiles" aria-label="الأقسام">${secs.map(s => { const n = secCount(s); return `<a class="tile" href="#s-${esc(s.key)}"><span class="sec-i" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${NAVI[s.key] || NAVI.about}"/></svg></span><b class="tile-t">${esc(s.label)}</b><small class="tile-n">${n ? n + ' ' + (UNIT[s.key] || '') : 'عرض'}</small></a>`; }).join('')}</nav>` + secs.map(s => { const n = secCount(s); return `<section class="sec" id="s-${esc(s.key)}"><a class="sec-back" href="#home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg><span>الرئيسية</span></a><h2 class="sec-h"><span class="sec-i" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="${NAVI[s.key] || NAVI.about}"/></svg></span><span class="sec-t">${esc(s.label)}</span>${n ? `<em class="sec-n">${n}</em>` : ''}</h2>${R[s.key](s)}</section>`; }).join('') : '<p class="empty">لا توجد أقسام ظاهرة حاليًا.</p>';
     hero(d, secs); route();
@@ -213,7 +224,7 @@
   document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('.galt'); if (!b) return; const all = [...document.querySelectorAll('.galt')]; lightbox.open(all.map(x => ({ url: x.querySelector('img').src, caption: x.querySelector('img').alt })), all.indexOf(b)); });
   const NT_GO = { '/#s-matches': 'المباريات والنتائج', '/#s-squad': 'اللاعبون', '/#s-gallery': 'معرض الصور', '/#s-staff': 'الطاقم', '/#s-scorers': 'الهدافون' };
   const ntWhen = at => { const d = new Date(at); return isNaN(d) ? '' : d.toLocaleString('ar-u-nu-latn', { timeZone: 'Asia/Qatar', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }); };
-  const toNotices = a => Array.isArray(a) ? a.filter(n => n && typeof n.title === 'string' && typeof n.body === 'string').slice(0, 20).map(n => { const u = typeof n.url === 'string' ? n.url : ''; return { title: n.title.slice(0, 60), body: n.body.slice(0, 160), at: String(n.at || ''), when: ntWhen(n.at), go: NT_GO[u] ? [u, NT_GO[u]] : null }; }) : [];
+  const toNotices = a => Array.isArray(a) ? a.filter(n => n && Number.isInteger(n.id) && typeof n.title === 'string' && typeof n.body === 'string').slice(0, 20).map(n => { const u = typeof n.url === 'string' ? n.url : ''; return { id: n.id, title: n.title.slice(0, 60), body: n.body.slice(0, 160), at: String(n.at || ''), when: ntWhen(n.at), go: NT_GO[u] ? [u, NT_GO[u]] : null }; }) : [];
   const toSnap = (j, dev, gal, nts) => {
     if (!j || !j.team) throw 0;
     const S = j.sections || {}, secs = [], nt = toNotices(nts);
