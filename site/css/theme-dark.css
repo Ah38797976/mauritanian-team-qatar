@@ -97,7 +97,6 @@ section.sec,section.sec:first-child{margin:0;background:var(--card);border:1px s
 .card.m .mid{margin-top:12px;padding:6px 12px;border-radius:99px;background:var(--gold);color:#2b2000;font-size:.85rem;font-weight:900;letter-spacing:1px}
 .card.m .mf{flex-wrap:wrap;gap:6px 8px}
 .card.m .mw.tm-c{background:rgba(122,92,10,.14);color:var(--gold-ink);font-weight:800;direction:ltr;unicode-bidi:isolate}
-.card.m .mw.vn{background:rgba(11,42,27,.1);color:var(--paper-ink);overflow-wrap:anywhere}
 .card.m .mf{display:flex;justify-content:center;margin-top:12px;padding-top:10px;border-top:1px dashed var(--paper-line)}
 .card.m .mw{font-size:.8rem;font-weight:700;color:var(--paper-mut);padding:2px 12px;border-radius:99px;background:rgba(11,42,27,.06)}
 .res.w{background:#d6f1e1;color:#0a6b3a}.res.d{background:#ebe8da;color:#4d5a52}.res.l{background:#fbdfda;color:#a3271b}.res.u{background:var(--gold);color:#2b2000}
@@ -252,6 +251,20 @@ html.pm-lock,html.pm-lock body{overflow:hidden;overscroll-behavior:none}
 /* عن مطوّر التطبيق — الوضع الداكن */
 .dev-pic{background:#14503a;color:#d8efe2}
 .dev-n{color:#fff}.dev-t{color:#e2c26b}.dev-txt p{color:#b9cdc1}
-.card.m .mw.vl{text-decoration:none;cursor:pointer;border:1px solid rgba(11,42,27,.25)}
-.card.m .mw.vl:hover,.card.m .mw.vl:focus-visible{background:rgba(11,42,27,.18);outline:2px solid var(--gold-ink);outline-offset:2px}
-.meta a.vl{color:inherit;font-weight:800;text-decoration:underline;text-underline-offset:3px}
+
+/* بطاقة موقع الملعب */
+.vc{display:flex;align-items:center;gap:12px;flex:1 1 100%;width:100%;max-width:440px;box-sizing:border-box;min-height:56px;margin-top:8px;padding:8px 12px;border-radius:16px;background:#fff;border:1px solid var(--paper-line);color:var(--paper-ink);text-align:start;text-decoration:none;box-shadow:0 2px 10px rgba(11,42,27,.08);transition:transform .15s,box-shadow .15s,border-color .15s}
+a.vc{cursor:pointer;-webkit-tap-highlight-color:transparent}
+a.vc:hover{border-color:var(--gold);box-shadow:0 6px 16px rgba(11,42,27,.16);transform:translateY(-1px)}
+a.vc:active{transform:scale(.985)}
+a.vc:focus-visible{outline:3px solid var(--gold-ink);outline-offset:2px}
+.vc-i{order:0;flex:none;display:grid;place-items:center;width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#1a6a41,#0b2a1b);box-shadow:0 0 0 2px rgba(212,175,79,.55)}
+.vc-i svg{width:22px;height:22px;fill:none;stroke:var(--gold);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.vc-t{order:1;flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.vc-t small{font-size:.72rem;font-weight:700;color:var(--paper-mut)}
+.vc-t b{font-size:1rem;font-weight:800;line-height:1.3;color:var(--paper-ink);overflow-wrap:anywhere}
+.vc-go{order:2;flex:none;display:inline-flex;align-items:center;gap:4px;padding:7px 12px;border-radius:99px;background:var(--gold);color:#2b2000;font-size:.78rem;font-weight:800;white-space:nowrap}
+.vc-go svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;transform:scaleX(-1)}
+.card.m .mf .vc{margin-top:6px}
+@media (max-width:360px){.vc-go{font-size:0;gap:0;padding:8px}.vc-go svg{width:18px;height:18px}}
+@media (prefers-reduced-motion:reduce){.vc{transition:none}a.vc:hover{transform:none}}

@@ -24,14 +24,16 @@
   const venueOf = m => typeof m.venue === 'string' ? m.venue.trim().slice(0, 100) : '';
   // رابط الموقع: رابط الخريطة المحفوظ (https فقط وبلا مسافات أو علامات خطرة)، وإلا بحث في خرائط جوجل باسم الملعب، وإلا لا شيء
   const mapOf = m => { const u = typeof m.map === 'string' ? m.map.trim() : '', v = venueOf(m); if (u.length <= 300 && /^https:\/\/[^\s<>"']+$/.test(u)) return u; return v ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(/قطر|الدوحة|qatar|doha/i.test(v) ? v : v + ' قطر') : ''; };
-  const venueHtml = (m, cls) => { const v = venueOf(m), u = mapOf(m); if (!v && !u) return ''; const t = v ? esc(v) : 'موقع الملعب'; return u ? `<a class="${cls} vn vl" href="${esc(u)}" target="_blank" rel="noopener noreferrer" aria-label="${esc((v || 'الملعب') + ' — فتح الموقع في الخريطة')}">📍 ${t}</a>` : `<span class="${cls} vn">${t}</span>`; };
+  // بطاقة الموقع: أيقونة دبوس + «الملعب» واسمه + زر «افتح الخريطة» (الرابط كله قابل للنقر)
+  const PIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.1-7-11.2A7 7 0 0 1 19 9.8C19 14.9 12 21 12 21z"/><circle cx="12" cy="9.8" r="2.6"/></svg>', GO = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 16l8-8M9 8h7v7"/></svg>';
+  const venueHtml = m => { const v = venueOf(m), u = mapOf(m); if (!v && !u) return ''; const t = v ? esc(v) : 'موقع الملعب'; return u ? `<a class="vc vn vl" href="${esc(u)}" target="_blank" rel="noopener noreferrer" aria-label="${esc((v || 'الملعب') + ' — فتح الموقع في الخريطة')}"><span class="vc-i">${PIN}</span><span class="vc-go">افتح الخريطة${GO}</span><span class="vc-t"><small>الملعب</small><b>${t}</b></span></a>` : `<div class="vc vn"><span class="vc-i">${PIN}</span><span class="vc-t"><small>الملعب</small><b>${t}</b></span></div>`; };
   const matchCard = m => {
     const [A, B] = sides(m), r = m.played ? outcome(m) : ['u', 'قادمة'];
     const us = esc(TEAM), badge = (name, ours) => `<i class="tb${ours ? ' us' : ''}" aria-hidden="true">${ini(name)}</i>`;
     const [nA, nB] = m.home ? [TEAM, m.opp] : [m.opp, TEAM];
     // الرقمان بترتيب الفريقين نفسه (الأول من اليمين)، فيجاور كل رقم فريقه
     const mid = m.played ? `<span class="sc"><b>${m.home ? num(m.us) : num(m.them)}</b><em>-</em><b>${m.home ? num(m.them) : num(m.us)}</b></span>` : '<span class="mid">VS</span>';
-    return `<article class="card m m-${r[0]}"><div class="top"><span class="md">${shortDate(m.date)}</span><span class="res ${r[0]}">${r[1]}</span></div><div class="vs"><span class="tmw">${badge(nA, m.home)}<span class="tm">${A}</span></span>${mid}<span class="tmw">${badge(nB, !m.home)}<span class="tm">${B}</span></span></div><div class="mf"><span class="mw ${m.home ? 'h' : 'a'}">${where(m)}</span>${clock(m.time) ? `<span class="mw tm-c">${clock(m.time)}</span>` : ''}${venueHtml(m, 'mw')}</div></article>`;
+    return `<article class="card m m-${r[0]}"><div class="top"><span class="md">${shortDate(m.date)}</span><span class="res ${r[0]}">${r[1]}</span></div><div class="vs"><span class="tmw">${badge(nA, m.home)}<span class="tm">${A}</span></span>${mid}<span class="tmw">${badge(nB, !m.home)}<span class="tm">${B}</span></span></div><div class="mf"><span class="mw ${m.home ? 'h' : 'a'}">${where(m)}</span>${clock(m.time) ? `<span class="mw tm-c">${clock(m.time)}</span>` : ''}${venueHtml(m)}</div></article>`;
   };
   // ---------- اللاعبون: ملعب التشكيلة + الاحتياط + بطاقة اللاعب ----------
   let SQ = [], SF = [], LST = SQ, MODE = 'p'; // لاعبو القسم الحالي وأعضاء الطاقم (تُقرأ منها البطاقة عند الضغط)
@@ -142,7 +144,7 @@
     if (sc && sc.rows[0]) st.push([num(sc.rows[0].goals), 'أهداف الهداف']);
     $('#stats').innerHTML = st.map(([n, l]) => `<div class="stat"><b>${num(n)}</b><span>${esc(l)}</span></div>`).join('');
     const next = ms && ms.matches.filter(m => !m.played).sort((a, b) => String(a.date).localeCompare(String(b.date)))[0], h = $('#heroNext');
-    if (next) { const [A, B] = sides(next); h.innerHTML = `<div class="lbl"><span>المباراة القادمة</span><span class="pill">${esc(untilLabel(next.date))}</span></div><div class="vs"><span class="tm">${A}</span><span class="mid">×</span><span class="tm">${B}</span></div><div class="meta"><span>${longDate(next.date)}</span>${clock(next.time) ? `<span>${clock(next.time)}</span>` : ''}<span>${where(next)}</span>${venueHtml(next, 'nv')}</div>`; h.hidden = false; }
+    if (next) { const [A, B] = sides(next); h.innerHTML = `<div class="lbl"><span>المباراة القادمة</span><span class="pill">${esc(untilLabel(next.date))}</span></div><div class="vs"><span class="tm">${A}</span><span class="mid">×</span><span class="tm">${B}</span></div><div class="meta"><span>${longDate(next.date)}</span>${clock(next.time) ? `<span>${clock(next.time)}</span>` : ''}<span>${where(next)}</span>${venueHtml(next)}</div>`; h.hidden = false; }
     else { h.innerHTML = ''; h.hidden = true; }
   }
   // عدد عناصر القسم (شارة بجانب العنوان)
