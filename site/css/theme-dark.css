@@ -281,3 +281,15 @@ a.vc:focus-visible{outline:3px solid var(--gold-ink);outline-offset:2px}
 .card.m .tb svg rect:first-child,.hero-card .vs .mrf svg{border-radius:2px}
 .hero-card .vs .mrf{display:grid;place-items:center;border-color:var(--gold)}
 .hero-card .vs .mrf svg{width:100%;height:auto;display:block}
+
+/* قسم التنبيهات */
+.nt-list{display:flex;flex-direction:column;gap:12px}
+.card.nt{padding:14px 16px;background:var(--paper);color:var(--paper-ink);border:1px solid var(--paper-line);border-inline-start:4px solid var(--gold);box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.nt-top{display:flex;align-items:center;gap:10px}
+.nt-ic{flex:none;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#1a6a41,#0b2a1b);box-shadow:0 0 0 2px rgba(212,175,79,.55)}
+.nt-ic svg{width:18px;height:18px;fill:none;stroke:var(--gold);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nt-t{font-size:1.02rem;font-weight:800;color:var(--paper-ink);overflow-wrap:anywhere}
+.nt-b{margin:8px 0 0;line-height:1.7;color:var(--paper-ink);overflow-wrap:anywhere}
+.nt-f{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding-top:8px;border-top:1px dashed var(--paper-line);font-size:.8rem;color:var(--paper-mut)}
+.nt-go{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border-radius:99px;background:var(--gold);color:#2b2000;font-weight:800;text-decoration:none}
+.nt-go:focus-visible{outline:3px solid var(--gold-ink);outline-offset:2px}

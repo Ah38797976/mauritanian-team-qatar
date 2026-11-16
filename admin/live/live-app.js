@@ -377,9 +377,9 @@ ${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إر�
   // إرسال تنبيه (Web Push) لكل من فعّل التنبيهات في الموقع
   let pushCount = 0;
   const pushForm = r => { pushCount = r.subscribers | 0; const rec = Array.isArray(r.recent) ? r.recent : [];
-    return `<h2>إرسال تنبيه للجميع</h2><p class="muted">يصل إلى ${pushCount} جهازًا فعّل التنبيهات من الموقع. على الآيفون يعمل فقط لمن أضاف الموقع إلى الشاشة الرئيسية.</p>
+    return `<h2>إرسال تنبيه للجميع</h2><p class="muted">يصل إلى ${pushCount} جهازًا فعّل التنبيهات من الموقع. على الآيفون يعمل فقط لمن أضاف الموقع إلى الشاشة الرئيسية. يظهر كل تنبيه أيضًا في قسم «التنبيهات» بالموقع لمدة 60 يومًا.</p>
       <form id="pf">${fld('العنوان', 'ptitle', '', 'text', 'maxlength="60" required')}<label class="f"><span>نص التنبيه</span><textarea name="pbody" rows="3" maxlength="160" required></textarea></label>
-      <label class="f"><span>عند الضغط يفتح</span><select name="purl"><option value="/">الصفحة الرئيسية</option><option value="/#s-matches">المباريات والنتائج</option><option value="/#s-squad">اللاعبون</option><option value="/#s-gallery">معرض الصور</option></select></label><button>إرسال التنبيه</button></form>
+      <label class="f"><span>عند الضغط يفتح</span><select name="purl"><option value="/#s-notices">قسم التنبيهات في الموقع (الأنسب)</option><option value="/">الصفحة الرئيسية</option><option value="/#s-matches">المباريات والنتائج</option><option value="/#s-squad">اللاعبون</option><option value="/#s-gallery">معرض الصور</option></select></label><button>إرسال التنبيه</button></form>
       ${rec.length ? `<h3>آخر التنبيهات</h3><ul class="plist">${rec.map(x => `<li><b>${esc(x.title)}</b> — ${esc(x.body)}<small>${esc(new Date(x.at).toLocaleString('ar'))} · وصل ${x.sent | 0} · فشل ${x.failed | 0}${x.by ? ' · ' + esc(x.by) : ''}</small></li>`).join('')}</ul>` : ''}`; };
   // من فعّل التنبيهات ومن لم يفعّل: لكل لاعب وعضو إدارة رمز شخصي يكتبه في الموقع فيُربط جهازه باسمه
   const loadPush = () => { const box = $('#pushadm'); if (!box) return; TD.getPushStats().then(r => { const b = $('#pushadm'); if (!b || route().page !== 'site') return; b.innerHTML = r && typeof r === 'object' ? pushForm(r) : '<h2>إرسال تنبيه للجميع</h2><p>هذه الميزة غير مفعّلة بعد في قاعدة البيانات، أو لا تملك صلاحية إدارة الموقع.</p>'; }); };
