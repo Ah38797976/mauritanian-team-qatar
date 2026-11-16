@@ -252,3 +252,6 @@ html.pm-lock,html.pm-lock body{overflow:hidden;overscroll-behavior:none}
 /* عن مطوّر التطبيق — الوضع الداكن */
 .dev-pic{background:#14503a;color:#d8efe2}
 .dev-n{color:#fff}.dev-t{color:#e2c26b}.dev-txt p{color:#b9cdc1}
+.card.m .mw.vl{text-decoration:none;cursor:pointer;border:1px solid rgba(11,42,27,.25)}
+.card.m .mw.vl:hover,.card.m .mw.vl:focus-visible{background:rgba(11,42,27,.18);outline:2px solid var(--gold-ink);outline-offset:2px}
+.meta a.vl{color:inherit;font-weight:800;text-decoration:underline;text-underline-offset:3px}

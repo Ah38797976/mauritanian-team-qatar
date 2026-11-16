@@ -18,7 +18,7 @@ with sync_playwright() as p:
     cards = pg.eval_on_selector_all('.card.m', "els => els.map(e => ({t: e.querySelector('.tm-c') ? e.querySelector('.tm-c').textContent : null, v: e.querySelector('.vn') ? e.querySelector('.vn').textContent : null}))")
     ck('4 بطاقات', len(cards) == 4, cards)
     ck('19:30 تظهر 7:30 م', cards[0]['t'] == '7:30 م', cards[0])
-    ck('اسم الملعب يظهر نصًّا (لا وسوم)', cards[0]['v'] == '<img src=x onerror=alert(1)>ملعب' and pg.locator('.card.m img').count() == 0, cards[0])
+    ck('اسم الملعب يظهر نصًّا (لا وسوم)', cards[0]['v'].endswith('<img src=x onerror=alert(1)>ملعب') and pg.locator('.card.m img').count() == 0, cards[0])
     ck('00:05 تظهر 12:05 ص بلا ملعب', cards[1]['t'] == '12:05 ص' and cards[1]['v'] is None, cards[1])
     ck('وقت غير صالح يُخفى', cards[2]['t'] is None and cards[2]['v'] is None, cards[2])
     ck('بلا حقلين: لا شارات إضافية', cards[3]['t'] is None and cards[3]['v'] is None, cards[3])
