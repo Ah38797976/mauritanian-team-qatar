@@ -500,7 +500,9 @@ ${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إر�
     }
     if (e.target.id === 'pf') { e.preventDefault(); const form = e.target, fd = new FormData(form), ti = String(fd.get('ptitle') || '').trim(), bo = String(fd.get('pbody') || '').trim(), u = String(fd.get('purl') || '/'), btn = form.querySelector('button');
       if (!ti || !bo) { toast('اكتب العنوان والنص'); return; }
-      if (!confirm('إرسال التنبيه إلى ' + pushCount + ' جهازًا الآن؟ لا يمكن التراجع بعد الإرسال.')) return;
+      // تأكيد داخل الصفحة بدل confirm(): الآيفون قد يحجب النوافذ المنبثقة بصمت فيبدو الزر كأنه لا يعمل
+      if (!btn.dataset.armed) { btn.dataset.armed = '1'; btn.dataset.label = btn.textContent; btn.textContent = 'اضغط مرة أخرى لتأكيد الإرسال إلى ' + pushCount + ' جهازًا'; toast('اضغط الزر مرة أخرى للتأكيد — لا يمكن التراجع بعد الإرسال'); setTimeout(() => { if (btn.dataset.armed && !btn.disabled) { delete btn.dataset.armed; btn.textContent = btn.dataset.label; } }, 8000); return; }
+      delete btn.dataset.armed; btn.textContent = btn.dataset.label;
       btn.disabled = true; TD.sendPush(ti, bo, u).then(r => { if (r.err) { toast(r.err); btn.disabled = false; } else { toast('أُرسل التنبيه: وصل ' + r.sent + ' وفشل ' + r.failed); loadPush(); } }); return; }
     if (e.target.id === 'gf') { e.preventDefault(); const form = e.target, fd = new FormData(form), files = fd.getAll('gphotos').filter(f => f && f.size), cap = String(fd.get('gcap') || ''), btn = form.querySelector('button');
       if (!files.length) return toast('اختر صورة واحدة على الأقل'); if (files.length + ((galData && galData.photos) || []).length > 40) return toast('الحد الأقصى 40 صورة في المعرض');
