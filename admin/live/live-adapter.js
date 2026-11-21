@@ -93,6 +93,8 @@
     async _refresh() {
       // كل الطلبات دفعة واحدة (كانت موجتين متتاليتين: كل موجة تساوي رحلة شبكة كاملة إلى الخادم)
       const q = t => sb.from(t);
+      // 0030: النتيجة اليدوية لنا (اختيارية) — تُطلب بالتوازي مع باقي الطلبات (بلا رحلة شبكة إضافية)، ويُتجاهل خطأها إن لم يُطبَّق 0030.
+      const usgP = (async () => { try { const r = await q('matches').select('id,us_goals'); return r.error ? {} : Object.fromEntries((r.data || []).map(x => [x.id, x.us_goals])); } catch (_) { return {}; } })();
       let mt, ss; const wantMap = cache.matchExt !== false && cache.matchMap !== false; const [[me, roster, stats], [pl, ct, st, mb, mt_, ls, ss_, at, lg, ph, sph]] = await Promise.all([Promise.all([rpc('rpc_get_me'), rpc('rpc_get_roster'), rpc('rpc_get_stat_rows')]), Promise.all([
         q('players').select('id,name,shirt_number,position,city,status'),
         q('player_contacts').select('player_id,phone,email'),
@@ -107,8 +109,7 @@
         q('staff_photos').select('id,staff_id,storage_path')
       ])]);
       mt = mt_; ss = ss_;
-      // 0030: النتيجة اليدوية لنا (اختيارية). استعلام منفصل متسامح: إن لم يُطبَّق 0030 بعد يُتجاهل الخطأ ولا يتأثر باقي تحميل المباريات.
-      let usg = {}; if (!mt.error) { try { const r = await q('matches').select('id,us_goals'); if (!r.error) usg = Object.fromEntries((r.data || []).map(x => [x.id, x.us_goals])); } catch (_) {} }
+      const usg = mt.error ? {} : await usgP;
       if (ss.error && cache.trainExt !== false && (ss.error.code === '42703' || /start_time|venue|map_url|column/i.test(String(ss.error.message || '')))) { cache.trainExt = false; ss = await q('training_sessions').select(TS_BASE).order('session_date'); }
       else if (!ss.error && cache.trainExt === null) cache.trainExt = true;
       if (mt.error && wantMap && /map_url/i.test(String(mt.error.message || ''))) { cache.matchMap = false; mt = await q('matches').select(MT_EXT).order('match_date'); }   // 0026 غير مُطبَّق: نرجع لأعمدة 0021 دون فقد الوقت والملعب
