@@ -376,9 +376,12 @@ ${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إر�
 
   // إرسال تنبيه (Web Push) لكل من فعّل التنبيهات في الموقع
   let pushCount = 0;
+  // مسودة التنبيه تُحفظ على هذا الجهاز: الآيفون يغلق التطبيق عند الخروج منه لنسخ النص فتضيع الكتابة عند العودة
+  const DKEY = 'mtq_push_draft', draftGet = () => { try { const j = JSON.parse(localStorage.getItem(DKEY) || '{}'); return { t: String(j.t || ''), b: String(j.b || '') }; } catch (_) { return { t: '', b: '' }; } };
+  const draftSet = (t, b) => { try { if (t || b) localStorage.setItem(DKEY, JSON.stringify({ t, b })); else localStorage.removeItem(DKEY); } catch (_) {} };
   const pushForm = r => { pushCount = r.subscribers | 0; const rec = Array.isArray(r.recent) ? r.recent : [];
     return `<h2>إرسال تنبيه للجميع</h2><p class="muted">يصل إلى ${pushCount} جهازًا فعّل التنبيهات من الموقع. على الآيفون يعمل فقط لمن أضاف الموقع إلى الشاشة الرئيسية. يظهر كل تنبيه أيضًا في قسم «التنبيهات» بالموقع لمدة 60 يومًا.</p>
-      <form id="pf">${fld('العنوان', 'ptitle', '', 'text', 'maxlength="60" required')}<label class="f"><span>نص التنبيه</span><textarea name="pbody" rows="3" maxlength="160" required></textarea></label>
+      <form id="pf">${fld('العنوان', 'ptitle', draftGet().t, 'text', 'maxlength="60" required')}<label class="f"><span>نص التنبيه</span><textarea name="pbody" rows="3" maxlength="160" required>${esc(draftGet().b)}</textarea></label>
       <label class="f"><span>عند الضغط يفتح</span><select name="purl"><option value="/#s-notices">قسم التنبيهات في الموقع (الأنسب)</option><option value="/">الصفحة الرئيسية</option><option value="/#s-matches">المباريات والنتائج</option><option value="/#s-squad">اللاعبون</option><option value="/#s-gallery">معرض الصور</option></select></label><button>إرسال التنبيه</button></form>
       ${rec.length ? `<h3>آخر التنبيهات</h3><ul class="plist">${rec.map(x => `<li><b>${esc(x.title)}</b> — ${esc(x.body)}<small>${esc(new Date(x.at).toLocaleString('ar'))} · وصل ${x.sent | 0} · فشل ${x.failed | 0}${x.by ? ' · ' + esc(x.by) : ''}</small></li>`).join('')}</ul>` : ''}`; };
   // من فعّل التنبيهات ومن لم يفعّل: لكل لاعب وعضو إدارة رمز شخصي يكتبه في الموقع فيُربط جهازه باسمه
@@ -487,6 +490,7 @@ ${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إر�
     if (d.de && confirm('حذف هذا الحدث؟ ستتغير إحصائيات اللاعب.')) fail(St.delEvent(+d.de)).then(bad => { if (!bad) toast('تم حذف الحدث'); });
     if (d.ua && confirm(d.to === '1' ? 'تفعيل هذا المستخدم؟' : 'إيقاف هذا المستخدم؟ لن يستطيع الدخول للوحة.')) fail(TD.setMemberActive(d.ua, d.to === '1'));
   });
+  v.addEventListener('input', e => { const n = e.target && e.target.name; if (n === 'ptitle' || n === 'pbody') { const f = e.target.form; draftSet(String(f.elements.ptitle.value || ''), String(f.elements.pbody.value || '')); } });
   v.addEventListener('submit', e => {
     if (e.target.classList.contains('evf')) { e.preventDefault(); const f = Object.fromEntries(new FormData(e.target)); fail(St.addEvent(e.target.dataset.mid, { pid: f.pid, type: f.type, min: +f.min || 1 })); }
     if (e.target.id === 'sf') { e.preventDefault(); const fd = new FormData(e.target), sec = {}; SEC.forEach(([k]) => { sec[k] = fd.has('sec_' + k); }); fail(TD.saveSite({ about: fd.get('about'), announcement: fd.get('announcement'), sections: sec })).then(bad => { if (!bad) toast(SAVED); }); }
@@ -503,7 +507,7 @@ ${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إر�
       // تأكيد داخل الصفحة بدل confirm(): الآيفون قد يحجب النوافذ المنبثقة بصمت فيبدو الزر كأنه لا يعمل
       if (!btn.dataset.armed) { btn.dataset.armed = '1'; btn.dataset.label = btn.textContent; btn.textContent = 'اضغط مرة أخرى لتأكيد الإرسال إلى ' + pushCount + ' جهازًا'; toast('اضغط الزر مرة أخرى للتأكيد — لا يمكن التراجع بعد الإرسال'); setTimeout(() => { if (btn.dataset.armed && !btn.disabled) { delete btn.dataset.armed; btn.textContent = btn.dataset.label; } }, 8000); return; }
       delete btn.dataset.armed; btn.textContent = btn.dataset.label;
-      btn.disabled = true; TD.sendPush(ti, bo, u).then(r => { if (r.err) { toast(r.err); btn.disabled = false; } else { toast('أُرسل التنبيه: وصل ' + r.sent + ' وفشل ' + r.failed); loadPush(); } }); return; }
+      btn.disabled = true; TD.sendPush(ti, bo, u).then(r => { if (r.err) { toast(r.err); btn.disabled = false; } else { draftSet('', ''); toast('أُرسل التنبيه: وصل ' + r.sent + ' وفشل ' + r.failed); loadPush(); } }); return; }
     if (e.target.id === 'gf') { e.preventDefault(); const form = e.target, fd = new FormData(form), files = fd.getAll('gphotos').filter(f => f && f.size), cap = String(fd.get('gcap') || ''), btn = form.querySelector('button');
       if (!files.length) return toast('اختر صورة واحدة على الأقل'); if (files.length + ((galData && galData.photos) || []).length > 40) return toast('الحد الأقصى 40 صورة في المعرض');
       btn.disabled = true;
