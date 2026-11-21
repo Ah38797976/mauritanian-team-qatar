@@ -277,7 +277,7 @@ ${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إر�
     const edge = m.played ? '#0b6b3a' : '#c9a227';   // أخضر = منتهية، ذهبي = قادمة
     return `<div class="card" data-m="${esc(m.id)}" style="border-inline-start:5px solid ${edge}"><h2>${title(m)}</h2><div>${when(m)} ${esc(m.date)}${m.time ? ' — ' + esc(m.time) : ''}${m.venue ? ' — ' + esc(m.venue) : ''}${mapLink(m) ? ' — ' + mapLink(m) : ''} — مسؤول المباراة: ${esc(off ? off.name : '-')}</div>
     <ul>${m.events.map(e => `<li>د ${num(e.min)}: ${esc(St.EV[e.type])} — ${esc(St.player(e.pid)?.name)}${canS && e.id != null ? ` <button class="dng" data-de="${esc(e.id)}" aria-label="حذف الحدث">حذف</button>` : ''}</li>`).join('') || '<li>لا أحداث</li>'}</ul>
-    ${canS ? `<form class="row evf" data-mid="${esc(m.id)}"><select name="pid" aria-label="اللاعب">${cand.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select><select name="type" aria-label="الحدث">${Object.entries(St.EV).map(([k, v]) => `<option value="${esc(k)}">${esc(v)}</option>`).join('')}</select><input name="min" type="number" min="1" max="130" value="1" style="width:80px" aria-label="الدقيقة"><button>إضافة حدث</button></form><div class="row" style="margin-top:6px">أهداف الخصم: <input type="number" min="0" value="${num(m.them)}" data-th="${esc(m.id)}" style="width:70px"> <label><input type="checkbox" data-pl="${esc(m.id)}" ${m.played ? 'checked' : ''}> انتهت</label></div>` : '<small>لا تملك صلاحية إدخال إحصائيات هذه المباراة.</small>'}
+    ${canS ? `<form class="row evf" data-mid="${esc(m.id)}"><select name="pid" aria-label="اللاعب">${cand.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select><select name="type" aria-label="الحدث">${Object.entries(St.EV).map(([k, v]) => `<option value="${esc(k)}">${esc(v)}</option>`).join('')}</select><input name="min" type="number" min="1" max="130" value="1" style="width:80px" aria-label="الدقيقة"><button>إضافة حدث</button></form><div class="row" style="margin-top:6px">نتيجة المباراة النهائية — أهدافنا: <input type="number" min="0" max="99" value="${num(St.us(m))}" data-us="${esc(m.id)}" style="width:70px" aria-label="أهدافنا"> أهداف الخصم: <input type="number" min="0" max="99" value="${num(m.them)}" data-th="${esc(m.id)}" style="width:70px" aria-label="أهداف الخصم"> <label><input type="checkbox" data-pl="${esc(m.id)}" ${m.played ? 'checked' : ''}> انتهت</label></div>` : '<small>لا تملك صلاحية إدخال إحصائيات هذه المباراة.</small>'}
     ${St.can('matches') && mg() ? `<div class="row" style="margin-top:6px"><button class="sec" data-em="${esc(m.id)}">تعديل البيانات</button><button class="dng" data-dm="${esc(m.id)}">حذف المباراة</button></div>` : ''}</div>`;
     };
     const up = ms.filter(m => !m.played).sort((a, b) => a.date.localeCompare(b.date)), past = ms.filter(m => m.played).sort((a, b) => b.date.localeCompare(a.date));
@@ -448,7 +448,11 @@ ${upcoming && St.can('settings') ? '<div class="tools"><button id="callup">إر�
     if (d.at) { const c = curSes(); if (!c) { t.checked = false; return toast('أضف حصة تدريب أولًا'); } fail(St.setAtt(c, d.at, t.checked)); }
     if (d.rp) { const [rl, pm] = d.rp.split('|'); fail(TD.setPerm(rl, pm, t.checked)); }
     if (d.ur && confirm('تغيير دور هذا المستخدم؟')) fail(TD.setMemberRole(d.ur, t.value)); else if (d.ur) render();
-    if (d.th || d.pl) { const id = d.th || d.pl, c = v.querySelector(`[data-m="${CSS.escape(id)}"]`); fail(St.setResult(id, +c.querySelector('[data-th]').value || 0, c.querySelector('[data-pl]').checked)); }
+    if (d.th || d.pl || d.us) { const id = d.th || d.pl || d.us, c = v.querySelector(`[data-m="${CSS.escape(id)}"]`), m = St.visibleMatches().find(x => x.id === id);
+      const uv = Math.max(0, Math.min(99, Math.trunc(+c.querySelector('[data-us]').value) || 0)), auto = m ? m.events.filter(e => e.type === 'goal').length : 0;
+      // لا نثبّت نتيجتنا يدويًا إلا إذا غُيّر الرقم عن المحسوب من الأحداث (أو كانت مثبّتة سابقًا)، فتبقى المباراة القديمة تتبع الأحداث
+      const us = m && m.usGoals == null && uv === auto ? null : uv;
+      fail(St.setScore(id, us, Math.max(0, Math.min(99, Math.trunc(+c.querySelector('[data-th]').value) || 0)), c.querySelector('[data-pl]').checked)); }
   });
   v.addEventListener('click', e => {
     const t = e.target, d = t.dataset, id = t.id;

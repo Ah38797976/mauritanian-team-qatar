@@ -107,6 +107,8 @@
         q('staff_photos').select('id,staff_id,storage_path')
       ])]);
       mt = mt_; ss = ss_;
+      // 0030: النتيجة اليدوية لنا (اختيارية). استعلام منفصل متسامح: إن لم يُطبَّق 0030 بعد يُتجاهل الخطأ ولا يتأثر باقي تحميل المباريات.
+      let usg = {}; if (!mt.error) { try { const r = await q('matches').select('id,us_goals'); if (!r.error) usg = Object.fromEntries((r.data || []).map(x => [x.id, x.us_goals])); } catch (_) {} }
       if (ss.error && cache.trainExt !== false && (ss.error.code === '42703' || /start_time|venue|map_url|column/i.test(String(ss.error.message || '')))) { cache.trainExt = false; ss = await q('training_sessions').select(TS_BASE).order('session_date'); }
       else if (!ss.error && cache.trainExt === null) cache.trainExt = true;
       if (mt.error && wantMap && /map_url/i.test(String(mt.error.message || ''))) { cache.matchMap = false; mt = await q('matches').select(MT_EXT).order('match_date'); }   // 0026 غير مُطبَّق: نرجع لأعمدة 0021 دون فقد الوقت والملعب
@@ -128,7 +130,7 @@
       });
       cache.staff = (st.data || []).map(s => { const o = { id: s.id, teamId: tid, name: s.name, role: s.title, kind: KIND[s.kind] }; if (s.staff_contacts && s.staff_contacts[0]) o.phone = s.staff_contacts[0].phone; return o; });
       cache.members = (mb.data || []).filter(m => m.active).map(m => ({ id: m.user_id, name: m.display_name, role: m.role }));
-      cache.matches = (mt.data || []).map(m => ({ id: m.id, opp: m.opponent, date: m.match_date, home: m.is_home, played: m.played, them: m.opp_goals, officer: m.officer_id, time: m.kickoff ? String(m.kickoff).slice(0, 5) : '', venue: m.venue || '', map: m.map_url || '', players: (m.match_players || []).map(x => x.player_id), events: (m.match_players || []).flatMap(x => (x.match_events || []).map(e => ({ id: e.id, pid: x.player_id, type: e.event_type, min: e.minute }))) }));   // الأحداث مرتبطة بجدول match_players فقط، لذا تُجلب متداخلة
+      cache.matches = (mt.data || []).map(m => ({ id: m.id, opp: m.opponent, date: m.match_date, home: m.is_home, played: m.played, them: m.opp_goals, usGoals: usg[m.id] == null ? null : usg[m.id], officer: m.officer_id, time: m.kickoff ? String(m.kickoff).slice(0, 5) : '', venue: m.venue || '', map: m.map_url || '', players: (m.match_players || []).map(x => x.player_id), events: (m.match_players || []).flatMap(x => (x.match_events || []).map(e => ({ id: e.id, pid: x.player_id, type: e.event_type, min: e.minute }))) }));   // الأحداث مرتبطة بجدول match_players فقط، لذا تُجلب متداخلة
       { const { ids, ...info } = ls; cache.lineup = ids; cache.lineupInfo = info; }
       cache.sessions = (ss.data || []).map(s => ({ id: s.id, title: s.title, date: s.session_date, time: s.start_time ? String(s.start_time).slice(0, 5) : '', venue: s.venue || '', map: s.map_url || '' }));                    // [v2 F2]
       cache.att = {}; (at.data || []).forEach(a => { (cache.att[a.session_id] = cache.att[a.session_id] || {})[a.player_id] = a.present; });
@@ -157,6 +159,7 @@
     delMatch: id => write('rpc_delete_match', { p_id: id }),          // 0025
     delEvent: id => write('rpc_delete_event', { p_id: id }),          // 0025
     setResult: (mid, them, played) => write('rpc_set_result', { p_match: mid, p_them: them, p_played: played }),
+    setScore: (mid, us, them, played) => write('rpc_set_score', { p_match: mid, p_us: us, p_them: them, p_played: played }),   // 0030
     setStarters: ids => write('rpc_set_starters', { p_ids: ids }),
     // ---- مركز المدرب (0014): أسماء الدوال ومعاملاتها كما في ملف SQL حرفيًا؛ يتحقق منها tools/test_lineup_contract.js ----
     setFormation: f => write('rpc_set_formation', { p_formation: f }),

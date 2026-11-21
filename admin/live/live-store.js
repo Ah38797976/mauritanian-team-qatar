@@ -65,7 +65,7 @@
     },
     playerLinks(id) { return St.canSeeRoster() ? links(id) : { events: 0, matches: 0, att: 0 }; },
     stats(pid, matches) { return calc(pid, matches || S.matches); },
-    us: m => m.events.filter(e => e.type === 'goal').length,
+    us: m => m.usGoals != null ? m.usGoals : m.events.filter(e => e.type === 'goal').length,   // 0030: النتيجة اليدوية إن وُجدت وإلا عدد أحداث الهدف
     statRows() { return (c().stats || []).map(r => ({ p: { id: r.id, name: r.name, num: r.num, pos: r.pos, status: r.status }, s: { apps: +r.apps || 0, goals: +r.goals || 0, yellow: +r.yellow || 0, red: +r.red || 0 } })); },
     topScorers() { const rows = St.statRows(), max = rows.length ? Math.max(...rows.map(r => r.s.goals)) : 0; return { goals: max, players: max > 0 ? rows.filter(r => r.s.goals === max).map(r => r.p) : [] }; },
     // ---- الكتابة (كلها عبر الخادم) ----
@@ -79,6 +79,7 @@
     delMatch: id => TD.delMatch(id),
     delEvent: id => TD.delEvent(id),
     setResult: (mid, them, played) => TD.setResult(mid, them, played),
+    setScore: (mid, us, them, played) => TD.setScore(mid, us, them, played),
     setStarters: ids => TD.setStarters(ids),
     // مركز المدرب: الواجهة لا تتجاوز الصلاحية (الخادم هو الحاسم)، لكن لا نُرسل أصلًا ما لا يحق للمستخدم
     setFormation: f => St.can('lineup') ? TD.setFormation(f) : Promise.resolve(DENY),
